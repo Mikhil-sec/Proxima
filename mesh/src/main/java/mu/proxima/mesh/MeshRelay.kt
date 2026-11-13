@@ -64,13 +64,14 @@ object MeshRelay {
      * Stored packets that [newer] replaces. A finder shares its position with the guardian every 10 s as SEALED
      * CRITICAL packets; keeping all of them would fill the store (200 max, oldest evicted, so the original SOS goes
      * first) and flood a newly met phone with stale positions. Only the newest SEALED packet per
-     * (origin, recipient) is worth carrying. SEALED is used only for found notices.
+     * (origin, recipient, channel) is worth carrying. Found notices have no channel; friend invites (#61) use "friend".
      */
     fun supersededBy(newer: MeshPacket, stored: Collection<MeshPacket>): List<MeshPacket> =
         if (newer.kind != PacketKind.SEALED || newer.recipientKey == null) emptyList()
         else stored.filter {
             it.kind == PacketKind.SEALED && it.packetId != newer.packetId &&
                 it.originNodeId == newer.originNodeId && it.recipientKey == newer.recipientKey &&
+                it.channel == newer.channel && // a friend invite (#61, channel "friend") never replaces a found notice
                 it.createdAtMs <= newer.createdAtMs
         }
 
