@@ -96,32 +96,24 @@ The previous "Field Terminal" look (OLED black, phosphor green, Space Grotesk + 
 
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 
-## NEXT_SESSION_HANDOFF (17:15 Fri)
-**Read first:** `DESIGN_RULES.md` (design source of truth) · this file · `CLAUDE.local.md` (gh/adb full paths).
-**Works (builds, designCheck 0 violations, lint clean, all module tests green — NOT yet seen on a device in the new look):**
-- Material You overhaul via the audited `ui-android` skill (`~/.claude/skills/ui-android`, invoke `/ui-android`): tokens in
-  `app/.../ui/theme/` (Color+semantic roles, Type=Roboto Flex, Shape, Spacing+Sizes, Motion, Theme), icons = Material Symbols
-  Rounded `res/drawable/ic_*.xml` via `components/Symbols.kt`. Old look: `git checkout ui-v1-field-terminal -- app/`.
-- Screens: Home (SOS 0.6 s hold-to-arm, voice ticks), Report (listen → review → 3 s auto-send → sent + nearest help), Feed + incident
-  sheet, Finder ("I'm with them" → sealed location), Found alert + Radar (guardian), Boot (permissions), Dev sheet (long-press
-  "Proxima"), Command Center dispatch board (tickets, someone's going / cleared, site plan with letter pins + hop pulses).
-- #28 done: `ProximaGraph` feeds `MeshBeaconInfo` (coarse location + llmReady).
-**Branch state:** `lane/ui` = main + `iface/lost-found` (PR #15, needs 👍 MESH+TRUST on #14) + lane/mesh `a548ed6` (MeshBeaconInfo).
-Do NOT merge lane/ui → main before PR #15 merges.
-**Mocked / broken:** sim ON by default; TRUST crypto still fake even with sim OFF (Diya, Tink by 23:00) — don't claim real
-encryption in the pitch yet. Protocol cards: 9 IFRC cards on main; crowd crush / electrical / branch / flood have none (#20).
-**Exact next steps:**
-1. Plug in the Honor X8b → `./gradlew installDebug` → screenshot every screen in light AND dark (`adb shell cmd uimode night yes|no`),
-   fix what fails `DESIGN_RULES.md` + the UI audit; then the Tab S6 Lite (landscape) for the Command Center.
-2. #8: Dev sheet lists `mesh.peers` with tap-to-allow → `MeshDemoControls.allowedNeighbours` (MeshDemoControls is on main).
-3. Command Center density heatmap from `mesh.peers[].location` (25 m cells from beacons).
-4. #20 decision (lead): recommend option A (crowd crush = hazard, no card). 130% font + TalkBack pass. README UI section (#23, by 10:30 Sat).
-**Files touched this session:** `app/**` (all UI), `DESIGN_RULES.md`, `CLAUDE.md` (§4 + last line), `docs/lanes/UI.md`,
-`docs/DECISIONS.md`, `docs/STATUS.md`, `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `core/**` (only via iface/lost-found PR #15).
+## NEXT_SESSION_HANDOFF (02:45 Sat)
+**Done:** every UI task, plus lead integration. Main = `1698627`, all green (build, tests, lint, designCheck 0).
+M2 passed on phones (#75). All 6 devices on the final build, simulation OFF.
+**Shipped tonight:** device audit fixes (light/dark), config-change fix (dark mode no longer loses a report),
+#8 demo chain, density heatmap, #30 hands-free guide + crowd risk, #10 sent = shown, verified posts, My people
+(friend pairing + radar), surprise-card surge line, radar no-GPS hint, Mermaid architecture diagram in README.
+**Known, not fixed:** dev-sheet demo chain can deadlock (#3; use the adb broadcast all at once); friend radar needs
+the phone's own GPS fix or UWB (now says so); "walk this way" to help points via `locate.track` (#40).
+**Next (submission only):** slides, video, decisions shortlist, README assembly block removal (TRUST), submit by 12:30.
+**Tools:** per-device install script and adb helpers live in the lead laptop's session scratchpad (`prep.sh`, `t.sh`).
+Update a device without wiping it: `ANDROID_SERIAL=<serial> ./gradlew :app:installDebug` (same laptop key).
 
 ## Progress log
 | Time | What |
 |---|---|
+| 02:45 Sat | All 6 devices updated in place to `1698627`; architecture diagram + "fresh install = simulation" note in README; release APK built; STATUS refreshed |
+| 02:20 Sat | **M2 passed on real phones** (T1 SOS, T2 2-hop, T3 lost & found + privacy, T4 Gemma, T6 friend pairing); fixed radar no-GPS hint + "heard just now" (#85) |
+| 02:15 Sat | Surprise card "Scale up": surge control (#83) + 1,400-phone model, README section, slide text |
 | 00:50 Sat | Lead override session: `report(raw, triaged)` (#10, core test), verified roles shown in Nearest help + Command Center + role pass wired, **My people** (friend find pairing + radar, shared RadarView), tablet boot copy, 8 GB tier fix. Build, all tests, lint, designCheck 0. **Not yet seen on a device** (tablet locked) |
 | 23:30 Fri | All 6 devices reinstalled on `0f7dcf8` (sim OFF, Gemma on S24U + S26P); M2 logic test delegated to Seeya + Yorvan on #75 |
 | 19:15 Fri | Tab S6 Lite (landscape) on main build: Command Center queue + plan readable; crowd-risk areas + reasons draw; #20 no-card line confirmed; hands-free guide UI works (buttons; no speech pack yet); rotation keeps state. To fix: boot screen says "phone" and stretches full width on tablet |
