@@ -40,6 +40,8 @@ case "${1:-}" in
     for s in $(serials); do
       echo "== $s ($(model "$s"))"
       "$ADB" -s "$s" install -r --user 0 "$APK" | tr -d '\r' | tail -1
+      # Samsung Device Care ("sleeping apps") suspends idle debug apps → launch shows a "paused" screen instead.
+      sh_ "$s" pm unsuspend --user 0 "$PKG" >/dev/null || true
       for p in BLUETOOTH_SCAN BLUETOOTH_ADVERTISE BLUETOOTH_CONNECT NEARBY_WIFI_DEVICES POST_NOTIFICATIONS \
                ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION UWB_RANGING RECORD_AUDIO; do
         "$ADB" -s "$s" shell pm grant "$PKG" "android.permission.$p" 2>/dev/null || true
