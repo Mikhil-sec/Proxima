@@ -444,6 +444,7 @@ class NearbyMeshEngine(
             llmReady = MeshBeaconInfo.llmReady.value,
             location = MeshBeaconInfo.location.value?.let { MeshBeaconInfo.coarse(it) }, // anonymous 25 m cell only
             role = MeshBeaconInfo.rolePass.value, // role phones only (#69); verified by receivers with this signed packet
+            friendTag = runCatching { trust.beaconTag(clock()) }.getOrNull(), // #61: rotating HMAC tag, unlinkable to bystanders
         )
         val packet = packets.create(PacketKind.BEACON, ProximaJson.encodeToString(Beacon.serializer(), beacon), Severity.LOW)
         scope.launch(serial) {
@@ -461,6 +462,8 @@ class NearbyMeshEngine(
             nodeId = b.nodeId, shortCode = shortCode(b.nodeId), tier = b.tier, transport = Transport.NEARBY_AUTO,
             lastSeenMs = clock(), location = b.location, hasUwb = b.hasUwb, llmReady = b.llmReady, direct = false,
             role = verified?.first, roleLabel = verified?.second,
+            publicKey = MeshBeaconInfo.signerKey(b, packet),
+            friendLabel = MeshBeaconInfo.friendLabel(b, packet, clock(), trust::matchFriend),
         )
         publishPeers()
     }
@@ -471,7 +474,8 @@ class NearbyMeshEngine(
                 lastSeenMs = it.lastSeenMs, location = indirect[it.nodeId]?.location,
                 hasUwb = indirect[it.nodeId]?.hasUwb ?: false,
                 llmReady = indirect[it.nodeId]?.llmReady ?: false, direct = true,
-                role = indirect[it.nodeId]?.role, roleLabel = indirect[it.nodeId]?.roleLabel)
+                role = indirect[it.nodeId]?.role, roleLabel = indirect[it.nodeId]?.roleLabel,
+                publicKey = indirect[it.nodeId]?.publicKey, friendLabel = indirect[it.nodeId]?.friendLabel)
         }
         val directIds = direct.map { it.nodeId }.toSet()
         _peers.value = direct + indirect.values.filter { it.nodeId !in directIds }
