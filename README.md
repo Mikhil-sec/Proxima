@@ -216,8 +216,9 @@ ever travels encrypted to the guardian's key.
 - No names, no photos and no profiles. Lost-person alerts carry a minimal description only.
 - A child's location travels **sealed to the guardian's public key**; relays forward it and cannot read it.
 - **No stable identifier.** A phone gets a fresh key, and with it a fresh node id, every app session, so a node id
-  cannot be used to follow one phone around the venue. Previous keys stay on the phone for 24 h only, so a
-  guardian whose app restarts mid-search still receives the finder's message.
+  cannot be used to follow one phone around the venue. Previous keys stay on the phone for 24 h only, and the
+  phone replays its own recent alerts (last 30 min) after a restart, so a guardian whose app restarts mid-search
+  still receives the finder's message.
 - Crowd density is reported as **anonymous ~25 m grid cells**, never as individual positions.
 - No account, no server, no analytics. The app declares no camera and no contacts permission.
 
