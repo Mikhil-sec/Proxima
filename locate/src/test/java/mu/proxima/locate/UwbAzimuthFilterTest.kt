@@ -53,7 +53,8 @@ class UwbAzimuthFilterTest {
     @Test
     fun contactRangeAndEdgeOnlyGiveNoArrow() {
         val f = UwbAzimuthFilter()
-        assertNull(f.update(30.0, 0.2, 0))      // < 0.3 m: angle is noise
+        assertNull(f.update(30.0, 0.2, 0))      // < 0.5 m: angle is noise
+        assertNull(f.update(30.0, 0.4, 100))    // measured 35–89° jumps at 0.30–0.34 m
         assertNull(f.update(-90.0, 2.0, 300))  // field-of-view edge
         assertNull(f.update(null, 2.0, 600))   // no AoA (e.g. S24 Ultra)
     }

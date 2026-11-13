@@ -33,7 +33,7 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 2. Position = fused GPS every 1 s; heading = rotation-vector sensor, corrected to true north, smoothed; works flat or upright.
 3. `track(target)` emits a `RadarFix` every 100 ms from the best source: UWB → GPS → mesh RSSI → last GPS. (Real Nearby gives no RSSI, so on phones it's UWB → GPS.) Help points: `track(LocateTargets.helpPoint(p))`.
 4. UWB: the guardian's phone sends a signed CONTROL "uwb" REQUEST over the mesh; the finder's phone auto-answers; both range at ~0.3 m.
-5. Direction arrow from UWB needs angle-of-arrival (S23+ yes, S24U no) and >0.3 m; it is median+EMA smoothed; otherwise distance-only.
+5. Direction arrow from UWB needs angle-of-arrival (S23+ yes, S24U no) and >0.5 m; it is median+EMA smoothed; otherwise distance-only.
 
 ## NEXT_SESSION_HANDOFF
 _Updated 18:53 Fri. `lane/locate` = `main` (PR #39 merged 18:34) + README/lane-doc commits not yet in main._
@@ -97,6 +97,9 @@ Chanum's S26+ (SM-S947B, API 37) has UWB + AoA support flag; comma-decimal local
 | 19:25 Fri | Outdoor GPS radar, site 1 (S26+ fixed point, S23+ walks): distance smooth, 59.5 m at the far spot vs 70 steps (≈49–60 m), bearing steady ±1°, auto handover UWB→GPS at ~6 m and back to UWB at ~1 m. **Heading ≈ +70° off** (pointing at target read 250° vs 180° true), steady, also on the walk back |
 | 19:37 Fri | Outdoor GPS radar, site 2 (35 steps ≈ 26 m): **heading correct** (walking away 285–290° vs 278–286° true; pointing at target rel 353–1°; walking back rel 0–19°), spin tracked smoothly. GPS distance peaked 23.8 m, drifted to 18 m while standing (±6 m GPS). UWB re-acquired at **10.8 m** walking back, arrow rel 0–5° to contact. → heading code OK; the site-1 error was environment/uncalibrated magnetometer, not code |
 | 19:45 Fri | Sync (#53): merged main, build + locate tests green, **PR #60 merged** at the 19:45 cutoff; 👍 + M2 heads-ups on #53. Paused until main reopens. Next: arrow cutoff 0.3→0.5 m, compass-calibration hint (heading accuracy from rotation vector) |
+| 20:15 Fri | Pulled main fb20894 (#68), build + all tests green. UWB arrow cutoff 0.3 → 0.5 m (+ boundary tests), README row updated (0.5 m, UWB from 10.8 m outdoors) |
+| 20:25 Fri | Compass reliability logging: rotation-vector heading accuracy (`values[4]`) + accuracy status in the debug STATUS line and on every status change. Needed before a calibration hint: must know what the S23+ reports when it is right vs ~70° off |
+| 20:46 Fri | Compass signal test on S23+ (side-by-side build, demo build untouched): **S23+ reports no heading-accuracy estimate** (`values[4]` absent) and the accuracy status stayed **HIGH** throughout (indoors, flat on the laptop hinge, figure-8, on the ground), no status change event. → the phone gives no usable "compass is wrong" signal. Test build removed (it was joining the team M2 mesh). Lesson: an `adb shell` loop dies on unplug; log from the app for walk-away tests |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -122,3 +125,5 @@ Chanum's S26+ (SM-S947B, API 37) has UWB + AoA support flag; comma-decimal local
 | 18:39 Fri | README states RSSI fallback is simulation-only | Real `NearbyMeshEngine` never fills `Peer.rssiDbm` (Nearby Connections exposes no RSSI); judges reward honest limits | Claiming warmer/colder on all phones |
 | 18:52 Fri | 👍 #14 (lost & found without wristband), fix to `trackFinder` as a non-blocking ask | Finder id = mesh node id, so the radar/UWB path works unchanged; only ordering/multi-finder mixing is wrong, and it's small and in `core` | Blocking #15 until fixed (would stall UI's lost-child flow) |
 | 18:52 Fri | Don't build a beacon-cell fallback for the missing RSSI | Needs UI's beacon wiring, only says "within ~25 m", and shows an unsealed location on the radar; on stage UWB carries the demo | Beacon-cell coarse radar |
+| 20:55 Fri | No in-app compass-calibration hint; state the limit in the README (figure-8 to recalibrate) | S23+ reports no heading-accuracy estimate and its status stays HIGH even on a laptop hinge, so a hint would never fire; on stage UWB needs no compass | Own field-strength disturbance detector (~45 min + phone session, likely misses calibration offsets like site 1) |
+| 20:15 Fri | Raise the UWB arrow cutoff 0.3 → 0.5 m | 19:12 phone re-check: the only 35–89° arrow jumps were at 0.30–0.34 m; at ≥0.4 m no step > 30°. Within 0.5 m the parent can see the child and the screen already says "together" | Keep 0.3 m (arrow jumps as you close in); 1 m (loses the useful last-metre arrow) |

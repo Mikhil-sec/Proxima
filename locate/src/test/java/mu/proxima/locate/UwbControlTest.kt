@@ -35,6 +35,8 @@ class UwbControlTest {
 
     @Test fun uwbAzimuthIgnoredWhenTooCloseOrMissing() {
         assertNull(RadarMath.uwbRelativeBearingDeg(90.0, 0.05)) // contact range: angle is noise
+        assertNull(RadarMath.uwbRelativeBearingDeg(20.0, 0.45)) // below the 0.5 m cutoff
+        assertEquals(20.0, RadarMath.uwbRelativeBearingDeg(20.0, 0.5)!!, 1e-9)
         assertNull(RadarMath.uwbRelativeBearingDeg(null, 3.0))  // phone without AoA (S24U)
     }
 }

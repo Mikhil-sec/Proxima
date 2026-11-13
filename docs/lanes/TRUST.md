@@ -57,20 +57,17 @@ posts on #1/#53 that it is reopened.** Diya (19:12): when main IS open, merge in
 | TinkTrustEngine (Ed25519 + HPKE, Keystore) | main | Done. 22/22 on S24 Ultra (19:47, built from main), 21/21 on Honor LLY-LX2 |
 | Per-session identity (#38 item 1) | main (#50, #52) | Live. Fresh id per launch, previous keys 24 h / max 10, pipeline uses `ownsKey/ownsNodeId` |
 | Verified roles (#38 item 2) | main (#55, #56, #57) | TRUST side done. Organiser PUBLIC key in `trust/src/main/assets/data/organiser_public.json`; PRIVATE key at `~/.proxima/organiser_private.json` on Diya's laptop, **outside the repo, never commit/post**. Not on screen: MESH/UI wiring asked as optional on #55 (no reply yet) |
-| Friend find (#38 item 3) | branch `iface/friend-find`, **PR #62 HELD**, interface #61 | TRUST side done, 11 tests, 99/99, already merged with fb20894. Not on screen: MESH/UI spec on #61 |
-| README | `lane/trust` (d6d6d30, not on main yet) | Updated to match main. MESH + LOCATE sections in; **UI + AI still owed (#23)** |
+| Friend find (#38 item 3) | main (#62, merged 20:36), interface #61 | TRUST side done, 11 tests, 99/99. Not on screen: MESH/UI spec on #61 |
+| README | main (#70, merged 20:37) | Updated to match main. MESH + LOCATE sections in; **UI + AI still owed (#23)** |
 
 ### THE ONE THING THAT MATTERS NEXT
-Check #1 / #53 / #68: **has the lead reopened main?**
-- **Not yet:** stay on branches. Useful meanwhile: README polish on `lane/trust`; read M2 results on #1 (`[M2] ...`)
-  and fix anything TRUST-related on `lane/trust` first (lead rule: M2 fixes before features).
-- **Reopened:** (1) `git switch iface/friend-find && git merge origin/main`, `./gradlew assembleDebug test`, push,
-  `gh pr merge 62 --merge`, comment on #61 + #38 + #1. (2) `git switch lane/trust && git merge origin/main`, build,
-  PR + merge (README). (3) S24 plugged in: `ANDROID_SERIAL=R5CXA2VDYMY ./gradlew :trust:connectedDebugAndroidTest`,
-  read `adb logcat -d -s TestRunner:*` (the Keystore AES-GCM friend key has only run on the JVM). Test package only -
-  never `installDebug` onto demo devices.
-- Then: write the M2 lost & found result into the README status block; chase #23 (UI, AI) and #45 (AI proof-read of
-  protocols.json, needed before the demo); README decision shortlist (AI's draft is in docs/lanes/AI.md, ~10:00 Sat).
+**Main reopened 20:25; #62 and #70 merged.** Remaining:
+1. **S24 device run of the friend storage** (Keystore AES-GCM key has only run on the JVM). The S24 is now a DEMO
+   device on the lead's build and the lead's rule says don't install onto demo devices. `connectedDebugAndroidTest`
+   installs only the separate test package, not the app, but ask the lead on #53 first (or run it on a non-demo phone).
+2. Record the M2 lost & found result (on #1 as `[M2] ...`) in the README status block.
+3. Chase #23 (UI + AI README sections) and #45 (AI proof-read of protocols.json, needed before the demo).
+4. ~10:00 Sat: decision shortlist (AI's draft in docs/lanes/AI.md); remove the README assembly comment block before 12:30.
 
 ### Gotchas learned this session
 - Connected tests print no per-test lines; read `adb logcat -d -s TestRunner:*`. The Honor has logcat OFF entirely:
@@ -179,6 +176,7 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 19:53 Fri | **Friend find built** on `iface/friend-find` (11 tests, 99/99): rotating HMAC beacon tags, 6-digit pairing code, sealed invites bound to the confirmed peer, friend book AES-GCM under the Keystore. Interface #61, PR #62 held until main reopens. |
 | 20:15 Fri | Pulled main `fb20894` (#68), build + 88/88 green, reported on #68. `iface/friend-find` merged with fb20894, 99/99, pushed (PR #62 still held). README updated on `lane/trust` (per-session identity, Ed25519 detail, device results, section status). Saving protocol. |
 | 20:28 Fri | Main still frozen, no M2 results yet. **MESH #54 fixed a gap my #52 restart test missed**: `LostAndFoundTest`'s LoopMesh does not dedup, so it passed, but the real mesh dropped the re-forwarded lost report as already seen. MESH now replays stored INCIDENT/SEALED packets (<= 30 min) into the phone's own pipeline on start. README restart claim narrowed to that 30-min window. |
+| 20:38 Fri | Main reopened (20:25). **Friend find merged (#62), README merged (#70).** 99/99, project green. Informed #61, #38, #1. No phone connected for the friend-storage device run. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
