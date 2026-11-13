@@ -32,9 +32,12 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 
 ## NEXT_SESSION_HANDOFF
 - Onboarded (S23+, @yorvan2401). App installs and runs in SIM mode.
-- UWB device-check tool written and compiles, **not yet run on hardware**: needs 2 UWB phones on one PC
-  (S23+ + S24U/S23+), UWB ON, airplane OFF → `./gradlew installDebug` on both → `bash locate/tools/uwb_check.sh`.
-  Record: distance y/n, azimuth y/n, typical error, range. Then log the result here + on #5.
+- **UWB device check DONE 16:07 Fri (S24U controller ↔ S23+ controlee):** distance works on both
+  (2 m → 2.11–2.15, 5 m → 4.95–5.11, ~4 Hz, 0 dropouts in 5 min). **Azimuth: S23+ yes, S24U NO**
+  (`isAzimuthalAngleSupported=false`). S23+ facing peer: −8°…+5°; responds to turning (+48° one way, smaller
+  swing the other — re-check rotation on the real radar). At <0.3 m azimuth is noise (±90°): ignore it there.
+  → Demo: guardian phone = S23+ (shows the arrow); S24U gets UWB distance only.
+  Re-run: `./gradlew installDebug` on both, UWB ON, airplane OFF → `bash locate/tools/uwb_check.sh`.
 - Files: `locate/src/debug/.../UwbCheckActivity.kt`, `locate/src/debug/AndroidManifest.xml`,
   `locate/src/main/AndroidManifest.xml` (UWB perm + overrideLibrary), `locate/tools/uwb_check.sh`, `locate/build.gradle.kts`.
 - `AndroidLocateEngine` written + wired in `LocateModule` (used when simulation=false). Fused GPS 1 s,
@@ -51,6 +54,7 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 | 15:00 Fri | Onboarding done: lane branch pushed, app installed on S23+ in SIM mode |
 | 15:46 Fri | UWB device-check tool (debug-only activity + adb script) builds; waiting for 2 phones |
 | 15:54 Fri | AndroidLocateEngine (GPS + true-north heading + RSSI fallback) builds, RadarMath tests pass |
+| 16:07 Fri | UWB device check passed: distance ±0.1–0.3 m on S23+ & S24U; azimuth only on S23+ |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -61,3 +65,5 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 | 15:50 Fri | Heading = horizontal sum of phone's top edge + back vector | One formula works flat, tilted and upright (camera grip) with no jump at a threshold | `getOrientation` azimuth (breaks when upright); remap at a pitch threshold (jumps) |
 | 15:50 Fri | Apply magnetic declination (GeomagneticField) | Mauritius ≈ −20°: uncorrected arrow points ~20° off in a crowd | Magnetic heading only |
 | 15:50 Fri | Fix chain GPS (fresh <30 s) → RSSI (heard <10 s) → stale GPS; `uwbAvailable=false` until UWB wired | Indoors GPS is stale, RSSI still says warmer/colder; never claim UWB we don't deliver | Report hardware UWB flag now |
+| 16:10 Fri | UWB is the indoor stage-demo radar; S23+ is the guardian (arrow) phone | Measured: S23+ has azimuth, S24U distance only; GPS fails indoors | GPS-only radar indoors; S24U as guardian |
+| 16:10 Fri | UWB radar: use azimuth only when distance > 0.3 m and AoA is supported, else distance-only | Azimuth is ±90° noise at contact range and absent on S24U | Always show the arrow |
