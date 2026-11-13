@@ -100,6 +100,8 @@ import kotlin.math.sin
 private const val CELL_M = 25.0
 private const val EARTH_R = 6_371_000.0
 private const val HOP_MS = 900L
+/** Beacons arrive every ~10 s and relayed peers are kept as last seen (MESH, #30): older than this, a phone isn't counted. */
+private const val DENSITY_FRESH_MS = 60_000L
 /** Phones in one 25 m square from which the cell reads as crowded (darkest shade). */
 private const val CROWDED = 4
 /** Unhandled for this long and the waiting time switches to the caution role. */
@@ -606,7 +608,8 @@ private fun cellOf(origin: GeoPoint, c: Offset, pxPerM: Float, key: Pair<Int, In
  * (Text colour goes in at draw time on this plan: TextMeasurer reuses cached layouts across a light/dark switch.)
  */
 private fun DrawScope.drawDensity(origin: GeoPoint, c: Offset, pxPerM: Float, peers: List<Peer>, measurer: TextMeasurer, ink: PlanInk) {
-    peers.mapNotNull { it.location }
+    val freshSince = System.currentTimeMillis() - DENSITY_FRESH_MS
+    peers.filter { it.lastSeenMs >= freshSince }.mapNotNull { it.location }
         .groupingBy { GeoMath.cellKey(it, CELL_M) }
         .eachCount()
         .forEach { (key, n) ->

@@ -41,11 +41,13 @@ private fun group(perms: List<String>): List<PermissionGroup> {
     val nearby = pick("BLUETOOTH", "NEARBY_WIFI", "WIFI_STATE", "CHANGE_WIFI")
     val location = pick("LOCATION")
     val mic = pick(Manifest.permission.RECORD_AUDIO)
+    val uwb = pick("UWB_RANGING")
     val alerts = pick("POST_NOTIFICATIONS")
-    val known = (nearby + location + mic + alerts).toSet()
+    val known = (nearby + location + mic + alerts + uwb).toSet()
     return listOfNotNull(
         nearby.takeIf { it.isNotEmpty() }?.let { PermissionGroup(Sym.Mesh, "Nearby phones", "Pass alerts from phone to phone without mobile signal.", it) },
         location.takeIf { it.isNotEmpty() }?.let { PermissionGroup(Sym.Location, "Location", "So help can find you, and you can find your child.", it) },
+        uwb.takeIf { it.isNotEmpty() }?.let { PermissionGroup(Sym.Direction, "Close-range finding", "Point you to your child to within a metre when you're near.", it) },
         mic.takeIf { it.isNotEmpty() }?.let { PermissionGroup(Sym.Mic, "Microphone", "Describe an emergency by voice. Nothing is recorded.", it) },
         alerts.takeIf { it.isNotEmpty() }?.let { PermissionGroup(Sym.Hazard, "Alerts", "Wake you when your child is found.", it) },
         (perms - known).takeIf { it.isNotEmpty() }?.let { PermissionGroup(Sym.Settings, "Other", "Needed by the mesh.", it) },

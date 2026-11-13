@@ -85,6 +85,14 @@ fun DevSheet(graph: ProximaGraph, nav: Nav, onDismiss: () -> Unit) {
             if (sim != graph.simulation) {
                 LargeButton(if (sim) "Restart with simulation on" else "Restart with simulation off", { restartWithSimulation(context, sim) })
             }
+            // MESH's acoustic SOS (P2), off by default.
+            val acoustic by MeshDemoControls.acoustic.collectAsStateWithLifecycle()
+            ListItem(
+                headlineContent = { Text("Sound fallback", style = MaterialTheme.typography.titleMedium) },
+                supportingContent = { Text("With no phone in range, urgent alerts go out as chirps and this phone listens for them. Uses the microphone.") },
+                trailingContent = { Switch(checked = acoustic, onCheckedChange = { MeshDemoControls.acoustic.value = it }) },
+                colors = rows,
+            )
             Spacer(Modifier.height(MaterialTheme.spacing.lg))
             DemoChain(graph)
             val other = if (nav.current == Screen.Command) Screen.Home else Screen.Command
