@@ -1,0 +1,34 @@
+# Build output
+.gradle/
+.kotlin/
+build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# IDE / OS
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local machine config & secrets — NEVER commit
+local.properties
+*.jks
+*.keystore
+*.p12
+secrets.properties
+
+# On-device AI models are sideloaded with adb, never committed
+models/
+*.task
+*.litertlm
+*.tflite
+*.gguf
+
+# Personal Claude Code files (each member's lane note + local settings)
+CLAUDE.local.md
+.claude/settings.local.json

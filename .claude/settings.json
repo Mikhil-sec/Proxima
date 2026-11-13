@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/build/**)",
+      "Read(**/.gradle/**)",
+      "Read(**/*.apk)",
+      "Read(**/*.litertlm)",
+      "Read(**/*.task)",
+      "Read(**/*.tflite)"
+    ]
+  }
+}
