@@ -21,7 +21,7 @@ object LocateModule {
         scope: CoroutineScope,
         simulation: Boolean,
     ): LocateEngine {
-        // TODO(LOCATE): if (!simulation) return AndroidLocateEngine(context, capabilities, mesh, trust, scope)
+        if (!simulation) return AndroidLocateEngine(context, capabilities, mesh, trust, scope)
         return FakeLocateEngine(scope)
     }
 }
