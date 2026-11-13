@@ -49,6 +49,7 @@ import mu.proxima.core.model.Severity
 import mu.proxima.core.model.Transport
 import mu.proxima.core.pipeline.PacketFactory
 import mu.proxima.core.pipeline.ProximaJson
+import kotlin.random.Random
 
 /**
  * Real mesh on Google Nearby Connections (P2P_CLUSTER: every phone advertises and discovers at once).
@@ -105,7 +106,16 @@ class NearbyMeshEngine(
     /** All engine state is touched only from this single-threaded dispatcher. */
     private val serial = Dispatchers.Default.limitedParallelism(1)
 
-    private data class Endpoint(val nodeId: String, val tier: DeviceTier, val connected: Boolean, val lastSeenMs: Long)
+    private data class Endpoint(
+        val nodeId: String,
+        val tier: DeviceTier,
+        val connected: Boolean,
+        val lastSeenMs: Long,
+        /** Failed/pending attempts since the last successful link (drives backoff). */
+        val attempts: Int = 0,
+        /** When to try connecting next; null = don't (e.g. dropped by the demo allow-list). */
+        val nextAttemptMs: Long? = null,
+    )
 
     private val endpoints = mutableMapOf<String, Endpoint>()          // endpointId → neighbour
     private val indirect = mutableMapOf<String, Peer>()              // nodeId → peer known via beacons
@@ -145,10 +155,17 @@ class NearbyMeshEngine(
                 delay(5_000)
                 val now = clock()
                 indirect.values.removeAll { now - it.lastSeenMs > PEER_EXPIRY_MS }
+                endpoints.values.removeAll { !it.connected && now - it.lastSeenMs > FORGET_ENDPOINT_MS }
                 if (outbox.removeAll { now - it.createdAtMs > STORE_MS }) {
                     runCatching { stored.pruneOlderThan(now - STORE_MS) }
                 }
                 publishPeers()
+            }
+        }
+        jobs += scope.launch(serial) { // reconnect known neighbours (links drop constantly in a crowd)
+            while (isActive) {
+                delay(1_000)
+                reconnectDue()
             }
         }
         jobs += scope.launch(serial) { // demo allow-list (issue #8)
@@ -170,7 +187,7 @@ class NearbyMeshEngine(
         if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0) return
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(c: Context, intent: Intent) {
-                scope.launch {
+                scope.launch(serial) {
                     val p = packets.create(PacketKind.CONTROL, "ping from $selfNodeId", Severity.HIGH, channel = "ping")
                     Log.i(TAG, "tx PING ${p.packetId.take(8)} to ${endpoints.values.count { it.connected }} neighbours")
                     send(p)
@@ -365,17 +382,33 @@ class NearbyMeshEngine(
     }
 
     private fun applyAllowList() {
+        val now = clock()
         endpoints.forEach { (id, ep) ->
             val allowed = MeshDemoControls.allows(ep.nodeId)
             if (ep.connected && !allowed) {
                 Log.i(TAG, "demo allow-list: dropping ${ep.nodeId}")
                 client.disconnectFromEndpoint(id)
-                endpoints[id] = ep.copy(connected = false)
+                endpoints[id] = ep.copy(connected = false, nextAttemptMs = null)
             } else if (!ep.connected && allowed) {
-                connect(id)
+                endpoints[id] = ep.copy(attempts = 0, nextAttemptMs = now) // reconnect loop picks it up
             }
         }
         publishPeers()
+    }
+
+    /** Called every second on [serial]: (re)connect to known neighbours whose backoff has elapsed. */
+    private fun reconnectDue() {
+        val now = clock()
+        endpoints.forEach { (id, ep) ->
+            if (ReconnectPolicy.isDue(ep.connected, MeshDemoControls.allows(ep.nodeId), ep.nextAttemptMs, now)) {
+                if (ep.attempts > 0) Log.i(TAG, "reconnect ${ep.nodeId} attempt ${ep.attempts + 1}")
+                endpoints[id] = ep.copy(
+                    attempts = ep.attempts + 1,
+                    nextAttemptMs = now + ReconnectPolicy.backoffMs(ep.attempts + 1) + Random.nextLong(0, 1_000),
+                )
+                connect(id)
+            }
+        }
     }
 
     private val discovery = object : EndpointDiscoveryCallback() {
@@ -385,15 +418,12 @@ class NearbyMeshEngine(
                 val (nodeId, tier) = parseName(info.endpointName)
                 if (nodeId == selfNodeId) return@launch
                 Log.i(TAG, "found $nodeId ($tier) ep=$endpointId")
-                endpoints[endpointId] = endpoints[endpointId] ?: Endpoint(nodeId, tier, connected = false, lastSeenMs = clock())
-                if (!MeshDemoControls.allows(nodeId)) return@launch
-                // Tie-break so both phones don't request at once; the other side retries if we never do.
-                if (selfNodeId < nodeId) {
-                    connect(endpointId)
-                } else {
-                    delay(CONNECT_FALLBACK_MS)
-                    if (endpoints[endpointId]?.connected == false) connect(endpointId)
-                }
+                val existing = endpoints[endpointId]
+                if (existing?.connected == true) return@launch
+                // Tie-break so both phones don't request at once; the reconnect loop does the actual request.
+                endpoints[endpointId] = Endpoint(nodeId, tier, connected = false, lastSeenMs = clock(),
+                    nextAttemptMs = ReconnectPolicy.firstAttemptAt(selfNodeId, nodeId, clock()))
+                reconnectDue()
             }
         }
 
@@ -412,7 +442,10 @@ class NearbyMeshEngine(
                 return
             }
             scope.launch(serial) {
-                endpoints[endpointId] = Endpoint(nodeId, tier, connected = false, lastSeenMs = clock())
+                val prev = endpoints[endpointId]
+                endpoints[endpointId] = Endpoint(nodeId, tier, connected = false, lastSeenMs = clock(),
+                    attempts = prev?.attempts ?: 0,
+                    nextAttemptMs = clock() + ReconnectPolicy.backoffMs(prev?.attempts ?: 0))
             }
             client.acceptConnection(endpointId, payloads)
         }
@@ -422,19 +455,28 @@ class NearbyMeshEngine(
                 val ep = endpoints[endpointId] ?: return@launch
                 if (resolution.status.statusCode == ConnectionsStatusCodes.STATUS_OK) {
                     Log.i(TAG, "connected ${ep.nodeId}")
-                    endpoints[endpointId] = ep.copy(connected = true, lastSeenMs = clock())
+                    endpoints[endpointId] = ep.copy(connected = true, lastSeenMs = clock(), attempts = 0, nextAttemptMs = null)
                     publishPeers()
                     flushTo(endpointId)
                     sendBeacon()
                 } else {
+                    // Keep it known; the reconnect loop retries with backoff.
                     Log.w(TAG, "connection to ${ep.nodeId} failed: ${resolution.status.statusCode}")
+                    if (ep.nextAttemptMs == null) {
+                        endpoints[endpointId] = ep.copy(nextAttemptMs = clock() + ReconnectPolicy.backoffMs(ep.attempts))
+                    }
                 }
             }
         }
 
         override fun onDisconnected(endpointId: String) {
             scope.launch(serial) {
-                endpoints.remove(endpointId)?.let { Log.i(TAG, "disconnected ${it.nodeId}") }
+                val ep = endpoints[endpointId] ?: return@launch
+                Log.i(TAG, "disconnected ${ep.nodeId}, will retry")
+                // Keep it: Nearby rarely re-reports a found endpoint, so we must retry ourselves.
+                val wasAllowed = MeshDemoControls.allows(ep.nodeId)
+                endpoints[endpointId] = ep.copy(connected = false, attempts = 0,
+                    nextAttemptMs = if (wasAllowed) clock() + ReconnectPolicy.backoffMs(0) else null)
                 publishPeers()
             }
         }
@@ -466,7 +508,7 @@ class NearbyMeshEngine(
         private const val PEER_EXPIRY_MS = 35_000L
         private const val STORE_MS = 30 * 60 * 1000L
         private const val OUTBOX_MAX = 200
-        private const val CONNECT_FALLBACK_MS = 6_000L
+        private const val FORGET_ENDPOINT_MS = 10 * 60 * 1000L
         private const val RADIO_RETRY_MS = 10_000L
         private val STRATEGY = Strategy.P2P_CLUSTER
     }
