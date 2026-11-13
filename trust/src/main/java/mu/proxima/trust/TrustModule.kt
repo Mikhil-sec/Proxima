@@ -4,7 +4,6 @@ import android.content.Context
 import mu.proxima.core.engine.HelpPointRepository
 import mu.proxima.core.engine.ProtocolRepository
 import mu.proxima.core.engine.TrustEngine
-import mu.proxima.core.fake.EmptyHelpPointRepository
 import mu.proxima.core.fake.EmptyProtocolRepository
 import mu.proxima.core.fake.FakeTrustEngine
 
@@ -18,10 +17,11 @@ object TrustModule {
         return FakeTrustEngine()
     }
 
-    fun createHelpPoints(context: Context): HelpPointRepository {
-        // TODO(TRUST): AssetHelpPointRepository(context, "data/help_points_mu.json")
-        return EmptyHelpPointRepository()
-    }
+    /**
+     * Real OSM dataset, always - there is no simulated variant. 524 Mauritius help points parsed from
+     * the raw Overpass extract committed in this module's assets. Loads lazily on first use.
+     */
+    fun createHelpPoints(context: Context): HelpPointRepository = AssetHelpPointRepository(context)
 
     fun createProtocols(context: Context): ProtocolRepository {
         // TODO(TRUST): AssetProtocolRepository(context, "data/protocols.json")
