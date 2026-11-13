@@ -3,6 +3,8 @@ package mu.proxima.trust
 import java.io.File
 import mu.proxima.core.model.IncidentType
 import mu.proxima.core.model.ProtocolCard
+import mu.proxima.core.model.RawReport
+import mu.proxima.core.pipeline.RuleTriageEngine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -15,7 +17,13 @@ import org.junit.Test
  */
 class ProtocolsTest {
 
-    /** Every subtype `RuleTriageEngine` can emit. Kept in sync by hand; the coverage test below is the guard. */
+    /**
+     * Every subtype `RuleTriageEngine` can emit, transcribed from its source by hand.
+     *
+     * This list alone is NOT a guard - it only says what I believed the engine emits. The real guard is
+     * `every subtype the live engine emits is either covered or a documented gap`, which drives the actual
+     * engine, so a renamed subtype or a changed precedence rule in the AI lane fails here.
+     */
     private val triageSubtypes = setOf(
         "CARDIAC_ARREST", "CROWD_CRUSH", "FIRE", "UNCONSCIOUS", "SEIZURE", "BLEEDING", "CHEST_PAIN",
         "HEAT_EXHAUSTION", "FRACTURE", "ELECTRICAL", "FALLEN_BRANCH", "FLOOD", "GENERAL",
@@ -120,6 +128,58 @@ class ProtocolsTest {
         assertEquals(
             "coverage changed - update knownGaps and the lane file",
             knownGaps, triageSubtypes - covered - setOf("GENERAL"),
+        )
+    }
+
+    /**
+     * The real drift guard: drives the live `RuleTriageEngine` with one trigger phrase per subtype and checks
+     * that whatever it actually emits either resolves to a card or is a documented gap.
+     *
+     * This is here because the AI lane owns `RuleTriageEngine` and changed its precedence rules at 13:xx Fri
+     * (#16). If they rename a subtype code or reorder the rules so a phrase classifies differently, the
+     * hardcoded list above would not notice but this will.
+     */
+    @Test
+    fun `every subtype the live engine emits is either covered or a documented gap`() {
+        val engine = RuleTriageEngine()
+        val phrases = mapOf(
+            "he is not breathing" to "CARDIAC_ARREST",
+            "there is a stampede" to "CROWD_CRUSH",
+            "there is a fire near the stalls" to "FIRE",
+            "she collapsed" to "UNCONSCIOUS",
+            "he is having a seizure" to "SEIZURE",
+            "his arm is bleeding" to "BLEEDING",
+            "he has chest pain" to "CHEST_PAIN",
+            "she is dehydrated" to "HEAT_EXHAUSTION",
+            "his leg is broken" to "FRACTURE",
+            "there is a live wire on the ground" to "ELECTRICAL",
+            "a fallen tree is blocking the path" to "FALLEN_BRANCH",
+            "the road is flooded" to "FLOOD",
+            "someone is injured" to "GENERAL",
+            "I lost my child" to "CHILD",
+            "I lost my grandmother" to "ELDERLY",
+            "my friend is missing" to "PERSON",
+        )
+
+        val emitted = mutableSetOf<String>()
+        phrases.forEach { (text, expected) ->
+            val result = engine.classify(RawReport(text = text, createdAtMs = 0L))
+            assertEquals("'$text' classified differently than TRUST assumes", expected, result.subtype)
+            val subtype = result.subtype!!
+            emitted += subtype
+
+            val card = Protocols.bestFor(cards, result.type, subtype)
+            if (subtype in knownGaps) {
+                assertNull("$subtype is a documented gap but resolved to ${card?.id}", card)
+            } else {
+                assertNotNull("$subtype has no protocol card and is not a documented gap", card)
+            }
+        }
+
+        // If the engine gains or renames a subtype, this is what catches it.
+        assertEquals(
+            "RuleTriageEngine subtypes changed - re-check protocols.json coverage",
+            triageSubtypes, emitted,
         )
     }
 }
