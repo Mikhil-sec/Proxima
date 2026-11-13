@@ -60,10 +60,20 @@ case "${1:-setup}" in
     "$ADB" -s "$s" shell am broadcast -a mu.proxima.mesh.PING -p "$PKG" >/dev/null
     echo "ping sent from $s"
     ;;
+  allow)   # allow <serial> "SELF-AAAA,SELF-BBBB"   or   allow <serial> "*"
+    s="${2:?usage: allow <serial> <nodes|*>}"
+    "$ADB" -s "$s" shell am broadcast -a mu.proxima.mesh.ALLOW -p "$PKG" --es nodes "'${3:-*}'" >/dev/null
+    echo "allow-list on $s = ${3:-*}"
+    ;;
+  ids)
+    for s in $(serials); do
+      echo "$s $({ "$ADB" -s "$s" logcat -d -s Proxima:I | grep -o 'mesh start node=[^ ]*' || true; } | tail -1 | cut -d= -f2)"
+    done
+    ;;
   logs)
     for s in $(serials); do
       echo "== $s"
-      "$ADB" -s "$s" logcat -d -s Proxima:* AndroidRuntime:E | grep -v "beginning of" | tail -n "${2:-25}" | tr -d '\r'
+      { "$ADB" -s "$s" logcat -d -s Proxima:* AndroidRuntime:E | grep -v "beginning of" || true; } | tail -n "${2:-25}" | tr -d '\r'
     done
     ;;
   cleanup)

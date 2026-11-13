@@ -187,6 +187,14 @@ class NearbyMeshEngine(
         if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0) return
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(c: Context, intent: Intent) {
+                if (intent.action == ACTION_ALLOW) {
+                    // adb shell am broadcast -a mu.proxima.mesh.ALLOW --es nodes "SELF-AAAA,SELF-BBBB"   ("*" = everyone)
+                    val nodes = intent.getStringExtra("nodes")?.trim().orEmpty()
+                    val set = if (nodes.isEmpty() || nodes == "*") null else nodes.split(',').map { it.trim() }.toSet()
+                    Log.i(TAG, "demo allow-list = ${set ?: "everyone"}")
+                    MeshDemoControls.allowedNeighbours.value = set
+                    return
+                }
                 scope.launch(serial) {
                     val p = packets.create(PacketKind.CONTROL, "ping from $selfNodeId", Severity.HIGH, channel = "ping")
                     Log.i(TAG, "tx PING ${p.packetId.take(8)} to ${endpoints.values.count { it.connected }} neighbours")
@@ -194,7 +202,7 @@ class NearbyMeshEngine(
                 }
             }
         }
-        val filter = IntentFilter(ACTION_PING)
+        val filter = IntentFilter(ACTION_PING).apply { addAction(ACTION_ALLOW) }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
         } else {
@@ -504,6 +512,7 @@ class NearbyMeshEngine(
         private const val TAG = "Proxima"
         const val SERVICE_ID = "mu.proxima.mesh"
         const val ACTION_PING = "mu.proxima.mesh.PING"
+        const val ACTION_ALLOW = "mu.proxima.mesh.ALLOW"
         private const val BEACON_INTERVAL_MS = 10_000L
         private const val PEER_EXPIRY_MS = 35_000L
         private const val STORE_MS = 30 * 60 * 1000L
