@@ -95,8 +95,8 @@ fun PeopleScreen(graph: ProximaGraph, friends: FriendLink, nav: Nav) {
                         Text(
                             when {
                                 heard == null -> "Not heard yet. Their phone shows up once it is in reach of the mesh."
-                                heard.location == null -> "Phone heard ${ageLabel(heard.lastSeenMs, now)} ago, no location yet"
-                                else -> "Phone heard ${ageLabel(heard.lastSeenMs, now)} ago. Tap to find them."
+                                heard.location == null -> "Phone heard ${heardAgo(heard.lastSeenMs, now)}, no location yet"
+                                else -> "Phone heard ${heardAgo(heard.lastSeenMs, now)}. Tap to find them."
                             },
                         )
                     },
@@ -165,7 +165,7 @@ fun PeopleScreen(graph: ProximaGraph, friends: FriendLink, nav: Nav) {
                 Text(label, style = MaterialTheme.typography.headlineSmall)
                 Spacer(Modifier.height(MaterialTheme.spacing.sm))
                 Text(
-                    if (heard?.location != null) "Their phone was last heard ${ageLabel(heard.lastSeenMs, now)} ago, within a 25 m square."
+                    if (heard?.location != null) "Their phone was last heard ${heardAgo(heard.lastSeenMs, now)}, within a 25 m square."
                     else "Their phone hasn't been heard with a location yet.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -190,9 +190,10 @@ fun PeopleScreen(graph: ProximaGraph, friends: FriendLink, nav: Nav) {
 fun FriendRadarScreen(graph: ProximaGraph, friends: FriendLink, nav: Nav, label: String) {
     val target = remember(label) { friends.track(label) } ?: run { LaunchedEffect(Unit) { nav.back() }; return }
     val fixes = remember(label) { graph.locate.track(target) }
+    val me by graph.locate.selfLocation.collectAsStateWithLifecycle()
     RadarView(
         "Finding $label", fixes, "Where their phone was last heard, to within 25 m.",
-        doneLabel = "Found them", onDone = nav::back, onBack = nav::back,
+        doneLabel = "Found them", onDone = nav::back, onBack = nav::back, ownFix = me != null,
     )
 }
 
@@ -237,3 +238,7 @@ fun PairSheet(code: String, intro: String, taken: List<String>, onConfirm: (Stri
         }
     }
 }
+
+/** "just now" / "45s ago" / "3m ago" (ageLabel says "now", which reads badly after "heard"). */
+private fun heardAgo(atMs: Long, nowMs: Long): String = ageLabel(atMs, nowMs).let { if (it == "now") "just now" else "$it ago" }
+
