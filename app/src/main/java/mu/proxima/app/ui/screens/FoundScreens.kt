@@ -166,8 +166,9 @@ fun RadarScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav, lostId: Str
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm)) {
                 Text(parts?.first() ?: "--", style = MaterialTheme.typography.displayLarge)
                 parts?.getOrNull(1)?.let { Text(it, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = MaterialTheme.spacing.sm)) }
-                fix?.accuracyM?.let {
-                    Text("±${it.toInt()} m", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = MaterialTheme.spacing.md))
+                // UWB reports ±0.3 m: under a metre the ± adds nothing ("1.7 m ±0 m"), so it's hidden (#40).
+                fix?.accuracyM?.takeIf { it >= 1.0 }?.let {
+                    Text("±${it.roundToInt()} m", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = MaterialTheme.spacing.md))
                 }
             }
             Text(

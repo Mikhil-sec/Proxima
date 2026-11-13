@@ -33,6 +33,10 @@ class ProximaGraph(app: Application, val simulation: Boolean) {
 
     val pipeline = IncidentPipeline(mesh, triage, trust, locate, protocols, scope)
 
+    // AI lane (#30): hands-free guided first aid, and crowd-crush early warning from anonymous density cells.
+    val guide = AiModule.createGuide(voice, protocols, capabilities, scope)
+    val crowdRisk = AiModule.createCrowdRisk(mesh, locate, pipeline, capabilities, scope)
+
     init {
         // What this phone's BEACON advertises (issue #28). The mesh snaps the location to its anonymous 25 m cell
         // before sending (MeshBeaconInfo.coarse); llmReady lets Tier 2 phones pick a peer to offload triage to.

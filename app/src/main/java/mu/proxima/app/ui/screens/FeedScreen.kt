@@ -1,6 +1,8 @@
 package mu.proxima.app.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,6 +47,7 @@ import mu.proxima.app.ui.Screen
 import mu.proxima.app.ui.ageLabel
 import mu.proxima.app.ui.components.BackIcon
 import mu.proxima.app.ui.components.Fact
+import mu.proxima.app.ui.components.GuidedSteps
 import mu.proxima.app.ui.components.LargeButton
 import mu.proxima.app.ui.components.NearestHelp
 import mu.proxima.app.ui.components.SeverityBadge
@@ -197,78 +200,56 @@ fun IncidentSheet(
     val (fill, onFill) = i.severity.fill()
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state) {
-        LazyColumn(Modifier.fillMaxWidth().padding(horizontal = MaterialTheme.spacing.xxl)) {
-            item {
-                Surface(color = fill, contentColor = onFill, shape = MaterialTheme.shapes.small) {
-                    Text(
-                        i.severity.label(),
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.sm, vertical = MaterialTheme.spacing.xs),
-                    )
-                }
-                Spacer(Modifier.height(MaterialTheme.spacing.sm))
-                Text(incidentTitle(i.type, i.subtype), style = MaterialTheme.typography.headlineMedium)
-                Spacer(Modifier.height(MaterialTheme.spacing.sm))
-                Text(i.summary, style = MaterialTheme.typography.bodyLarge)
-                Spacer(Modifier.height(MaterialTheme.spacing.lg))
-                i.landmark?.let { Fact("Where", it) }
-                i.peopleCount?.let { Fact("People", it.toString()) }
-                Fact("Sorted by", i.triagedBy.label())
-                Fact("Signature", if (record.signatureValid) "Verified" else "Not verified, treat with care")
-                Fact("Travelled", when (record.hopsTravelled) { 0 -> "Sent from this phone"; 1 -> "1 hop"; else -> "${record.hopsTravelled} hops" })
-                if (i.reportCount > 1) Fact("Reports", "${i.reportCount} people reported this")
+        // A plain scrolling column, not a LazyColumn: the hands-free guide stops when its composable leaves, and a
+        // lazy item scrolled off-screen would stop it mid-CPR.
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = MaterialTheme.spacing.xxl)) {
+            Surface(color = fill, contentColor = onFill, shape = MaterialTheme.shapes.small) {
+                Text(
+                    i.severity.label(),
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(horizontal = MaterialTheme.spacing.sm, vertical = MaterialTheme.spacing.xs),
+                )
             }
+            Spacer(Modifier.height(MaterialTheme.spacing.sm))
+            Text(incidentTitle(i.type, i.subtype), style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.height(MaterialTheme.spacing.sm))
+            Text(i.summary, style = MaterialTheme.typography.bodyLarge)
+            Spacer(Modifier.height(MaterialTheme.spacing.lg))
+            i.landmark?.let { Fact("Where", it) }
+            i.peopleCount?.let { Fact("People", it.toString()) }
+            Fact("Sorted by", i.triagedBy.label())
+            Fact("Signature", if (record.signatureValid) "Verified" else "Not verified, treat with care")
+            Fact("Travelled", when (record.hopsTravelled) { 0 -> "Sent from this phone"; 1 -> "1 hop"; else -> "${record.hopsTravelled} hops" })
+            if (i.reportCount > 1) Fact("Reports", "${i.reportCount} people reported this")
             protocol?.let { card ->
-                item {
-                    Spacer(Modifier.height(MaterialTheme.spacing.lg))
-                    Text(card.title, style = MaterialTheme.typography.titleLarge)
-                }
-                itemsIndexed(card.steps.take(4)) { n, step ->
-                    // Number on the first line of the step, not centred against a five-line paragraph.
-                    Row(Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.sm)) {
-                        Text(
-                            "${n + 1}",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.width(MaterialTheme.spacing.xxxl),
-                        )
-                        Text(step.text, style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
-                item {
-                    Spacer(Modifier.height(MaterialTheme.spacing.xs))
-                    Text("Source: ${card.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                Spacer(Modifier.height(MaterialTheme.spacing.lg))
+                GuidedSteps(graph, card)
             }
             // No vetted card (e.g. crowd crush, #20): say so plainly instead of inventing steps or leaving a gap.
             if (protocolChecked && protocol == null && i.type != IncidentType.LOST_PERSON) {
-                item {
-                    Spacer(Modifier.height(MaterialTheme.spacing.lg))
-                    Text(
-                        "No first-aid steps for this alert. Stay clear and tell a steward.",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                }
-            }
-            item {
                 Spacer(Modifier.height(MaterialTheme.spacing.lg))
-                NearestHelp(graph, me ?: i.location, i.type.helpCategories)
-                Spacer(Modifier.height(MaterialTheme.spacing.xxl))
-                if (onWithThem != null) {
-                    LargeButton("I'm with this person", onWithThem, sym = Sym.Person)
-                    Spacer(Modifier.height(MaterialTheme.spacing.sm))
-                }
-                if (!record.resolved && canResolve) {
-                    OutlinedButton(
-                        onClick = {
-                            graph.scope.launch { graph.pipeline.resolve(i.id) }
-                            scope.launch { state.hide() }.invokeOnCompletion { onDismiss() }
-                        },
-                        modifier = Modifier.fillMaxWidth().height(MaterialTheme.sizes.touchTarget),
-                    ) { Text("Mark as resolved") }
-                }
-                Spacer(Modifier.height(MaterialTheme.spacing.xxl))
+                Text(
+                    "No first-aid steps for this alert. Stay clear and tell a steward.",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
             }
+            Spacer(Modifier.height(MaterialTheme.spacing.lg))
+            NearestHelp(graph, me ?: i.location, i.type.helpCategories)
+            Spacer(Modifier.height(MaterialTheme.spacing.xxl))
+            if (onWithThem != null) {
+                LargeButton("I'm with this person", onWithThem, sym = Sym.Person)
+                Spacer(Modifier.height(MaterialTheme.spacing.sm))
+            }
+            if (!record.resolved && canResolve) {
+                OutlinedButton(
+                    onClick = {
+                        graph.scope.launch { graph.pipeline.resolve(i.id) }
+                        scope.launch { state.hide() }.invokeOnCompletion { onDismiss() }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(MaterialTheme.sizes.touchTarget),
+                ) { Text("Mark as resolved") }
+            }
+            Spacer(Modifier.height(MaterialTheme.spacing.xxl))
         }
     }
 }

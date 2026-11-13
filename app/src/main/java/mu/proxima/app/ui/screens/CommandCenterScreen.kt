@@ -67,9 +67,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import mu.proxima.ai.crowd.CrowdRisk
+import mu.proxima.ai.crowd.CrowdRiskLevel
 import mu.proxima.app.ProximaGraph
 import mu.proxima.app.ui.components.MeshStatus
 import mu.proxima.app.ui.components.SimLabel
+import mu.proxima.app.ui.components.StateLabel
 import mu.proxima.app.ui.components.VerifiedMark
 import mu.proxima.app.ui.components.rememberReducedMotion
 import mu.proxima.app.ui.incidentTitle
@@ -169,6 +172,7 @@ fun CommandCenterScreen(graph: ProximaGraph, onDev: () -> Unit) {
     val peers by graph.mesh.peers.collectAsStateWithLifecycle()
     val incidents by graph.pipeline.incidents.collectAsStateWithLifecycle()
     val post by graph.locate.selfLocation.collectAsStateWithLifecycle()
+    val risks by graph.crowdRisk.risks.collectAsStateWithLifecycle()
     val now = rememberNow()
     val reducedMotion = rememberReducedMotion()
     val board = remember { Board() }
@@ -236,7 +240,7 @@ fun CommandCenterScreen(graph: ProximaGraph, onDev: () -> Unit) {
                     onClear = ::clear)
             }
             val plan: @Composable (Modifier) -> Unit = { m ->
-                SitePlan(graph.mesh.selfNodeId, post, peers, open, board, anims, frame, selected, lastHopMs, now, m)
+                SitePlan(graph.mesh.selfNodeId, post, peers, open, risks, board, anims, frame, selected, lastHopMs, now, m)
             }
             if (landscape) {
                 Row(Modifier.fillMaxSize()) {
@@ -450,6 +454,7 @@ private fun SitePlan(
     post: GeoPoint?,
     peers: List<Peer>,
     open: List<IncidentRecord>,
+    risks: List<CrowdRisk>,
     board: Board,
     anims: List<HopAnim>,
     frame: Long,
@@ -462,6 +467,11 @@ private fun SitePlan(
     val origin = post ?: peers.firstNotNullOfOrNull { it.location } ?: open.firstNotNullOfOrNull { it.incident.location }
     val direct = peers.count { it.direct }
     val sevFills = Severity.entries.associateWith { it.fill() }
+    val riskInk = mapOf(
+        CrowdRiskLevel.WATCH to MaterialTheme.semantic.caution,
+        CrowdRiskLevel.WARNING to MaterialTheme.semantic.urgent,
+        CrowdRiskLevel.DANGER to MaterialTheme.semantic.critical,
+    )
     val ink = PlanInk(
         line = MaterialTheme.colorScheme.outlineVariant,
         node = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -481,6 +491,21 @@ private fun SitePlan(
 
     Column(modifier.padding(MaterialTheme.spacing.xxl)) {
         Text("Around this post", style = MaterialTheme.typography.titleLarge)
+        // Crowd-crush early warning (AI lane, #30): the worst two areas, in words, matching the outlined squares.
+        risks.take(2).forEach { r ->
+            Spacer(Modifier.height(MaterialTheme.spacing.xs))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                val sem = MaterialTheme.semantic
+                val (fill, on) = when (r.level) {
+                    CrowdRiskLevel.WATCH -> sem.caution to sem.onCaution
+                    CrowdRiskLevel.WARNING -> sem.urgent to sem.onUrgent
+                    CrowdRiskLevel.DANGER -> sem.critical to sem.onCritical
+                }
+                StateLabel(r.level.label(), container = fill, content = on)
+                Spacer(Modifier.width(MaterialTheme.spacing.sm))
+                Text(r.reason.replace(" · ", ", "), style = MaterialTheme.typography.bodyMedium.figures())
+            }
+        }
         Spacer(Modifier.height(MaterialTheme.spacing.sm))
         Box(Modifier.weight(1f).fillMaxWidth()) {
             Canvas(
@@ -515,6 +540,7 @@ private fun SitePlan(
                     drawLine(ink.line, from, via, ink.hairline, pathEffect = PathEffect.dashPathEffect(floatArrayOf(ink.hatch, ink.hatch)))
                 }
 
+                drawRisks(origin, c, pxPerM, risks, riskInk, ink)
                 drawZones(origin, c, pxPerM, open, selected, sevFills, ink)
 
                 anims.forEach { a ->
@@ -621,6 +647,33 @@ private fun DrawScope.drawDensity(origin: GeoPoint, c: Offset, pxPerM: Float, pe
                 drawText(t, color = ink.node, topLeft = Offset(cell.left + ink.gap, cell.bottom - t.size.height - ink.gap))
             }
         }
+}
+
+private fun CrowdRiskLevel.label(): String = when (this) {
+    CrowdRiskLevel.WATCH -> "Crowd: watch"
+    CrowdRiskLevel.WARNING -> "Crowd: warning"
+    CrowdRiskLevel.DANGER -> "Crowd: danger"
+}
+
+/**
+ * Crowd-crush risk areas (#30): the 3×3 cells around each flagged cell, tinted and outlined in the level's role.
+ * Watch is dashed and thin; warning and danger get heavier strokes, so the level reads without colour too.
+ */
+private fun DrawScope.drawRisks(
+    origin: GeoPoint, c: Offset, pxPerM: Float, risks: List<CrowdRisk>, riskInk: Map<CrowdRiskLevel, Color>, ink: PlanInk,
+) {
+    risks.forEach { r ->
+        val cell = cellOf(origin, c, pxPerM, GeoMath.cellKey(r.cellCentre, CELL_M))
+        val area = cell.inflate(cell.width)
+        val color = riskInk.getValue(r.level)
+        drawRect(color.copy(alpha = 0.14f), area.topLeft, area.size)
+        val stroke = when (r.level) {
+            CrowdRiskLevel.WATCH -> Stroke(ink.stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(ink.hatch, ink.hatch)))
+            CrowdRiskLevel.WARNING -> Stroke(ink.strokeBold)
+            CrowdRiskLevel.DANGER -> Stroke(ink.strokeBold * 1.5f)
+        }
+        drawRect(color, area.topLeft, area.size, style = stroke)
+    }
 }
 
 /** Anonymous density: reports per 25 m cell (GeoMath.cellKey), drawn as hatching. Denser hatching = more reports. */

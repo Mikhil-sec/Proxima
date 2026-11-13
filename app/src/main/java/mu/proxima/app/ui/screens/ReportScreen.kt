@@ -56,6 +56,7 @@ import mu.proxima.app.ui.Screen
 import mu.proxima.app.ui.VoiceCapture
 import mu.proxima.app.ui.components.BackIcon
 import mu.proxima.app.ui.components.Fact
+import mu.proxima.app.ui.components.GuidedSteps
 import mu.proxima.app.ui.components.LargeButton
 import mu.proxima.app.ui.components.NearestHelp
 import mu.proxima.app.ui.components.SeverityBadge
@@ -368,20 +369,9 @@ private fun ColumnScope.SentView(graph: ProximaGraph, incident: Incident, reache
         NearestHelp(graph, incident.location ?: me, incident.type.helpCategories)
         protocol?.let { card ->
             Spacer(Modifier.height(MaterialTheme.spacing.xxl))
-            Text("What to do now", style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(MaterialTheme.spacing.sm))
-            card.steps.forEachIndexed { i, step ->
-                ListItem(
-                    headlineContent = { Text(step.text, style = MaterialTheme.typography.bodyLarge) },
-                    leadingContent = { Text("${i + 1}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary) },
-                )
-            }
-            Text("Source: ${card.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = { graph.scope.launch { graph.voice.speak(card.steps.joinToString(". ") { it.text }) } }) {
-                SymbolIcon(Sym.ReadAloud, null, size = MaterialTheme.sizes.iconSmall)
-                Spacer(Modifier.width(MaterialTheme.spacing.sm))
-                Text("Read the steps aloud")
-            }
+            Text("What to do now", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(MaterialTheme.spacing.xs))
+            GuidedSteps(graph, card)
         }
     }
     LargeButton("Done", onDone)
