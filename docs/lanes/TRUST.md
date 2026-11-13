@@ -46,60 +46,77 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 
 
 ## NEXT_SESSION_HANDOFF
-**Done and verified (22/22 unit tests pass, whole project builds)**
-- Onboarding complete; toolchain works (Android Studio + JBR **JDK 25**, SDK `android-37.0`, adb,
-  `local.properties` with forward-slash `sdk.dir`). gh authed as @diya-r6. Context7 MCP connected.
-- **Dataset** `assets/data/osm_help_points_raw.json` - 524 real Mauritius OSM features (ODbL),
-  fetched 14:43 Fri, OSM base `2026-11-13T10:42:12Z`. **Merged to `main` in PR #12.**
-- **Help points** `OsmHelpPoints` + `AssetHelpPointRepository`, wired in `TrustModule`.
-- ~~**Wristband QR**~~ built and merged, then **made obsolete by #14** the same hour. `WristbandQr` is
-  still in the tree, tested, marked UNUSED in its header. Nothing in the demo flow calls it.
-- **Protocols** `assets/data/protocols.json` - 9 cards transcribed from the real IFRC 2020 PDF with a
-  citation each. `AssetProtocolRepository` + `Protocols.bestFor`, wired in `TrustModule`.
-- `trust/AndroidManifest.xml` declares **no permissions** (CAMERA removed in #18 after #14).
-- Verified properly: `./gradlew :app:assembleDebug --rerun-tasks` recompiles the whole app against this
-  code and succeeds. Plain `assembleDebug` reports success from cache in ~3 s - do not trust that alone.
+_Saved 17:55 Fri 13 Nov. Branch `lane/trust`, synced with `main`, 34/34 tests pass, whole project builds._
 
-**Not done**
-- `TrustEngine` is still `FakeTrustEngine`. **This is the biggest remaining item and MESH is waiting on it**
-  (they need the `nodeId` derivation to finalise node identity).
-- ~~`WristbandScanner`~~ **CANCELLED** - the team dropped the QR wristband at 15:35 Fri (#14). Never
-  started, so nothing was wasted. No CameraX / ML Kit work is needed by this lane at all now.
-- 4 protocol cards missing - see the gap below. `protocols.json` has **not been proof-read by a second
-  member yet**, which the lane requires before the demo.
-- Never run on a phone. `installDebug` untried, the S24 Ultra has never been connected.
-- README assembly (due 10:30 Sat) not started.
+### THE ONE THING THAT MATTERS NEXT
+**`TinkTrustEngine`.** It is the last P0, MESH is blocked on it (#19), and until it lands the product's
+headline privacy claim is false. **Check Context7 is loaded before writing a line of it** (CLAUDE.md section 3):
+the tools are `resolve-library-id` / `query-docs`. It is registered at **user** scope and reports Connected, so
+it should appear now. If it does not, do NOT write Tink from memory - say so and stop.
 
-**Exact next step**
-1. **Restart Claude Code** so the Context7 tools load, then `TinkTrustEngine`: Ed25519 over
-   `MeshPacket.signingBytes()`, HPKE X25519 seal/open, keysets in the Android Keystore,
-   `identity.publicKey = "<sigB64>.<encB64>"`, `nodeId` = first 8 hex of SHA-256(publicKey).
-   **Then tell MESH on the bus what the nodeId derivation is.**
-2. Source the 4 missing protocol cards, or get a team decision to ship without them. CROWD_CRUSH first.
-3. `installDebug` on the S24 Ultra - this lane has never run on a phone.
-4. README assembly (mine, due 10:30 Sat).
+What it must do (the spec is already written as a test - see below):
+- Ed25519 sign/verify over `MeshPacket.signingBytes()`.
+- HPKE (X25519) seal/open.
+- Keysets persisted via the **Android Keystore**, so identity survives restart.
+- `identity.publicKey = NodeIds.publicKey(sigB64, encB64)`; `identity.nodeId = NodeIds.derive(publicKey)`.
+  **Both helpers already exist and are tested - use them, do not re-derive.**
+- Then flip `TrustModule.createTrust`: `if (!simulation) return TinkTrustEngine(context)`.
+- Then `class TinkTrustEngineTest : TrustEngineContractTest() { override fun newEngine() = ... }` in
+  **`src/androidTest`** (the Keystore needs a real `Context`, so it is instrumented, not JVM).
+- Then **delete `FakeTrustEngineSecurityTest`** - it will start failing, which is the intended signal.
+- Then comment on #19 and #1 that simulation-OFF is now genuinely signed and sealed.
 
-**Protocol coverage gap (deliberate, pinned by a test)**
-`CROWD_CRUSH`, `ELECTRICAL`, `FALLEN_BRANCH`, `FLOOD` have no card: the IFRC 2020 guidelines contain no
-protocol for them, and `bestFor` returns null rather than substituting an unrelated card.
-**`CROWD_CRUSH` is the one that hurts** - CRITICAL severity and the Maha Shivaratri scenario, so a crowd
-crush currently produces an incident with no guidance. Needs a non-IFRC authoritative source
-(e.g. a crowd-safety / event-safety guide) or an explicit team decision to ship without it.
-The lost-person subtypes (`CHILD`/`ELDERLY`/`PERSON`) are operational, not medical, so they must not be
-cited to IFRC; they need their own honestly-sourced card.
-`ProtocolsTest` fails if this gap list changes, so it cannot grow unnoticed.
+### What works, merged to `main`, verified
+- **Dataset** `trust/src/main/assets/data/osm_help_points_raw.json` - 524 real Mauritius OSM features (ODbL),
+  fetched 14:43 Fri, OSM base `2026-11-13T10:42:12Z`. Raw Overpass response committed for provenance.
+  Re-fetch with `bash scripts/fetch_help_points.sh`.
+- **Nearest help** `OsmHelpPoints` (pure parser + `rankNearest`) and `AssetHelpPointRepository`, wired in
+  `TrustModule.createHelpPoints`.
+- **Protocols** `assets/data/protocols.json` - 9 cards transcribed from the real IFRC 2020 PDF with a page
+  citation each. `AssetProtocolRepository` + `Protocols.bestFor`, wired in `TrustModule.createProtocols`.
+- **`NodeIds`** - `derive` / `publicKey` / `split`, plain SHA-256, 3 fixed vectors pinned (#25).
+- **`WristbandQr`** - works, round-trip tested, but **UNUSED**: the wristband was dropped at 15:35 (#14).
+  Marked in its file header. Delete it if the lead says so.
+- **README** assembled and merged (#22). It is a TRUST deliverable.
+- **34 unit tests**, all passing. `./gradlew :trust:test`.
 
-**Open asks on the bus**
-- **#11 to UI** - km distances (Ganga Talao's nearest help is 8.5 km) + pharmacies via explicit
-  categories. Unaffected by #14, still open and still needed.
-- #14 - 👍 given. I flagged that `FoundNotice.tagId` now holds a lost-incident id, so the name misleads.
-  Mikhil's call, his file.
-- #13 - closed by me (no longer needed). #7 - cancelled; commented, left for UI to close.
+### Tests that exist to protect other lanes - do not weaken them
+- `NodeIdsTest` - fixed vectors MESH's #8 allow-list depends on.
+- `ProtocolsTest > card ids the AI guide switches by are stable` - #30 switches cards by id.
+- `ProtocolsTest > every subtype the live engine emits...` - drives the real `RuleTriageEngine`, so an
+  AI-lane subtype rename fails here.
+- `TrustEngineContractTest > verify still passes after a legitimate relay` - protects MESH's relay path
+  (`ttl` / `hopCount` / `path` must stay outside `signingBytes()`).
 
-**Files I own and have touched**
-`trust/**` (OsmHelpPoints, AssetHelpPointRepository, WristbandQr, AssetProtocolRepository, TrustModule,
-AndroidManifest, build.gradle.kts, assets/data/*.json, 4 test classes), `docs/lanes/TRUST.md`,
-`docs/TEAM_ROLES.md` (my row + phone note). **No `core/` changes. No interface changes.**
+### Known gaps, all deliberate and logged
+1. **Simulation-OFF is not demo-safe.** `TrustModule.createTrust` ignores the flag and returns
+   `FakeTrustEngine`, whose `seal()` is recoverable base64 and whose `verify()` accepts anything.
+   Proven by `FakeTrustEngineSecurityTest`. Fixed by `TinkTrustEngine`. Reported on #19 and #1.
+   **The README has a blocker note about this - its privacy claims must not be submitted until this is true.**
+2. **No CROWD_CRUSH / ELECTRICAL / FALLEN_BRANCH / FLOOD card.** IFRC 2020 has zero crush content; UK HSE is
+   organiser prevention only. Awaiting the lead on #20, now more urgent because #30's feature D raises
+   CROWD_CRUSH incidents. Default is to ship without. **Do not invent these.**
+3. **`protocols.json` has NOT been proof-read by a second member.** The lane requires it before the demo.
+4. **This lane has never run on a phone.** `adb devices` was empty all session; `installDebug` untried.
+5. OSM Mauritius has no assembly points, ambulance stations or defibrillators. `docs/PRODUCT.md` still
+   wrongly claims defibrillators - not my file, flagged in PR #22.
+
+### My open asks on other lanes
+- **#11** UI - nearest-help must render kilometre distances (Ganga Talao's nearest help is 8.5 km).
+- **#20** UI/lead - decide the CROWD_CRUSH card before 08:00 freeze.
+- **#23** all lanes - one README section each by 10:30 Sat. **I compile it, so chase this.**
+
+### Machine notes
+- `export JAVA_HOME="C:/Program Files/Android/Android Studio/jbr"` (JDK 25, works fine).
+- `gh` is not on PATH: `export PATH="$PATH:/c/Program Files/GitHub CLI"` and set `GH_PAGER=cat`,
+  or `gh issue view` prints nothing.
+- `build/` is deny-listed, so `:trust:test` prints per-test results to the console instead. Plain
+  `assembleDebug` can report success from cache in ~3 s - use `--rerun-tasks` when you need real proof.
+- `local.properties` uses forward slashes. Writing it with `printf` and backslashes silently mangles the path.
+
+### Files I own
+`trust/**`, `scripts/fetch_help_points.sh`, `docs/lanes/TRUST.md`, my row in `docs/TEAM_ROLES.md`,
+and `README.md` (assembly). **No `core/` changes have been made by this lane at any point.**
 
 ## Progress log
 | Time | What |
@@ -124,6 +141,10 @@ AndroidManifest, build.gradle.kts, assets/data/*.json, 4 test classes), `docs/la
 | 16:15 Fri | Searched for a citable CROWD_CRUSH source: IFRC 2020 has **zero** hits for stampede / trampling / compressive asphyxia; UK HSE event-safety is organiser prevention only; general web is blogs and law firms. Raised #20 asking the lead to decide, recommending no card + route the casualty through the existing cited CPR cards. |
 | 16:20 Fri | **README assembled and merged (#22).** Filled problem & user, both data sources (licence, fetch date, counts, gaps), tech stack, how to run, privacy, AI disclosure, draft decision shortlist. Corrected the claims #14 invalidated (no wristband, no camera, CameraX/ML Kit/ZXing out of the stack). Appended 3 team decisions to `docs/DECISIONS.md`, which still only had the superseded 13:20 wristband entry. Raised #23 asking each lane for its section by 10:30 Sat. |
 | 16:30 Fri | **`NodeIds.derive` merged (#25)** - the format half of #19, plain SHA-256, no Tink, so MESH can build the #8 allow-list now. 3 fixed vectors pinned. 28/28 tests pass. |
+| 16:40 Fri | Merged 23 commits from `main` (clean, no conflicts); `assembleDebug test` green across all modules. Noticed AI changed `RuleTriageEngine` precedence (#16), so replaced my hand-transcribed coverage check with one that **drives the live engine**: 16 trigger phrases, all classify as assumed. 29/29 tests. Merged as #29. |
+| 16:50 Fri | Direction change proposed (blockchain instead of the crypto) and **rejected** after laying out the costs; staying with Ed25519 + HPKE. |
+| 17:00 Fri | **`TrustEngineContractTest` + `FakeTrustEngineSecurityTest` merged (#31).** The spec `TinkTrustEngine` must satisfy, written before the implementation, plus 4 passing tests that prove the fake accepts forged signatures, misses tampering, and base64s instead of encrypting. 33/33 tests. |
+| 17:50 Fri | 👍 #30 (AI: GuideEngine + CrowdRiskEngine). Their guide switches cards **by id**, so pinned `cpr-adult` / `unresponsive-breathing` / `severe-bleeding` / `seizure` with a test - card ids are now a cross-lane API. Warned them feature D raises `CROWD_CRUSH`, which has no card. Escalated #20. 34/34 tests. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -149,3 +170,7 @@ AndroidManifest, build.gradle.kts, assets/data/*.json, 4 test classes), `docs/la
 | 16:20 Fri | Put a **blocker note inside the README** saying its privacy/signing claims are not yet true in the build, rather than writing softer claims now | The claims will be true once `TinkTrustEngine` lands, and weakening them pre-emptively would undersell the product; but shipping an untrue privacy claim is the one thing judges will actually test. A note the team must act on is the honest middle | Writing the claims as if already true (dishonest); writing hedged claims now (undersells a design that should work by M2); leaving the sections empty (the README is due 10:30 Sat) |
 | 16:20 Fri | Lead the README with "at Ganga Talao the nearest medical facility is 8.5 km away" | It turns our own dataset into the argument for the product - help is far and the network you would use to call it fails first. A judge remembers a number from real data far better than "networks get congested" | Opening with the mesh architecture (impressive to engineers, not to a judge asking "why does this matter"); hiding the distance because it sounds like a weakness |
 | 16:30 Fri | Split `NodeIds.derive` out of `TinkTrustEngine` and ship it on its own | It is plain SHA-256 with no Tink, so it was not blocked by the Context7 gate, and MESH was waiting on the format for the #8 allow-list. Shipping the contract early with pinned vectors unblocks another lane hours before the crypto lands | Waiting to deliver it inside `TinkTrustEngine` (MESH idle meanwhile); giving MESH the format in an issue comment only (no test, nothing to stop a silent change breaking their allow-list) |
+| 16:40 Fri | Replace the hand-transcribed subtype list in `ProtocolsTest` with a test that drives the real `RuleTriageEngine` | The old test only asserted what I believed the engine emits, so a rename or reordering in the AI lane would have kept it green while the guided-response screen quietly stopped finding cards. That lane edited the engine's precedence the same afternoon (#16), so the risk was live | Keeping the hand-transcribed list (silent drift); asking AI to notify me on subtype changes (relies on a human remembering at 03:00); parsing the engine's source in a test (brittle) |
+| 16:50 Fri | **Keep Ed25519 + HPKE; do not replace the trust layer with a blockchain** | A blockchain is a replicated *public* log: it gives integrity but zero confidentiality, so a child's location on a ledger is the exact inverse of the product's headline privacy rule. It also needs consensus, and consensus needs connectivity - the one thing Proxima assumes is absent. And blockchains are *built on* Ed25519-style signatures, so it would not have removed any of the work, only added to it at 16:50 Fri with freeze at 08:00 | Replacing sign/seal with a ledger (breaks privacy and cannot run offline); adding a signed `prevHash` chain for tamper-evidence on top (defensible and offline-safe, but a `core/` interface change after the last P0, so deferred rather than dismissed) |
+| 17:00 Fri | Write the `TrustEngine` security contract as an abstract test **before** implementing Tink, and pin the fake's insecurity as passing tests | Two reasons. The contract stops a rushed 03:00 implementation shipping without tamper-rejection or confidentiality, which is exactly what gets dropped under time pressure. And a comment saying "the fake is insecure" never appears in anyone's build, whereas a test does - and it will flip to failing the moment the real engine lands, which is a free reminder to delete it | Implementing first and testing after (the untested property would be the one that matters); documenting the fake's weakness in the lane file only (invisible to other lanes) |
+| 17:50 Fri | Treat the protocol card **ids** as a published cross-lane API and enforce them with a test | #30's hands-free guide switches card by id on a voice command ("he stopped breathing" -> `cpr-adult`). That turns an internal string into an integration contract, and the failure mode is silent - the voice command just stops working, probably mid-demo at 03:00. A test makes a rename break my build instead | Promising it in an issue comment (nothing stops a later rename); asking AI to switch on subtype instead (their condition changes do not map to triage subtypes) |

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LOCATE lane, DEBUG builds only: UWB device-check screen, driven by locate/tools/uwb_check.sh over adb. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- exported so `adb shell am start` can open it; debug-only, never in release. -->
+        <activity
+            android:name="mu.proxima.locate.debug.UwbCheckActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:keepScreenOn="true" />
+    </application>
+</manifest>
