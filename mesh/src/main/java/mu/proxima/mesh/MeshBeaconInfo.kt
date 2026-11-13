@@ -46,6 +46,20 @@ object MeshBeaconInfo {
         return if (runCatching { verify(pass, packet, nowMs) }.getOrDefault(false)) pass.role to pass.label else null
     }
 
+    /** The key that signed this peer's beacon (#61), for pairing. Only when the beacon names its own signer. */
+    fun signerKey(beacon: Beacon, packet: MeshPacket): String? =
+        if (beacon.nodeId == packet.originNodeId && packet.originKey.isNotEmpty()) packet.originKey else null
+
+    /**
+     * Local friend label if this beacon's rotating tag matches one of THIS phone's friends (#61). The match happens
+     * only here, against beacons already heard; nobody broadcasts a search. Any failure means "not a friend".
+     */
+    fun friendLabel(beacon: Beacon, packet: MeshPacket, nowMs: Long, match: (String, Long) -> String?): String? {
+        val tag = beacon.friendTag ?: return null
+        if (beacon.nodeId != packet.originNodeId) return null
+        return runCatching { match(tag, nowMs) }.getOrNull()
+    }
+
     const val CELL_M = 25.0
     private const val EARTH_RADIUS_M = 6_371_000.0
 
