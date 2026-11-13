@@ -127,7 +127,7 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
   Installs side by side as `mu.proxima.app.meshtest` (needs `-Pmeshtest` from the machine-local init script), only
   force-stops teammates' `mu.proxima.app`, `cleanup` uninstalls only the test build. Safety routine: health first
   (battery, temp < 40 °C, storage), note BT/Wi-Fi state and restore it after, keep screens unlocked, `cleanup` at the end.
-  Honor hides app logs: `adb -s <serial> shell setprop log.tag.Proxima V` (reset with `""`). Samsung Secure Folder → always `--user 0`.
+  Honor hides app logs: `adb -s <serial> shell setprop log.tag.Proxima V` (reset with `""`). TRUST (19:00) saw the Honor LLY-LX2 return 0 logcat lines even so: if it looks dead, check with `dumpsys activity` or the other phones' logs, not logcat. Samsung Secure Folder → always `--user 0`.
   USB hub dropped phones twice: prefer direct cables/powered hub for the stage.
 - **Machine notes (Chanum's laptop):** JDK = Android Studio JBR; `~/.gradle/init.d/proxima-builddir-outside-onedrive.gradle.kts`
   puts build output in `C:/dev/proxima-build` (OneDrive locks `build/`) and adds `-Pmeshtest` suffix; no Python installed;
@@ -155,6 +155,7 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:20 Fri | #24 closed: LOCATE verified UWB CONTROL handshake over the real mesh on S23+ → S26+ (fix 0.5 s, arrow OK). Follow-up: after a peer app restart, its old per-launch id stays `direct=true` until Nearby reports the disconnect |
 | 18:51 Fri | Phone check S26+ ↔ S23+: restart fix OK (reconnect 7 s); acoustic decodes with MIC source; 4/5 kHz too loud for the venue → 18.0/18.7 kHz near-ultrasound: S26+→S23+ 2/2, S23+→S26+ 0/2 (weak speaker). Phones cleaned up |
 | 19:10 Fri | PR #44 merged (restart fix + ultrasonic acoustic). README MESH section + AI-disclosure row merged (PR #47), #23 answered |
+| 19:15 Fri | Validated #51 on its branch (whole project green), found + fixed the restart/LOST-report gap (PR #54 merged), 👍 #51 with "no mid-session rotation before freeze", told TRUST on #19 that MESH is ready for the found-notice test |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
