@@ -3,6 +3,7 @@ package mu.proxima.ai
 import android.content.Context
 import android.speech.SpeechRecognizer
 import android.util.Log
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import mu.proxima.core.engine.LocateEngine
 import mu.proxima.core.engine.MeshEngine
@@ -16,7 +17,10 @@ import mu.proxima.ai.guide.GuideIntentClassifier
 import mu.proxima.ai.guide.HandsFreeGuide
 import mu.proxima.ai.offload.TieredTriageEngine
 import mu.proxima.ai.offload.TriageServer
+import mu.proxima.ai.triage.FirstReadyBackend
 import mu.proxima.ai.triage.GeminiNanoBackend
+import mu.proxima.ai.triage.LiteRtLmBackend
+import mu.proxima.ai.triage.LlmBackend
 import mu.proxima.ai.triage.LlmTriageEngine
 import mu.proxima.ai.voice.AndroidVoiceIo
 import mu.proxima.core.model.DeviceCapabilities
@@ -31,6 +35,31 @@ import mu.proxima.core.engine.CrowdRiskEngine
  * Target: Tier 1 → on-device LLM (falls back to rules); Tier 2 → offload to a Tier 1 peer (falls back to rules).
  */
 object AiModule {
+    /** One on-device LLM per process, shared by triage and the guide (a 2.6 GB model can't load twice). */
+    @Volatile private var sharedLlm: LlmBackend? = null
+
+    private fun llm(context: Context, scope: CoroutineScope): LlmBackend = sharedLlm ?: synchronized(this) {
+        sharedLlm ?: run {
+            val app = context.applicationContext
+            val models = File(app.getExternalFilesDir(null) ?: app.filesDir, "models")
+            // Gemma first (sideloaded, works on our phones); Gemini Nano where AICore offers it.
+            FirstReadyBackend(
+                listOf(LiteRtLmBackend(models, app.cacheDir, scope, log = { Log.i("Proxima", it) }), GeminiNanoBackend())
+            ).also { sharedLlm = it }
+        }
+    }
+
+    /** Debug probe only: the SAME shared instance triage uses (never a second 2.6 GB copy). */
+    internal fun debugLlm(context: Context, scope: CoroutineScope): LlmBackend = llm(context, scope)
+
+    /** Resolves the shared LLM at call time, so createGuide works whichever factory runs first. */
+    private object SharedLlm : LlmBackend {
+        override val name get() = sharedLlm?.name ?: "none"
+        override suspend fun isReady() = sharedLlm?.isReady() ?: false
+        override suspend fun generate(system: String, user: String) =
+            (sharedLlm ?: error("no on-device LLM")).generate(system, user)
+    }
+
     fun createTriage(
         context: Context,
         capabilities: DeviceCapabilities,
@@ -40,11 +69,11 @@ object AiModule {
         simulation: Boolean,
     ): TriageEngine {
         // Every phone: local LLM (Tier 1) → offload to a peer with a ready LLM → RuleTriageEngine.
-        // Capabilities flip by themselves when Nano finishes downloading or a helper appears/leaves.
+        // Capabilities flip by themselves when the model finishes loading (~5-10 s) or a helper appears/leaves.
         val log: (String) -> Unit = { Log.i("Proxima", it) }
         val packets = PacketFactory(trust)
         val local = if (capabilities.tier == DeviceTier.TIER1_COMPUTE) {
-            LlmTriageEngine(backend = GeminiNanoBackend(), scope = scope, log = log).also {
+            LlmTriageEngine(backend = llm(context, scope), scope = scope, recheckMs = 5_000, log = log).also {
                 // Tier 1 also answers TRIAGE_REQUESTs for Tier 2 phones once its own model is ready.
                 TriageServer(it, mesh, trust, packets, scope, log = log).start()
             }
@@ -63,7 +92,7 @@ object AiModule {
         scope: CoroutineScope,
     ): GuideEngine {
         val log: (String) -> Unit = { Log.i("Proxima", it) }
-        val llm = if (capabilities.tier == DeviceTier.TIER1_COMPUTE) GeminiNanoBackend() else null
+        val llm = if (capabilities.tier == DeviceTier.TIER1_COMPUTE) SharedLlm else null
         return HandsFreeGuide(voice, protocols, scope, classifier = GuideIntentClassifier(llm, log = log), log = log)
     }
 
