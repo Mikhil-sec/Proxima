@@ -11,10 +11,12 @@ import mu.proxima.core.fake.FakeTrustEngine
  * Owns: keys/signing/sealing, wristband QR, and the real datasets (help points + protocol cards).
  */
 object TrustModule {
-    fun createTrust(context: Context, simulation: Boolean): TrustEngine {
-        // TODO(TRUST): if (!simulation) return TinkTrustEngine(context)
-        return FakeTrustEngine()
-    }
+    /**
+     * Simulation OFF (the demo) = real Ed25519 signing + HPKE sealing, keys in the Android Keystore.
+     * Simulation ON = `FakeTrustEngine`, which signs with "SIM" and base64s instead of encrypting - dev only.
+     */
+    fun createTrust(context: Context, simulation: Boolean): TrustEngine =
+        if (simulation) FakeTrustEngine() else TinkTrustEngine(context)
 
     /**
      * Real OSM dataset, always - there is no simulated variant. 524 Mauritius help points parsed from

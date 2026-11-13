@@ -44,7 +44,7 @@ case "${1:-setup}" in
       "$ADB" -s "$s" install -r --user 0 "$APK" | tr -d '\r' | tail -1
       sh_ "$s" am force-stop "$TEAM_PKG" || true   # teammate's build must not join this test mesh (not uninstalled)
       for p in BLUETOOTH_SCAN BLUETOOTH_ADVERTISE BLUETOOTH_CONNECT NEARBY_WIFI_DEVICES POST_NOTIFICATIONS \
-               ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION; do
+               ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION RECORD_AUDIO; do
         "$ADB" -s "$s" shell pm grant "$PKG" "android.permission.$p" 2>/dev/null || true
       done
       sh_ "$s" am force-stop "$PKG"
@@ -65,6 +65,17 @@ case "${1:-setup}" in
     "$ADB" -s "$s" shell am broadcast -a mu.proxima.mesh.ALLOW -p "$PKG" --es nodes "'${3:-*}'" >/dev/null
     echo "allow-list on $s = ${3:-*}"
     ;;
+  acoustic)   # acoustic <serial> on|off  (also isolates RF: on = allow-list "none", off = everyone)
+    s="${2:?usage: acoustic <serial> on|off}"; on=$([ "${3:-on}" = on ] && echo true || echo false)
+    "$ADB" -s "$s" shell am broadcast -a mu.proxima.mesh.ALLOW -p "$PKG" --es nodes "'$([ $on = true ] && echo none || echo "*")'" >/dev/null
+    "$ADB" -s "$s" shell am broadcast -a mu.proxima.mesh.ACOUSTIC -p "$PKG" --ez on $on >/dev/null
+    echo "acoustic=$on on $s (RF links $([ $on = true ] && echo dropped || echo restored)). Keep the app ON SCREEN to listen."
+    ;;
+  chirp)      # chirp <serial>: play a test SOS from this phone's speaker
+    s="${2:?usage: chirp <serial>}"
+    "$ADB" -s "$s" shell am broadcast -a mu.proxima.mesh.CHIRP -p "$PKG" >/dev/null
+    echo "chirp sent from $s (~8 s incl. repeat); then: $0 logs"
+    ;;
   ids)
     for s in $(serials); do
       echo "$s $({ "$ADB" -s "$s" logcat -d -s Proxima:I | grep -o 'mesh start node=[^ ]*' || true; } | tail -1 | cut -d= -f2)"
@@ -82,5 +93,5 @@ case "${1:-setup}" in
       "$ADB" -s "$s" uninstall --user 0 "$PKG" 2>/dev/null | tr -d '\r' | sed "s/^/$s: uninstall test build: /" || true
     done
     ;;
-  *) echo "usage: $0 [health|setup|ping <serial>|logs [n]|cleanup]"; exit 2 ;;
+  *) echo "usage: $0 [health|setup|ids|allow <serial> <ids|*>|ping <serial>|acoustic <serial> on|off|chirp <serial>|logs [n]|cleanup]"; exit 2 ;;
 esac

@@ -42,6 +42,7 @@ import mu.proxima.core.model.Beacon
 import mu.proxima.core.model.DeviceCapabilities
 import mu.proxima.core.model.DeviceTier
 import mu.proxima.core.model.HopEvent
+import mu.proxima.core.model.IncidentType
 import mu.proxima.core.model.MeshPacket
 import mu.proxima.core.model.PacketKind
 import mu.proxima.core.model.Peer
@@ -49,6 +50,8 @@ import mu.proxima.core.model.Severity
 import mu.proxima.core.model.Transport
 import mu.proxima.core.pipeline.PacketFactory
 import mu.proxima.core.pipeline.ProximaJson
+import mu.proxima.mesh.acoustic.AcousticLink
+import mu.proxima.mesh.acoustic.AcousticSos
 import kotlin.random.Random
 
 /**
@@ -171,6 +174,12 @@ class NearbyMeshEngine(
         jobs += scope.launch(serial) { // demo allow-list (issue #8)
             MeshDemoControls.allowedNeighbours.collect { applyAllowList() }
         }
+        jobs += scope.launch(serial) { // acoustic fallback: listen only while switched on and RF has no links
+            while (isActive) {
+                updateAcousticListener()
+                delay(2_000)
+            }
+        }
         registerDebugPing()
     }
 
@@ -195,6 +204,19 @@ class NearbyMeshEngine(
                     MeshDemoControls.allowedNeighbours.value = set
                     return
                 }
+                if (intent.action == ACTION_ACOUSTIC) {
+                    // adb shell am broadcast -a mu.proxima.mesh.ACOUSTIC -p <pkg> --ez on true
+                    MeshDemoControls.acoustic.value = intent.getBooleanExtra("on", true)
+                    Log.i(TAG, "acoustic fallback = ${MeshDemoControls.acoustic.value}")
+                    return
+                }
+                if (intent.action == ACTION_CHIRP) {
+                    // Device check of the speaker→mic path only: chirps a test SOS (HIGH MEDICAL, no location)
+                    // without putting anything into this phone's own pipeline. Debug builds only.
+                    val sos = AcousticSos(IncidentType.MEDICAL, Severity.HIGH, selfNodeId, null, Random.nextInt(0x10000))
+                    scope.launch(serial) { chirp(sos) }
+                    return
+                }
                 scope.launch(serial) {
                     val p = packets.create(PacketKind.CONTROL, "ping from $selfNodeId", Severity.HIGH, channel = "ping")
                     Log.i(TAG, "tx PING ${p.packetId.take(8)} to ${endpoints.values.count { it.connected }} neighbours")
@@ -202,7 +224,7 @@ class NearbyMeshEngine(
                 }
             }
         }
-        val filter = IntentFilter(ACTION_PING).apply { addAction(ACTION_ALLOW) }
+        val filter = IntentFilter(ACTION_PING).apply { addAction(ACTION_ALLOW); addAction(ACTION_ACOUSTIC); addAction(ACTION_CHIRP) }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
         } else {
@@ -241,6 +263,8 @@ class NearbyMeshEngine(
         discovering = false
         jobs.forEach { it.cancel() }
         jobs.clear()
+        acousticListen?.cancel()
+        acousticListen = null
         pingReceiver?.let { runCatching { context.unregisterReceiver(it) } }
         pingReceiver = null
         client.stopAdvertising()
@@ -264,7 +288,39 @@ class NearbyMeshEngine(
             val out = MeshRelay.originate(packet, selfNodeId)
             remember(out)
             broadcast(out, excludeEndpoint = null)
+            if (acousticActive()) AcousticSos.fromPacket(out)?.let { chirp(it) }
         }.join()
+    }
+
+    // ---------------------------------------------------------------- acoustic fallback (P2)
+
+    private val acoustic by lazy { AcousticLink(context) }
+    private var acousticListen: Job? = null
+
+    /** Only when switched on AND RF has nothing: call on [serial]. */
+    private fun acousticActive() = MeshDemoControls.acoustic.value && endpoints.values.none { it.connected }
+
+    private fun chirp(sos: AcousticSos) {
+        Log.i(TAG, "acoustic chirp ${sos.type}/${sos.severity} (no RF neighbours)")
+        scope.launch { runCatching { acoustic.transmit(sos.encode()) }.onFailure { Log.e(TAG, "acoustic tx failed: ${it.message}") } }
+    }
+
+    /** Runs on [serial] every few seconds: start/stop the mic listener as the switch and RF state change. */
+    private fun updateAcousticListener() {
+        val want = acousticActive()
+        if (want && acousticListen?.isActive != true) {
+            acousticListen = acoustic.listen(scope) { bytes -> onAcoustic(bytes) }
+        } else if (!want && acousticListen != null) {
+            acousticListen?.cancel()
+            acousticListen = null
+        }
+    }
+
+    private suspend fun onAcoustic(bytes: ByteArray) {
+        val sos = AcousticSos.decode(bytes) ?: return
+        if (AcousticSos.nodeIdBytes(sos.originNodeId) == AcousticSos.nodeIdBytes(selfNodeId)) return // own chirp echo
+        Log.i(TAG, "acoustic rx ${sos.type}/${sos.severity} from=${sos.originNodeId} loc=${sos.location != null}")
+        scope.launch(serial) { onPacket(sos.toPacket(clock()), fromEndpoint = ACOUSTIC_ENDPOINT) }.join()
     }
 
     private suspend fun onPacket(packet: MeshPacket, fromEndpoint: String) {
@@ -310,7 +366,7 @@ class NearbyMeshEngine(
 
     /** Store-and-forward: keep live packets (memory + Room) so new neighbours get them, even after a restart. */
     private fun remember(packet: MeshPacket) {
-        if (packet.kind == PacketKind.BEACON) return
+        if (!MeshRelay.isStorable(packet)) return
         outbox.removeAll { it.packetId == packet.packetId }
         outbox.addLast(packet)
         while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
@@ -343,7 +399,11 @@ class NearbyMeshEngine(
 
     private fun sendBeacon() {
         if (endpoints.values.none { it.connected }) return
-        val beacon = Beacon(selfNodeId, capabilities.tier, capabilities.hasUwb, llmReady = false, location = null)
+        val beacon = Beacon(
+            nodeId = selfNodeId, tier = capabilities.tier, hasUwb = capabilities.hasUwb,
+            llmReady = MeshBeaconInfo.llmReady.value,
+            location = MeshBeaconInfo.location.value?.let { MeshBeaconInfo.coarse(it) }, // anonymous 25 m cell only
+        )
         val packet = packets.create(PacketKind.BEACON, ProximaJson.encodeToString(Beacon.serializer(), beacon), Severity.LOW)
         scope.launch(serial) {
             seen.markFirstSeen(packet.packetId)
@@ -364,7 +424,8 @@ class NearbyMeshEngine(
     private fun publishPeers() {
         val direct = endpoints.values.filter { it.connected }.map {
             Peer(nodeId = it.nodeId, shortCode = shortCode(it.nodeId), tier = it.tier, transport = Transport.NEARBY_AUTO,
-                lastSeenMs = it.lastSeenMs, hasUwb = indirect[it.nodeId]?.hasUwb ?: false,
+                lastSeenMs = it.lastSeenMs, location = indirect[it.nodeId]?.location,
+                hasUwb = indirect[it.nodeId]?.hasUwb ?: false,
                 llmReady = indirect[it.nodeId]?.llmReady ?: false, direct = true)
         }
         val directIds = direct.map { it.nodeId }.toSet()
@@ -529,6 +590,9 @@ class NearbyMeshEngine(
         const val SERVICE_ID = "mu.proxima.mesh"
         const val ACTION_PING = "mu.proxima.mesh.PING"
         const val ACTION_ALLOW = "mu.proxima.mesh.ALLOW"
+        const val ACTION_ACOUSTIC = "mu.proxima.mesh.ACOUSTIC"
+        const val ACTION_CHIRP = "mu.proxima.mesh.CHIRP"
+        private const val ACOUSTIC_ENDPOINT = "acoustic"
         private const val BEACON_INTERVAL_MS = 10_000L
         private const val PEER_EXPIRY_MS = 35_000L
         private const val STORE_MS = 30 * 60 * 1000L

@@ -15,11 +15,12 @@ Proxima lets people raise and route emergencies, find lost children and get guid
        LOCATE (Yorvan) – UWB vs GPS vs RSSI: what works on which phone; AI row
      Also: "Surprise card" once drawn, and the final 5–10 decision shortlist (AI lane compiles ~10:00 Sat).
 
-     *** BLOCKER BEFORE SUBMITTING ***
-     The "Privacy" section and the signing/sealing claims in "How it works" describe the DESIGN. As of 16:00 Fri
-     they are NOT true in the build: TrustModule.createTrust ignores the `simulation` flag, so seal() is base64
-     and verify() accepts any signature (see #19). Either TinkTrustEngine lands, or these claims must be
-     softened before this README is submitted. Do not ship an untrue privacy claim — it is what judges check.
+     *** CHECK BEFORE SUBMITTING (was a blocker until 18:10 Fri) ***
+     The signing/sealing claims are now TRUE in the build with simulation OFF: TinkTrustEngine (Ed25519 + HPKE,
+     Keystore-backed) is wired in TrustModule, and 21 security tests pass on the JVM. Still NOT verified on a
+     phone. Before submitting: run `./gradlew :trust:connectedDebugAndroidTest` on a device, and do one
+     two-phone found-notice with simulation OFF. If neither happens, keep the claims but say "tested in unit
+     tests" rather than implying a device demo.
 -->
 
 ## Problem & user
