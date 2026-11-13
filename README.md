@@ -138,6 +138,8 @@ AGP 9.5.1 · Kotlin 2.4.21 · Gradle 9.9.1 · minSdk 26 · compileSdk 37.
 | 14:43 | Commit the **raw** Overpass response and map it in tested Kotlin | Licence, fetch date and coordinates stay verifiable against OSM |
 | 15:35 | **Drop the QR wristband**; the finder answers the guardian's alert instead | No wristband hardware or printing, and the flow works without it — same privacy, one less dependency |
 | 15:45 | Ship protocol cards with gaps rather than invent the missing four | A wrong protocol is more dangerous than an absent one |
+| 16:50 | **Reject a blockchain** for the trust layer; keep Ed25519 signatures + HPKE sealing | A ledger is public (a child's location on it inverts our privacy rule) and needs consensus, i.e. connectivity, the one thing a crowd does not have |
+| 18:05 | A node id is **derived from its key** and `verify()` rejects any packet whose id does not match | A valid signature alone lets an attacker claim someone else's id; binding the two makes ids unforgeable. The same 21-test security spec passes on the JVM and on two real phones |
 
 Full logs: `docs/DECISIONS.md` and `docs/lanes/*.md`.
 

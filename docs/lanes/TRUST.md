@@ -70,7 +70,9 @@ as the old handoff claimed.
 
 ### THE ONE THING THAT MATTERS NEXT
 **On-device: done for the Keystore.** 18:36 Fri, `./gradlew :trust:connectedDebugAndroidTest` on the Galaxy S24 Ultra
-(SM-S928B, Android 17): **21 tests, 0 failed**. Gradle prints no per-test lines for connected tests and `build/` is
+(SM-S928B, Android 17): **21 tests, 0 failed**. 18:50: also **21/21 on the Honor LLY-LX2 (X8b family, Android 14)**,
+run via `adb -s <serial> shell am instrument -w -r mu.proxima.trust.test/androidx.test.runner.AndroidJUnitRunner`
+because that phone has logcat switched off entirely (0 lines), so the TestRunner-tag method shows nothing there. Gradle prints no per-test lines for connected tests and `build/` is
 deny-listed, so read results with `adb logcat -d -s TestRunner:* | grep -E "started:|failed:|run finished"`.
 Remaining: one two-phone sealed found-notice with simulation OFF (needs MESH, asked on #19).
 Then: chase #23 (README sections due 10:30 Sat), and get `protocols.json` proof-read (gap 3 below).
@@ -162,6 +164,7 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 18:10 Fri | **`TinkTrustEngine` done and wired** for simulation OFF. Contract moved to `src/testFixtures`, strengthened (cross-device, impersonation, key substitution, bit-flip, unusable key) and passing 21/21 on the JVM. 51/51 trust tests; whole project green. Instrumented test compiles; no device to run it. |
 | 18:12 Fri | Found + fixed two build traps on the way: AGP 7.2+ forbids sharing one test dir between `test` and `androidTest` (-> test fixtures), and D8 rejects backtick test names below DEX 040 (-> underscores). Test logging now prints failure messages. |
 | 18:36 Fri | **First on-device run of this lane.** `:trust:connectedDebugAndroidTest` on the S24 Ultra (Android 17): 21/21 pass under the real Android Keystore, incl. `simulationOffUsesTheRealEngine`. Read via the `TestRunner` logcat tag since Gradle prints no per-test lines for connected tests. |
+| 18:50 Fri | Keystore contract **21/21 on the Honor LLY-LX2** (Android 14) too, via `am instrument` since that phone logs nothing to logcat. Found that the app classes it **TIER1** (7.47 GiB >= 7.0), so neither test phone is Tier 2 - reported to UI. Two-phone mesh test deferred until all lanes are on one build. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
