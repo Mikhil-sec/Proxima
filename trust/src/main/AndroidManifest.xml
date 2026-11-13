@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TRUST lane owns this file. Merged into the app manifest automatically. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Scanning a child's wristband QR (WristbandScanner). Nothing else in this lane uses the camera,
+         no frames are stored, and no image ever leaves the device. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- A phone with no camera can still be a guardian (mint wristbands) or a relay, so don't block install. -->
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+
+</manifest>
