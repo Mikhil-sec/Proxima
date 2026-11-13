@@ -73,6 +73,32 @@ _Saved 18:40 Fri by Seeya's session. Branch `lane/ai`, pushed, clean. Last AI me
 
 **Files touched today:** `ai/build.gradle.kts`, `ai/src/main/AndroidManifest.xml`, `ai/src/main/.../{AiModule.kt, triage/*, offload/*, voice/*, guide/*, crowd/*}`, `ai/src/debug/*`, `ai/src/test/*`, `core/.../pipeline/RuleTriageEngine.kt` (+ test), `gradle/libs.versions.toml` (+mlkit-genai-prompt), `docs/TEAM_ROLES.md`, `docs/lanes/AI.md`.
 
+## Decision shortlist draft (for README `## Key decisions`, team picks at 10:00 Sat)
+_Drafted 19:45 Fri from docs/DECISIONS.md, all five lane logs and TRUST's README draft. 10 proposed + 5 on the bench.
+TRUST's draft stopped at 18:05; the main change is adding the evening decisions. All times Fri 13 Nov._
+
+| Time | Decision | Why | Source |
+|---|---|---|---|
+| ~13:05 | Hero user = a parent at Maha Shivaratri (Ganga Talao), not "everyone at events" | A specific Mauritian user with real, measurable network congestion | DECISIONS |
+| ~13:10 | Cut the duress PIN, decoy calculator, cyber-warfare branding and LLM chatbot | Too many features, none finished; they did not serve the user | DECISIONS |
+| ~13:15 | One `Incident` pipeline for lost / sighting / found / medical / hazard / all-clear | One bus to build, test and explain instead of five subsystems | DECISIONS |
+| ~13:25 | The AI **selects** a cited protocol card and never writes medical advice; keyword rules always back it up | No hallucinated instruction can be read aloud, and SOS never depends on a model loading | DECISIONS |
+| 15:35 | **Drop the QR wristband**: the finder answers the guardian's alert, location sealed to the guardian | Same privacy with no hardware or printing; one less thing to fail | DECISIONS / UI |
+| 15:45 → 18:00 | Ship with **no card** for crowd crush, electrical, branch, flood rather than invent one | IFRC has no crush protocol; a confident wrong card is worse than none | TRUST |
+| 16:05 | Tell the whole team (and put it in the README) that simulation-OFF did not yet mean real crypto, instead of fixing it quietly | A privacy claim must be true in the build we submit | TRUST |
+| 16:50 | **Reject a blockchain**; keep Ed25519 signatures + HPKE sealing | A public ledger would expose a child's location and needs connectivity, the one thing a crowd doesn't have | TRUST |
+| 18:04 | AI pivot: stop chasing Kreol accuracy; build **hands-free CPR guidance** and **crowd-crush early warning** | Kreol can't be made accurate without a model or native reviewer; CPR and crush are where lives are lost at Ganga Talao | AI |
+| 18:48 → 19:37 | Gemini Nano unavailable on all our phones → **Gemma 4 E2B on LiteRT-LM**; measured on fixed reports, then added a **severity floor** because the model under-rated severity | Measured, not assumed: S24 Ultra 1.5 s/report; English + French under-triage 9 (rules) → 1 (shipped), with the tuning caveat stated | AI |
+
+**Bench (swap in if the team prefers):**
+| Time | Decision | Why | Source |
+|---|---|---|---|
+| 13:35 | Six Gradle modules, one owner each, fakes behind factories | Five developers in parallel with zero merge conflicts | DECISIONS |
+| 15:32 | Keyword rules can **raise** the model's severity but never lower it | Under-triage is the dangerous error | AI |
+| 17:15 | Beacons carry only the centre of a 25 m cell; crowd density is anonymous | Density without tracking anyone | MESH |
+| 18:50 | Acoustic SOS tones moved to near-ultrasound after the audible version disturbed other teams | Fallback when radio fails, without being a nuisance | MESH |
+| 18:39 | README states the RSSI radar fallback is simulation-only | Nearby Connections exposes no RSSI; honest over impressive | LOCATE |
+
 ## Progress log
 | Time | What |
 |---|---|
