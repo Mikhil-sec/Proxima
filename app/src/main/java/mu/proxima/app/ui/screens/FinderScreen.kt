@@ -1,32 +1,26 @@
 package mu.proxima.app.ui.screens
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,29 +30,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import mu.proxima.app.ProximaGraph
 import mu.proxima.app.ui.LostFound
 import mu.proxima.app.ui.Nav
 import mu.proxima.app.ui.Screen
 import mu.proxima.app.ui.ageLabel
-import mu.proxima.app.ui.components.BackButton
-import mu.proxima.app.ui.components.Glyph
-import mu.proxima.app.ui.components.GlyphIcon
-import mu.proxima.app.ui.components.PrimaryAction
-import mu.proxima.app.ui.components.QuietAction
-import mu.proxima.app.ui.components.rememberReducedMotion
+import mu.proxima.app.ui.components.BackIcon
+import mu.proxima.app.ui.components.Fact
+import mu.proxima.app.ui.components.LargeButton
+import mu.proxima.app.ui.components.SeverityBadge
+import mu.proxima.app.ui.components.Sym
+import mu.proxima.app.ui.components.SymbolIcon
+import mu.proxima.app.ui.components.safeButtonColors
+import mu.proxima.app.ui.components.sym
 import mu.proxima.app.ui.distanceLabel
 import mu.proxima.app.ui.incidentTitle
-import mu.proxima.app.ui.theme.Px
-import mu.proxima.app.ui.theme.grotesk
-import mu.proxima.app.ui.theme.mono
+import mu.proxima.app.ui.theme.semantic
+import mu.proxima.app.ui.theme.sizes
+import mu.proxima.app.ui.theme.spacing
 import mu.proxima.core.model.GeoMath
 import mu.proxima.core.model.GeoPoint
 import mu.proxima.core.model.HelpCategory
@@ -69,19 +60,31 @@ import mu.proxima.core.model.RankedHelpPoint
  * Finder: "I'm with someone who is lost." No hardware: pick the matching lost-person alert;
  * your location then goes, sealed, to that guardian's phone only.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FinderScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav) {
     val sharing = lostFound.sharingFor
-    if (sharing != null) {
-        SharingView(graph, lostFound, sharing, onDone = { lostFound.stopSharing(); nav.reset(Screen.Home) })
-    } else {
-        PickView(graph, lostFound, nav)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (sharing != null) "" else "Found someone?") },
+                navigationIcon = { BackIcon(nav::back) },
+            )
+        },
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            if (sharing != null) {
+                SharingView(graph, lostFound, sharing, onDone = { lostFound.stopSharing(); nav.reset(Screen.Home) })
+            } else {
+                PickView(graph, lostFound)
+            }
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PickView(graph: ProximaGraph, lostFound: LostFound, nav: Nav) {
+private fun ColumnScope.PickView(graph: ProximaGraph, lostFound: LostFound) {
     val incidents by graph.pipeline.incidents.collectAsStateWithLifecycle()
     val me by graph.locate.selfLocation.collectAsStateWithLifecycle()
     val now = rememberNow()
@@ -89,155 +92,142 @@ private fun PickView(graph: ProximaGraph, lostFound: LostFound, nav: Nav) {
     var confirm by remember { mutableStateOf<IncidentRecord?>(null) }
     var failed by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            BackButton(nav::back)
-        }
-        Column(Modifier.padding(horizontal = 20.dp)) {
-            Text("Found someone?", style = grotesk(30))
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "If they match an alert below, tap it. Their guardian is told where you are, and nobody else.",
-                style = grotesk(17, FontWeight.Medium, Px.Dim),
-            )
-            if (failed) {
-                Spacer(Modifier.height(12.dp))
+    Column(Modifier.padding(horizontal = MaterialTheme.spacing.lg)) {
+        Text(
+            "If they match an alert below, tap it. Their guardian is told where you are, and nobody else.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (failed) {
+            Spacer(Modifier.height(MaterialTheme.spacing.md))
+            Surface(color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer, shape = MaterialTheme.shapes.medium) {
                 Text(
                     "That alert reached this phone without a signature, so we can't reach its guardian. Stay with them and go to the nearest police post.",
-                    style = grotesk(15, FontWeight.Medium, Px.Amber),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(MaterialTheme.spacing.md),
                 )
             }
         }
-        Spacer(Modifier.height(12.dp))
-        if (lost.isEmpty()) {
-            NoLostAlerts(graph, me)
-        } else {
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(lost, key = { it.incident.id }) { r -> LostRow(r, me, now) { confirm = r } }
+    }
+    Spacer(Modifier.height(MaterialTheme.spacing.sm))
+    if (lost.isEmpty()) {
+        NoLostAlerts(graph, me)
+    } else {
+        LazyColumn(Modifier.weight(1f)) {
+            itemsIndexed(lost, key = { _, r -> r.incident.id }) { i, r ->
+                LostRow(r, me, now) { confirm = r }
+                if (i < lost.lastIndex) HorizontalDivider()
             }
         }
     }
 
     val pick = confirm
     if (pick != null) {
-        ModalBottomSheet(
-            onDismissRequest = { confirm = null },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = Px.Surface,
-            contentColor = Px.Text,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            dragHandle = { SheetHandle() },
-        ) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).navigationBarsPadding()) {
-                Text("Are you with them now?", style = grotesk(26))
-                Spacer(Modifier.height(8.dp))
-                Text("“${pick.incident.summary}”", style = grotesk(18, FontWeight.Medium))
-                Spacer(Modifier.height(12.dp))
+        ModalBottomSheet(onDismissRequest = { confirm = null }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = MaterialTheme.spacing.xxl)) {
+                Text("Are you with them now?", style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(MaterialTheme.spacing.sm))
+                Text("“${pick.incident.summary}”", style = MaterialTheme.typography.bodyLarge)
+                Spacer(Modifier.height(MaterialTheme.spacing.md))
                 Text(
                     "Your location will go to their guardian's phone every few seconds until you stop. Nobody else can read it.",
-                    style = grotesk(15, FontWeight.Medium, Px.Dim),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(24.dp))
-                PrimaryAction("Yes, I'm with them", {
+                Spacer(Modifier.height(MaterialTheme.spacing.xxl))
+                LargeButton("Yes, I'm with them", {
                     failed = !lostFound.startSharing(pick)
                     confirm = null
                 })
-                QuietAction("Not them", { confirm = null }, Modifier.fillMaxWidth(), color = Px.Dim)
-                Spacer(Modifier.height(16.dp))
+                TextButton(onClick = { confirm = null }, modifier = Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.sm)) {
+                    Text("Not them")
+                }
+                Spacer(Modifier.height(MaterialTheme.spacing.lg))
             }
         }
     }
-}
-
-@Composable
-fun SheetHandle() {
-    Box(Modifier.padding(vertical = 12.dp).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Px.Line))
 }
 
 @Composable
 private fun LostRow(r: IncidentRecord, me: GeoPoint?, now: Long, onClick: () -> Unit) {
     val i = r.incident
     val distance = if (me != null && i.location != null) GeoMath.distanceM(me, i.location!!) else null
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(role = Role.Button, onClickLabel = "I'm with this person", onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        GlyphIcon(Glyph.Person, Px.Amber, 28.dp)
-        Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(1f)) {
-            Text(incidentTitle(i.type, i.subtype), style = grotesk(20))
-            Spacer(Modifier.height(4.dp))
-            Text(i.summary, style = grotesk(17, FontWeight.Medium))
-            i.landmark?.let { Text("Last seen $it", style = grotesk(14, FontWeight.Medium, Px.Dim)) }
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(ageLabel(r.lastUpdatedMs, now), style = mono(13, color = Px.Text))
-            distance?.let { Text(distanceLabel(it), style = mono(13)) }
-        }
-    }
+    val s = MaterialTheme.semantic
+    ListItem(
+        modifier = Modifier.clickable(role = Role.Button, onClickLabel = "I'm with this person", onClick = onClick),
+        headlineContent = { Text(incidentTitle(i.type, i.subtype), style = MaterialTheme.typography.titleMedium) },
+        supportingContent = {
+            Column {
+                Text(i.summary, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                i.landmark?.let { Text("Last seen $it") }
+            }
+        },
+        leadingContent = { SeverityBadge(Sym.LostPerson, s.cautionContainer, s.onCautionContainer, null) },
+        trailingContent = {
+            Column(horizontalAlignment = Alignment.End) {
+                Text(ageLabel(r.lastUpdatedMs, now), style = MaterialTheme.typography.labelLarge)
+                distance?.let { Text(distanceLabel(it), style = MaterialTheme.typography.labelMedium) }
+            }
+        },
+    )
 }
 
 /** Empty state still gives direction: stay visible, and where the nearest police are. */
 @Composable
 private fun ColumnScope.NoLostAlerts(graph: ProximaGraph, me: GeoPoint?) {
     var police by remember { mutableStateOf<RankedHelpPoint?>(null) }
-    LaunchedEffect(me) { police = me?.let { graph.helpPoints.nearest(it, setOf(HelpCategory.POLICE), 1).firstOrNull() } }
-    Column(Modifier.weight(1f).padding(horizontal = 20.dp, vertical = 24.dp)) {
-        GlyphIcon(Glyph.Mesh, Px.Dim, 40.dp)
-        Spacer(Modifier.height(16.dp))
-        Text("Nobody has been reported lost near you yet.", style = grotesk(20))
-        Spacer(Modifier.height(8.dp))
+    LaunchedEffect(me) { police = me?.let { runCatching { graph.helpPoints.nearest(it, setOf(HelpCategory.POLICE), 1).firstOrNull() }.getOrNull() } }
+    Column(
+        Modifier.weight(1f).fillMaxWidth().padding(MaterialTheme.spacing.xxxl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        SymbolIcon(Sym.LostPerson, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, size = MaterialTheme.sizes.iconLarge)
+        Spacer(Modifier.height(MaterialTheme.spacing.md))
+        Text("Nobody has been reported lost near you yet", style = MaterialTheme.typography.headlineSmall)
+        Spacer(Modifier.height(MaterialTheme.spacing.sm))
         Text(
             "Stay with them somewhere safe and visible. If their guardian reports them, the alert appears here.",
-            style = grotesk(17, FontWeight.Medium, Px.Dim),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         police?.let { p ->
-            Spacer(Modifier.height(24.dp))
-            Text("Nearest police", style = grotesk(15, FontWeight.Medium, Px.Dim))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(p.point.name, style = grotesk(18, FontWeight.Bold), modifier = Modifier.weight(1f))
-                Text(distanceLabel(p.distanceM), style = mono(16, FontWeight.Bold, Px.Text))
-            }
-            Text(p.point.source, style = grotesk(12, FontWeight.Medium, Px.Dim))
+            Spacer(Modifier.height(MaterialTheme.spacing.xxl))
+            ListItem(
+                overlineContent = { Text("Nearest police") },
+                headlineContent = { Text(p.point.name) },
+                supportingContent = { Text(p.point.source) },
+                leadingContent = { SymbolIcon(p.point.category.sym(), null) },
+                trailingContent = { Text(distanceLabel(p.distanceM), style = MaterialTheme.typography.titleMedium) },
+            )
         }
     }
 }
 
-/** Finder after confirming: one message, one action. A slow green pulse says "still sending". */
+/** Finder after confirming: one message, one action. No looping motion; the timer shows it is still running. */
 @Composable
-private fun SharingView(graph: ProximaGraph, lostFound: LostFound, lost: IncidentRecord, onDone: () -> Unit) {
+private fun ColumnScope.SharingView(graph: ProximaGraph, lostFound: LostFound, lost: IncidentRecord, onDone: () -> Unit) {
     val now = rememberNow()
-    val reducedMotion = rememberReducedMotion()
-    val pulse = if (reducedMotion) 0f else {
-        val t = rememberInfiniteTransition(label = "pulse")
-        t.animateFloat(0f, 1f, infiniteRepeatable(tween(2000, easing = LinearEasing), RepeatMode.Restart), label = "p").value
-    }
+    val peers by graph.mesh.peers.collectAsStateWithLifecycle()
     val secs = ((now - lostFound.sharingSinceMs) / 1000).coerceAtLeast(0)
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Spacer(Modifier.height(48.dp))
-        Canvas(Modifier.size(72.dp)) {
-            val c = Offset(size.width / 2, size.height / 2)
-            drawCircle(Px.Green.copy(alpha = 0.4f * (1f - pulse)), radius = size.minDimension / 2 * (0.4f + 0.6f * pulse), center = c, style = Stroke(2.dp.toPx()))
-            drawCircle(Px.Green, radius = size.minDimension * 0.16f, center = c)
-        }
-        Spacer(Modifier.height(20.dp))
-        Text("Their guardian has been told", style = grotesk(32))
-        Spacer(Modifier.height(10.dp))
+    Column(Modifier.weight(1f).padding(horizontal = MaterialTheme.spacing.xl)) {
+        SymbolIcon(Sym.Location, description = null, tint = MaterialTheme.semantic.safe, size = MaterialTheme.sizes.iconLarge)
+        Spacer(Modifier.height(MaterialTheme.spacing.lg))
+        Text("Their guardian has been told", style = MaterialTheme.typography.displaySmall)
+        Spacer(Modifier.height(MaterialTheme.spacing.sm))
         Text(
             "Stay where you are. Your location goes only to their guardian's phone, every few seconds.",
-            style = grotesk(18, FontWeight.Medium, Px.Dim),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(MaterialTheme.spacing.xxl))
         Fact("Looking for", lost.incident.summary)
-        Fact("Sharing for", "%d:%02d".format(secs / 60, secs % 60), valueMono = true)
-        Fact("Phones around", graph.mesh.peers.collectAsStateWithLifecycle().value.size.toString(), valueMono = true)
-        Spacer(Modifier.weight(1f))
-        PrimaryAction("Their guardian is here", onDone, glyph = Glyph.Check)
-        QuietAction("Stop sharing", onDone, Modifier.fillMaxWidth(), color = Px.Dim)
-        Spacer(Modifier.height(8.dp))
+        Fact("Sharing for", "%d:%02d".format(secs / 60, secs % 60))
+        Fact("Phones around", peers.size.toString())
+    }
+    Column(Modifier.padding(horizontal = MaterialTheme.spacing.xl)) {
+        LargeButton("Their guardian is here", onDone, sym = Sym.Done, colors = safeButtonColors())
+        TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.sm)) { Text("Stop sharing") }
     }
 }

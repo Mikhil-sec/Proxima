@@ -4,17 +4,14 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +29,7 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
 import mu.proxima.app.ProximaGraph
 import mu.proxima.app.ui.components.rememberReducedMotion
+import mu.proxima.app.ui.theme.Motion
 import mu.proxima.app.ui.screens.BootScreen
 import mu.proxima.app.ui.screens.CommandCenterScreen
 import mu.proxima.app.ui.screens.DevSheet
@@ -41,7 +39,6 @@ import mu.proxima.app.ui.screens.FoundAlertScreen
 import mu.proxima.app.ui.screens.RadarScreen
 import mu.proxima.app.ui.screens.HomeScreen
 import mu.proxima.app.ui.screens.ReportScreen
-import mu.proxima.app.ui.theme.Px
 import mu.proxima.core.model.DeviceTier
 import mu.proxima.core.model.IncidentType
 
@@ -119,12 +116,12 @@ fun ProximaRoot(graph: ProximaGraph) {
         nav.back()
     }
 
-    Box(Modifier.fillMaxSize().background(Px.Black).windowInsetsPadding(WindowInsets.safeDrawing)) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         AnimatedContent(
             targetState = nav.current,
             transitionSpec = {
-                if (reducedMotion) fadeIn(tween(0)) togetherWith fadeOut(tween(0))
-                else (fadeIn(tween(220)) + slideInHorizontally(tween(220)) { it / 12 }) togetherWith fadeOut(tween(120))
+                (fadeIn(Motion.enter(reducedMotion)) + slideInHorizontally(Motion.enter(reducedMotion)) { it / 12 }) togetherWith
+                    fadeOut(Motion.exit(reducedMotion))
             },
             label = "screen",
         ) { screen ->

@@ -1,27 +1,26 @@
 package mu.proxima.app.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,12 +32,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -47,21 +42,23 @@ import mu.proxima.app.ui.LostFound
 import mu.proxima.app.ui.Nav
 import mu.proxima.app.ui.Screen
 import mu.proxima.app.ui.ageLabel
-import mu.proxima.app.ui.components.BackButton
-import mu.proxima.app.ui.components.Glyph
-import mu.proxima.app.ui.components.GlyphIcon
+import mu.proxima.app.ui.components.BackIcon
+import mu.proxima.app.ui.components.Fact
+import mu.proxima.app.ui.components.LargeButton
 import mu.proxima.app.ui.components.NearestHelp
-import mu.proxima.app.ui.components.PrimaryAction
-import mu.proxima.app.ui.components.Rail
-import mu.proxima.app.ui.components.SimBadge
+import mu.proxima.app.ui.components.SeverityBadge
+import mu.proxima.app.ui.components.SimLabel
+import mu.proxima.app.ui.components.Sym
+import mu.proxima.app.ui.components.SymbolIcon
 import mu.proxima.app.ui.components.VerifiedMark
 import mu.proxima.app.ui.distanceLabel
-import mu.proxima.app.ui.label
 import mu.proxima.app.ui.incidentTitle
-import mu.proxima.app.ui.theme.Px
-import mu.proxima.app.ui.theme.color
-import mu.proxima.app.ui.theme.grotesk
-import mu.proxima.app.ui.theme.mono
+import mu.proxima.app.ui.label
+import mu.proxima.app.ui.sym
+import mu.proxima.app.ui.theme.container
+import mu.proxima.app.ui.theme.fill
+import mu.proxima.app.ui.theme.sizes
+import mu.proxima.app.ui.theme.spacing
 import mu.proxima.core.model.GeoMath
 import mu.proxima.core.model.GeoPoint
 import mu.proxima.core.model.IncidentRecord
@@ -76,6 +73,7 @@ fun rememberNow(periodMs: Long = 1_000): Long {
     return now
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav) {
     val incidents by graph.pipeline.incidents.collectAsStateWithLifecycle()
@@ -86,24 +84,46 @@ fun FeedScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav) {
     val now = rememberNow()
     var selected by remember { mutableStateOf<String?>(null) }
 
-    Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            BackButton(nav::back)
-            Spacer(Modifier.weight(1f))
-            if (graph.simulation) SimBadge(Modifier.padding(end = 12.dp))
-        }
-        Text("Alerts near you", style = grotesk(30), modifier = Modifier.padding(horizontal = 20.dp))
-        Text(
-            if (open.isEmpty()) "Nothing reported around you right now." else "Most urgent first. Tap one for details.",
-            style = grotesk(16, FontWeight.Medium, Px.Dim),
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
-        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Alerts near you") },
+                navigationIcon = { BackIcon(nav::back) },
+                actions = { if (graph.simulation) SimLabel(Modifier.padding(end = MaterialTheme.spacing.lg)) },
+            )
+        },
+    ) { padding ->
         if (open.isEmpty()) {
-            EmptyFeed()
+            Column(
+                Modifier.fillMaxSize().padding(padding).padding(MaterialTheme.spacing.xxxl),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                SymbolIcon(Sym.Mesh, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, size = MaterialTheme.sizes.iconLarge)
+                Spacer(Modifier.height(MaterialTheme.spacing.md))
+                Text("No alerts near you", style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.height(MaterialTheme.spacing.sm))
+                Text(
+                    "Alerts from phones around you appear here, even with no mobile signal.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         } else {
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)) {
-                items(open, key = { it.incident.id }) { record ->
-                    IncidentRow(record, me, now, Modifier.animateItem()) { selected = record.incident.id }
+            LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+                item {
+                    Text(
+                        "Most urgent first. Tap one for details.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.lg, vertical = MaterialTheme.spacing.sm),
+                    )
+                }
+                itemsIndexed(open, key = { _, r -> r.incident.id }) { i, record ->
+                    Column(Modifier.animateItem()) {
+                        IncidentRow(record, me, now) { selected = record.incident.id }
+                        if (i < open.lastIndex) HorizontalDivider()
+                    }
                 }
             }
         }
@@ -121,60 +141,36 @@ fun FeedScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav) {
 }
 
 @Composable
-private fun EmptyFeed() {
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp), verticalArrangement = Arrangement.Center) {
-        GlyphIcon(Glyph.Mesh, Px.Dim, 40.dp)
-        Spacer(Modifier.height(16.dp))
-        Text(
-            "Alerts from phones around you appear here, even with no mobile signal.",
-            style = grotesk(18, FontWeight.Medium, Px.Dim),
-        )
-    }
-}
-
-@Composable
-fun IncidentRow(record: IncidentRecord, me: GeoPoint?, now: Long, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun IncidentRow(record: IncidentRecord, me: GeoPoint?, now: Long, onClick: () -> Unit) {
     val i = record.incident
     val distance = if (me != null && i.location != null) GeoMath.distanceM(me, i.location!!) else null
-    Row(
-        modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 14.dp)
-            .alpha(if (record.resolved) 0.45f else 1f),
-    ) {
-        Rail(i.severity.color(), Modifier.fillMaxHeight())
-        Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.Top) {
-                Text(
-                    incidentTitle(i.type, i.subtype),
-                    style = grotesk(20),
-                    modifier = Modifier.weight(1f),
-                )
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(ageLabel(record.lastUpdatedMs, now), style = mono(13, color = Px.Text))
-                    distance?.let { Text(distanceLabel(it), style = mono(13)) }
+    val (container, content) = i.severity.container()
+    ListItem(
+        modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
+        overlineContent = { Text("${i.severity.label()}, ${i.type.label().lowercase()}") },
+        headlineContent = { Text(incidentTitle(i.type, i.subtype), style = MaterialTheme.typography.titleMedium) },
+        supportingContent = {
+            Column {
+                Text(i.summary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(MaterialTheme.spacing.xs))
+                Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.md), verticalAlignment = Alignment.CenterVertically) {
+                    VerifiedMark(record.signatureValid)
+                    if (i.reportCount > 1) Text("${i.reportCount} reports", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        when (record.hopsTravelled) { 0 -> "From you"; 1 -> "1 hop"; else -> "${record.hopsTravelled} hops" },
+                        style = MaterialTheme.typography.labelMedium,
+                    )
                 }
             }
-            Text(
-                "${i.type.label()}, ${i.severity.label().lowercase()}",
-                style = grotesk(14, FontWeight.Medium, i.severity.color()),
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(i.summary, style = grotesk(16, FontWeight.Medium, Px.Text), maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                VerifiedMark(record.signatureValid)
-                if (i.reportCount > 1) Text("${i.reportCount} reports", style = grotesk(13, FontWeight.Medium, Px.Dim))
-                Text(
-                    when (record.hopsTravelled) { 0 -> "From you"; 1 -> "1 hop"; else -> "${record.hopsTravelled} hops" },
-                    style = grotesk(13, FontWeight.Medium, Px.Dim),
-                )
+        },
+        leadingContent = { SeverityBadge(i.type.sym(), container, content, description = null) },
+        trailingContent = {
+            Column(horizontalAlignment = Alignment.End) {
+                Text(ageLabel(record.lastUpdatedMs, now), style = MaterialTheme.typography.labelLarge)
+                distance?.let { Text(distanceLabel(it), style = MaterialTheme.typography.labelMedium) }
             }
-        }
-    }
+        },
+    )
 }
 
 /** Incident detail: what it is, who sorted it, what to do, where help is. Bottom sheet, never a dialog. */
@@ -193,61 +189,64 @@ fun IncidentSheet(
     val scope = rememberCoroutineScope()
     var protocol by remember { mutableStateOf<ProtocolCard?>(null) }
     LaunchedEffect(i.id) {
-        protocol = (i.protocolId?.let { graph.protocols.byId(it) }) ?: graph.protocols.bestFor(i.type, i.subtype)
+        protocol = runCatching { (i.protocolId?.let { graph.protocols.byId(it) }) ?: graph.protocols.bestFor(i.type, i.subtype) }.getOrNull()
     }
+    val (fill, onFill) = i.severity.fill()
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = state,
-        containerColor = Px.Surface,
-        contentColor = Px.Text,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        dragHandle = {
-            Box(Modifier.padding(vertical = 12.dp).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Px.Line))
-        },
-    ) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).navigationBarsPadding()) {
-            Text(i.severity.label(), style = grotesk(15, FontWeight.Medium, i.severity.color()))
-            Text(incidentTitle(i.type, i.subtype), style = grotesk(28))
-            Spacer(Modifier.height(8.dp))
-            Text(i.summary, style = grotesk(17, FontWeight.Medium))
-            Spacer(Modifier.height(20.dp))
-            Fact("Severity", i.severity.label())
-            i.landmark?.let { Fact("Where", it) }
-            i.peopleCount?.let { Fact("People", it.toString()) }
-            Fact("Sorted by", i.triagedBy.label())
-            Fact("Signature", if (record.signatureValid) "Verified" else "Not verified, treat with care")
-            Fact("Travelled", if (record.hopsTravelled == 0) "Sent from this phone" else "${record.hopsTravelled} hops")
-            if (i.reportCount > 1) Fact("Reports", "${i.reportCount} people reported this")
-
-            protocol?.let { card ->
-                Spacer(Modifier.height(20.dp))
-                Text(card.title, style = grotesk(20))
-                Spacer(Modifier.height(8.dp))
-                card.steps.take(4).forEachIndexed { n, step ->
-                    Row(Modifier.padding(vertical = 6.dp)) {
-                        Text("${n + 1}", style = mono(16, FontWeight.Bold, Px.Text), modifier = Modifier.width(28.dp))
-                        Text(step.text, style = grotesk(17, FontWeight.Medium))
-                    }
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state) {
+        LazyColumn(Modifier.fillMaxWidth().padding(horizontal = MaterialTheme.spacing.xxl)) {
+            item {
+                Surface(color = fill, contentColor = onFill, shape = MaterialTheme.shapes.small) {
+                    Text(
+                        i.severity.label(),
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.sm, vertical = MaterialTheme.spacing.xs),
+                    )
                 }
-                Text("Source: ${card.source}", style = grotesk(13, FontWeight.Medium, Px.Dim))
+                Spacer(Modifier.height(MaterialTheme.spacing.sm))
+                Text(incidentTitle(i.type, i.subtype), style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(MaterialTheme.spacing.sm))
+                Text(i.summary, style = MaterialTheme.typography.bodyLarge)
+                Spacer(Modifier.height(MaterialTheme.spacing.lg))
+                i.landmark?.let { Fact("Where", it) }
+                i.peopleCount?.let { Fact("People", it.toString()) }
+                Fact("Sorted by", i.triagedBy.label())
+                Fact("Signature", if (record.signatureValid) "Verified" else "Not verified, treat with care")
+                Fact("Travelled", if (record.hopsTravelled == 0) "Sent from this phone" else "${record.hopsTravelled} hops")
+                if (i.reportCount > 1) Fact("Reports", "${i.reportCount} people reported this")
             }
-
-            Spacer(Modifier.height(20.dp))
-            NearestHelp(graph, me ?: i.location, i.type.helpCategories)
-
-            Spacer(Modifier.height(24.dp))
-            if (onWithThem != null) {
-                PrimaryAction("I'm with this person", onWithThem, glyph = Glyph.Person)
-                Spacer(Modifier.height(8.dp))
+            protocol?.let { card ->
+                item {
+                    Spacer(Modifier.height(MaterialTheme.spacing.lg))
+                    Text(card.title, style = MaterialTheme.typography.titleLarge)
+                }
+                itemsIndexed(card.steps.take(4)) { n, step ->
+                    ListItem(
+                        headlineContent = { Text(step.text, style = MaterialTheme.typography.bodyLarge) },
+                        leadingContent = { Text("${n + 1}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary) },
+                    )
+                }
+                item { Text("Source: ${card.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
-            if (!record.resolved && canResolve) {
-                PrimaryAction("Mark as resolved", onClick = {
-                    graph.scope.launch { graph.pipeline.resolve(i.id) }
-                    scope.launch { state.hide() }.invokeOnCompletion { onDismiss() }
-                })
+            item {
+                Spacer(Modifier.height(MaterialTheme.spacing.lg))
+                NearestHelp(graph, me ?: i.location, i.type.helpCategories)
+                Spacer(Modifier.height(MaterialTheme.spacing.xxl))
+                if (onWithThem != null) {
+                    LargeButton("I'm with this person", onWithThem, sym = Sym.Person)
+                    Spacer(Modifier.height(MaterialTheme.spacing.sm))
+                }
+                if (!record.resolved && canResolve) {
+                    OutlinedButton(
+                        onClick = {
+                            graph.scope.launch { graph.pipeline.resolve(i.id) }
+                            scope.launch { state.hide() }.invokeOnCompletion { onDismiss() }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(MaterialTheme.sizes.touchTarget),
+                    ) { Text("Mark as resolved") }
+                }
+                Spacer(Modifier.height(MaterialTheme.spacing.xxl))
             }
-            Spacer(Modifier.height(16.dp))
         }
     }
 }

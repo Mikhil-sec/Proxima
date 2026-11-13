@@ -4,26 +4,31 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,17 +39,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.ImeAction
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -53,19 +55,22 @@ import mu.proxima.app.ProximaGraph
 import mu.proxima.app.ui.Nav
 import mu.proxima.app.ui.Screen
 import mu.proxima.app.ui.VoiceCapture
-import mu.proxima.app.ui.components.BackButton
-import mu.proxima.app.ui.components.Glyph
-import mu.proxima.app.ui.components.GlyphIcon
+import mu.proxima.app.ui.components.BackIcon
+import mu.proxima.app.ui.components.Fact
+import mu.proxima.app.ui.components.LargeButton
 import mu.proxima.app.ui.components.NearestHelp
-import mu.proxima.app.ui.components.PrimaryAction
-import mu.proxima.app.ui.components.QuietAction
-import mu.proxima.app.ui.components.Rail
-import mu.proxima.app.ui.label
+import mu.proxima.app.ui.components.SeverityBadge
+import mu.proxima.app.ui.components.Sym
+import mu.proxima.app.ui.components.SymbolIcon
+import mu.proxima.app.ui.components.criticalButtonColors
 import mu.proxima.app.ui.incidentTitle
-import mu.proxima.app.ui.theme.Px
-import mu.proxima.app.ui.theme.color
-import mu.proxima.app.ui.theme.grotesk
-import mu.proxima.app.ui.theme.mono
+import mu.proxima.app.ui.label
+import mu.proxima.app.ui.sym
+import mu.proxima.app.ui.theme.container
+import mu.proxima.app.ui.theme.fill
+import mu.proxima.app.ui.theme.semantic
+import mu.proxima.app.ui.theme.sizes
+import mu.proxima.app.ui.theme.spacing
 import mu.proxima.core.model.Incident
 import mu.proxima.core.model.IncidentType
 import mu.proxima.core.model.ProtocolCard
@@ -86,6 +91,7 @@ private const val AUTO_SEND_MS = 3_000
  * Report flow: listen → show what the AI understood → auto-send after 3 s unless cancelled → "Alert sent".
  * The preview uses the same TriageEngine the pipeline uses, so what you see is what goes out.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportScreen(graph: ProximaGraph, capture: VoiceCapture, nav: Nav, hint: IncidentType?, fromHold: Boolean) {
     val scope = rememberCoroutineScope()
@@ -125,22 +131,40 @@ fun ReportScreen(graph: ProximaGraph, capture: VoiceCapture, nav: Nav, hint: Inc
         }
     }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (stage !is Stage.Sent) BackButton(::leave)
-            Spacer(Modifier.weight(1f))
-            if (hint != null && stage !is Stage.Sent) HintTag(hint)
-        }
-        when (val s = stage) {
-            Stage.Capture -> CaptureView(
-                capture, hint,
-                onDone = capture::stop,
-                onType = { capture.cancel(); stage = Stage.Typing },
-                onSkip = hint?.let { h -> { capture.cancel(); classify(defaultText(h)) } },
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (stage is Stage.Sent) "" else "Report") },
+                navigationIcon = { if (stage !is Stage.Sent) BackIcon(::leave) },
+                actions = {
+                    if (hint != null && stage !is Stage.Sent) {
+                        AssistChip(
+                            onClick = {},
+                            label = { Text(hint.label()) },
+                            leadingIcon = { SymbolIcon(hint.sym(), null, size = MaterialTheme.sizes.iconSmall) },
+                        )
+                        Spacer(Modifier.width(MaterialTheme.spacing.lg))
+                    }
+                },
             )
-            Stage.Typing -> TypingView(capture.error, hint, onCheck = ::classify)
-            is Stage.Review -> ReviewView(s.raw, s.result, onSend = { send(s.raw) }, onCancel = ::leave)
-            is Stage.Sent -> SentView(graph, s.incident, reached.size, onDone = { nav.reset(Screen.Home) }, onAlerts = { nav.reset(Screen.Home); nav.go(Screen.Feed) })
+        },
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = MaterialTheme.spacing.xl).imePadding()) {
+            when (val s = stage) {
+                Stage.Capture -> CaptureView(
+                    capture, hint,
+                    onDone = capture::stop,
+                    onType = { capture.cancel(); stage = Stage.Typing },
+                    onSkip = hint?.let { h -> { capture.cancel(); classify(defaultText(h)) } },
+                )
+                Stage.Typing -> TypingView(capture.error, hint, onCheck = ::classify)
+                is Stage.Review -> ReviewView(s.raw, s.result, onSend = { send(s.raw) }, onCancel = ::leave)
+                is Stage.Sent -> SentView(
+                    graph, s.incident, reached.size,
+                    onDone = { nav.reset(Screen.Home) },
+                    onAlerts = { nav.reset(Screen.Home); nav.go(Screen.Feed) },
+                )
+            }
         }
     }
 }
@@ -160,24 +184,7 @@ private fun promptFor(hint: IncidentType?) = when (hint) {
 }
 
 @Composable
-private fun HintTag(hint: IncidentType) {
-    val glyph = when (hint) {
-        IncidentType.MEDICAL -> Glyph.Medical
-        IncidentType.HAZARD -> Glyph.Hazard
-        else -> Glyph.Person
-    }
-    Row(
-        Modifier.border(1.dp, Px.Line, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        GlyphIcon(glyph, Px.Text, 18.dp)
-        Spacer(Modifier.width(8.dp))
-        Text(hint.label(), style = grotesk(14, FontWeight.Medium))
-    }
-}
-
-@Composable
-private fun androidx.compose.foundation.layout.ColumnScope.CaptureView(
+private fun ColumnScope.CaptureView(
     capture: VoiceCapture,
     hint: IncidentType?,
     onDone: () -> Unit,
@@ -185,204 +192,186 @@ private fun androidx.compose.foundation.layout.ColumnScope.CaptureView(
     onSkip: (() -> Unit)?,
 ) {
     val listening = capture.phase == VoiceCapture.Phase.Listening
-    Spacer(Modifier.height(12.dp))
-    Text(if (listening) "Listening" else "Understanding", style = grotesk(16, FontWeight.Medium, if (listening) Px.Crimson else Px.Dim))
-    Spacer(Modifier.height(8.dp))
-    Text(promptFor(hint), style = grotesk(28))
-    Spacer(Modifier.height(32.dp))
-    Waveform(capture.levels, active = listening, modifier = Modifier.fillMaxWidth().height(112.dp))
-    Spacer(Modifier.height(28.dp))
+    Text(
+        if (listening) "Listening" else "Working out what's needed",
+        style = MaterialTheme.typography.labelLarge,
+        color = if (listening) MaterialTheme.semantic.critical else MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(MaterialTheme.spacing.sm))
+    Text(promptFor(hint), style = MaterialTheme.typography.headlineMedium)
+    Spacer(Modifier.height(MaterialTheme.spacing.xxxl))
+    Waveform(capture.levels, active = listening, modifier = Modifier.fillMaxWidth().height(MaterialTheme.sizes.touchTarget * 2))
+    Spacer(Modifier.height(MaterialTheme.spacing.xxl))
     Text(
         capture.transcript.ifBlank { if (listening) "Speak now. Any language is fine." else "" },
-        style = grotesk(24, FontWeight.Medium, if (capture.transcript.isBlank()) Px.Dim else Px.Text),
+        style = MaterialTheme.typography.headlineSmall,
+        color = if (capture.transcript.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.weight(1f),
     )
-    if (listening) PrimaryAction("Done talking", onDone, glyph = Glyph.Check)
-    Spacer(Modifier.height(8.dp))
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        QuietAction("Type instead", onType)
-        if (onSkip != null) QuietAction("Send without describing", onSkip, color = Px.Dim)
+    if (listening) LargeButton("Done talking", onDone, sym = Sym.Done)
+    Row(Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.sm), horizontalArrangement = Arrangement.SpaceBetween) {
+        TextButton(onClick = onType) {
+            SymbolIcon(Sym.Keyboard, null, size = MaterialTheme.sizes.iconSmall)
+            Spacer(Modifier.width(MaterialTheme.spacing.sm))
+            Text("Type instead")
+        }
+        if (onSkip != null) TextButton(onClick = onSkip) { Text("Send without describing") }
     }
-    Spacer(Modifier.height(8.dp))
 }
 
-/** Live voice: mirrored bars, newest on the right. Flat line when silent so it never looks broken. */
+/** Live voice: mirrored bars, newest on the right. A flat line when silent so it never looks broken. */
 @Composable
 private fun Waveform(levels: List<Float>, active: Boolean, modifier: Modifier) {
+    val activeColor = MaterialTheme.semantic.critical
+    val idleColor = MaterialTheme.colorScheme.outlineVariant
+    val gapDp = MaterialTheme.spacing.xs
     Canvas(modifier.semantics { contentDescription = if (active) "Voice level" else "Voice captured" }) {
         val n = 40
-        val gap = 4.dp.toPx()
+        val gap = gapDp.toPx()
         val w = (size.width - gap * (n - 1)) / n
         val mid = size.height / 2
         for (i in 0 until n) {
             val idx = levels.size - n + i
             val lv = if (idx >= 0) levels[idx] else 0f
-            val h = (4.dp.toPx() + lv * (size.height - 4.dp.toPx())).coerceAtMost(size.height)
-            val color = if (active) Px.Crimson.copy(alpha = 0.35f + 0.65f * lv) else Px.Dim.copy(alpha = 0.5f)
+            val h = (w + lv * (size.height - w)).coerceAtMost(size.height)
+            val color = if (active) activeColor.copy(alpha = 0.35f + 0.65f * lv) else idleColor
             drawRoundRect(color, Offset(i * (w + gap), mid - h / 2), Size(w, h), CornerRadius(w / 2))
         }
     }
 }
 
 @Composable
-private fun androidx.compose.foundation.layout.ColumnScope.TypingView(error: String?, hint: IncidentType?, onCheck: (String) -> Unit) {
+private fun ColumnScope.TypingView(error: String?, hint: IncidentType?, onCheck: (String) -> Unit) {
     var text by remember { mutableStateOf("") }
-    Spacer(Modifier.height(12.dp))
     if (error != null) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            GlyphIcon(Glyph.Mic, Px.Amber, 18.dp)
-            Spacer(Modifier.width(8.dp))
-            Text("Microphone didn't work. Type what's happening instead.", style = grotesk(15, FontWeight.Medium, Px.Amber))
+        Surface(
+            color = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Row(Modifier.padding(MaterialTheme.spacing.md), verticalAlignment = Alignment.CenterVertically) {
+                SymbolIcon(Sym.Mic, null)
+                Spacer(Modifier.width(MaterialTheme.spacing.md))
+                Text("The microphone didn't work. Type what's happening instead.", style = MaterialTheme.typography.bodyMedium)
+            }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(MaterialTheme.spacing.lg))
     }
-    Text(promptFor(hint), style = grotesk(28))
-    Spacer(Modifier.height(24.dp))
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 140.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(Px.Surface)
-            .padding(20.dp),
-    ) {
-        if (text.isEmpty()) Text("For example: man collapsed near the temple steps", style = grotesk(20, FontWeight.Medium, Px.Dim))
-        BasicTextField(
-            value = text,
-            onValueChange = { text = it.take(280) },
-            textStyle = grotesk(20, FontWeight.Medium),
-            cursorBrush = SolidColor(Px.Text),
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
+    Text(promptFor(hint), style = MaterialTheme.typography.headlineMedium)
+    Spacer(Modifier.height(MaterialTheme.spacing.xxl))
+    OutlinedTextField(
+        value = text,
+        onValueChange = { text = it.take(280) },
+        label = { Text("What's happening") },
+        placeholder = { Text("For example: man collapsed near the temple steps") },
+        supportingText = { Text("Say where, if you can. No names.") },
+        minLines = 3,
+        maxLines = 6,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        modifier = Modifier.fillMaxWidth(),
+    )
     Spacer(Modifier.weight(1f))
-    PrimaryAction("Check alert", { onCheck(text) }, enabled = text.isNotBlank())
-    Spacer(Modifier.height(16.dp))
+    LargeButton("Check alert", { onCheck(text) }, enabled = text.isNotBlank())
+    Spacer(Modifier.height(MaterialTheme.spacing.lg))
 }
 
 @Composable
-private fun androidx.compose.foundation.layout.ColumnScope.ReviewView(
-    raw: RawReport,
-    result: TriageResult,
-    onSend: () -> Unit,
-    onCancel: () -> Unit,
-) {
+private fun ColumnScope.ReviewView(raw: RawReport, result: TriageResult, onSend: () -> Unit, onCancel: () -> Unit) {
     val countdown = remember { Animatable(1f) }
     var sending by remember { mutableStateOf(false) }
     fun fire() { if (!sending) { sending = true; onSend() } }
     LaunchedEffect(Unit) {
-        countdown.animateTo(0f, tween(AUTO_SEND_MS, easing = LinearEasing))
+        countdown.animateTo(0f, tween(AUTO_SEND_MS, easing = LinearEasing)) // a countdown timer: linear by definition
         fire()
     }
-    val secondsLeft = (countdown.value * AUTO_SEND_MS / 1000f).let { kotlin.math.ceil(it).toInt() }
+    val secondsLeft = kotlin.math.ceil(countdown.value * AUTO_SEND_MS / 1000f).toInt()
+    val (fill, onFill) = result.severity.fill()
+    val title = incidentTitle(result.type, result.subtype)
 
     Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-        Spacer(Modifier.height(12.dp))
-        Text("This is what we'll send", style = grotesk(16, FontWeight.Medium, Px.Dim))
-        Spacer(Modifier.height(20.dp))
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            Rail(result.severity.color(), Modifier.fillMaxHeight())
-            Spacer(Modifier.width(16.dp))
-            Column {
-                val title = incidentTitle(result.type, result.subtype)
-                if (title != result.type.label()) Text(result.type.label(), style = grotesk(16, FontWeight.Medium, Px.Dim))
-                Text(title, style = grotesk(32))
-                Spacer(Modifier.height(6.dp))
-                Text(result.severity.label(), style = grotesk(18, FontWeight.Bold, result.severity.color()))
-            }
+        Text("This is what we'll send", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(MaterialTheme.spacing.lg))
+        Surface(color = fill, contentColor = onFill, shape = MaterialTheme.shapes.small) {
+            Text(
+                result.severity.label(),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = MaterialTheme.spacing.sm, vertical = MaterialTheme.spacing.xs),
+            )
         }
-        Spacer(Modifier.height(24.dp))
-        Text("“${raw.text}”", style = grotesk(18, FontWeight.Medium, Px.Text))
-        result.landmark?.let {
-            Spacer(Modifier.height(16.dp))
-            Fact("Where", it)
+        Spacer(Modifier.height(MaterialTheme.spacing.sm))
+        Text(title, style = MaterialTheme.typography.displaySmall)
+        if (title != result.type.label()) {
+            Text(result.type.label(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        Spacer(Modifier.height(MaterialTheme.spacing.xxl))
+        Text("“${raw.text}”", style = MaterialTheme.typography.bodyLarge)
+        Spacer(Modifier.height(MaterialTheme.spacing.lg))
+        result.landmark?.let { Fact("Where", it) }
         result.peopleCount?.let { Fact("People", it.toString()) }
-        Spacer(Modifier.height(16.dp))
         Fact("Sorted by", result.source.label())
         Fact("Confidence", "${(result.confidence * 100).toInt()}%")
     }
 
-    // Countdown: a draining bar and a number. The send happens on its own; Cancel is always one tap away.
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(if (sending) "Sending" else "Sending in", style = grotesk(16, FontWeight.Medium, Px.Dim))
-        Spacer(Modifier.weight(1f))
-        if (!sending) Text("$secondsLeft", style = mono(20, FontWeight.Bold, Px.Text))
-    }
-    Spacer(Modifier.height(8.dp))
-    Canvas(Modifier.fillMaxWidth().height(4.dp)) {
-        drawRoundRect(Px.Line, cornerRadius = CornerRadius(2.dp.toPx()))
-        drawRoundRect(Px.Crimson, size = Size(size.width * countdown.value, size.height), cornerRadius = CornerRadius(2.dp.toPx()))
-    }
-    Spacer(Modifier.height(16.dp))
-    PrimaryAction(if (sending) "Sending" else "Send alert now", ::fire, color = Px.Crimson, enabled = !sending)
-    QuietAction("Cancel", onCancel, Modifier.fillMaxWidth())
-    Spacer(Modifier.height(8.dp))
-}
-
-/** Label on the left, value on the right: aligned facts instead of dot-joined meta strings. */
-@Composable
-fun Fact(label: String, value: String, valueMono: Boolean = false) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
-        Text(label, style = grotesk(15, FontWeight.Medium, Px.Dim), modifier = Modifier.width(112.dp))
-        Text(value, style = if (valueMono) mono(15, color = Px.Text) else grotesk(15, FontWeight.Medium))
-    }
+    Text(if (sending) "Sending" else "Sending in $secondsLeft", style = MaterialTheme.typography.titleMedium)
+    Spacer(Modifier.height(MaterialTheme.spacing.sm))
+    LinearProgressIndicator(
+        progress = { countdown.value },
+        color = MaterialTheme.semantic.critical,
+        trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(MaterialTheme.spacing.lg))
+    LargeButton(if (sending) "Sending" else "Send alert now", ::fire, sym = Sym.Sos, colors = criticalButtonColors(), enabled = !sending)
+    TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.sm)) { Text("Cancel") }
 }
 
 @Composable
-private fun androidx.compose.foundation.layout.ColumnScope.SentView(
-    graph: ProximaGraph,
-    incident: Incident,
-    reached: Int,
-    onDone: () -> Unit,
-    onAlerts: () -> Unit,
-) {
+private fun ColumnScope.SentView(graph: ProximaGraph, incident: Incident, reached: Int, onDone: () -> Unit, onAlerts: () -> Unit) {
     var protocol by remember { mutableStateOf<ProtocolCard?>(null) }
-    LaunchedEffect(incident.protocolId) { protocol = incident.protocolId?.let { graph.protocols.byId(it) } }
+    LaunchedEffect(incident.protocolId) { protocol = incident.protocolId?.let { runCatching { graph.protocols.byId(it) }.getOrNull() } }
+    val me by graph.locate.selfLocation.collectAsStateWithLifecycle()
+    val (container, content) = incident.severity.container()
 
     Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-        Spacer(Modifier.height(24.dp))
-        GlyphIcon(Glyph.Check, Px.Green, 56.dp, description = "Alert sent")
-        Spacer(Modifier.height(20.dp))
-        Text("Alert sent", style = grotesk(34))
-        Spacer(Modifier.height(8.dp))
+        SymbolIcon(Sym.Done, description = "Alert sent", tint = MaterialTheme.semantic.safe, size = MaterialTheme.sizes.iconLarge)
+        Spacer(Modifier.height(MaterialTheme.spacing.lg))
+        Text("Alert sent", style = MaterialTheme.typography.displaySmall)
+        Spacer(Modifier.height(MaterialTheme.spacing.sm))
         Text(
             when (reached) {
                 0 -> "It will pass to the next phone that comes in range."
                 1 -> "Passed to 1 phone nearby. It keeps spreading from there."
                 else -> "Passed to $reached phones nearby. It keeps spreading from there."
             },
-            style = grotesk(18, FontWeight.Medium, Px.Dim),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(28.dp))
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            Rail(incident.severity.color(), Modifier.fillMaxHeight())
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(incidentTitle(incident.type, incident.subtype), style = grotesk(20))
-                Text(incident.summary, style = grotesk(15, FontWeight.Medium, Px.Dim))
-            }
-        }
-        Spacer(Modifier.height(28.dp))
-        val me by graph.locate.selfLocation.collectAsStateWithLifecycle()
+        Spacer(Modifier.height(MaterialTheme.spacing.xxl))
+        ListItem(
+            headlineContent = { Text(incidentTitle(incident.type, incident.subtype), style = MaterialTheme.typography.titleMedium) },
+            supportingContent = { Text(incident.summary) },
+            leadingContent = { SeverityBadge(incident.type.sym(), container, content, null) },
+        )
+        Spacer(Modifier.height(MaterialTheme.spacing.lg))
         NearestHelp(graph, incident.location ?: me, incident.type.helpCategories)
         protocol?.let { card ->
-            Spacer(Modifier.height(28.dp))
-            Text("What to do now", style = grotesk(22))
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(MaterialTheme.spacing.xxl))
+            Text("What to do now", style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(MaterialTheme.spacing.sm))
             card.steps.forEachIndexed { i, step ->
-                Row(Modifier.padding(vertical = 8.dp)) {
-                    Text("${i + 1}", style = mono(18, FontWeight.Bold, Px.Text), modifier = Modifier.width(32.dp))
-                    Text(step.text, style = grotesk(19, FontWeight.Medium))
-                }
+                ListItem(
+                    headlineContent = { Text(step.text, style = MaterialTheme.typography.bodyLarge) },
+                    leadingContent = { Text("${i + 1}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary) },
+                )
             }
-            Text("Source: ${card.source}", style = grotesk(13, FontWeight.Medium, Px.Dim))
-            QuietAction("Read the steps aloud", {
-                graph.scope.launch { graph.voice.speak(card.steps.joinToString(". ") { it.text }) }
-            })
+            Text("Source: ${card.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick = { graph.scope.launch { graph.voice.speak(card.steps.joinToString(". ") { it.text }) } }) {
+                SymbolIcon(Sym.ReadAloud, null, size = MaterialTheme.sizes.iconSmall)
+                Spacer(Modifier.width(MaterialTheme.spacing.sm))
+                Text("Read the steps aloud")
+            }
         }
     }
-    PrimaryAction("Done", onDone)
-    QuietAction("See all alerts", onAlerts, Modifier.fillMaxWidth())
-    Spacer(Modifier.height(8.dp))
+    LargeButton("Done", onDone)
+    TextButton(onClick = onAlerts, modifier = Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.sm)) { Text("See all alerts") }
 }

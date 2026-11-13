@@ -22,36 +22,20 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 
 ## Design plan & quality bar (every screen must pass before it is "done")
 
-### Tokens (code: `app/.../ui/theme/Theme.kt`, nothing else picks colours or sizes)
-| Token | Value | Only used for |
-|---|---|---|
-| Black | `#05070A` | Every background. True OLED black, not "tinted near-black". |
-| Surface / SurfaceHi | `#0F141C` / `#161D28` | Sheets, pressed states, the few raised panels |
-| Line | `#232C3A` | 1dp structure: map grid, dividers that separate *different* things |
-| Green `#00FF9D` | phosphor | **Meaning only:** verified signature, mesh link alive, "you are connected". Never decoration. |
-| Amber `#FFB800` | | Unverified relay, SIM badge, warnings, MEDIUM |
-| Crimson `#FF2A55` | | SOS and CRITICAL only. If crimson is on screen, something is on fire. |
-| Text / Dim | `#E6EDF3` / `#7D8590` | Body / secondary (Dim on Black = 5.4:1, on Surface = 4.9:1, both pass AA) |
+### Tokens and anchor: see `DESIGN_RULES.md` (repo root) — single source of truth since 16:20 Fri
+Material You anchor (ui-android skill), lagoon-teal seed `#006A6A`, light + dark following the system, Roboto Flex,
+M3 shapes/spacing/motion, semantic critical/urgent/caution/safe roles. `./gradlew :app:designCheck` must report 0.
+The previous "Field Terminal" look (OLED black, phosphor green, Space Grotesk + JetBrains Mono) is at tag `ui-v1-field-terminal`.
 
-- **Type scale** (Space Grotesk, ratio ~1.25): 44 / 32 / 26 / 22 / 18 / 16 / 14sp. Body 18sp on civilian screens.
-  JetBrains Mono **only for machine data** (coordinates, dBm, hop counts, node ids, timers), never for labels or sentences.
-- **Spacing**: 4dp grid, screen gutters 20dp (phone) / 24dp (tablet). Section gaps 32dp, related items 12dp.
-- **Shape**: hierarchy-driven, not one radius everywhere. SOS = circle, primary actions = 20dp radius,
-  list rows = no container (a severity rail + whitespace), sheets = 28dp top corners.
-- **Motion**: one ambient motion per screen at most (Home: SOS breathing ring; Command Center: hop pulses; Radar: sweep).
-  Everything else moves only in response to touch. All of it respects the system animator scale (reduced motion).
-
-### Two registers (the core design decision)
-- **Civilian (phone: Home, Report, Guardian, Finder, Guided response):** calm, plain, huge. Reads like a
-  well-made public-safety sign, not a hacker toy. Sentence case, no mono, no grid, no telemetry. One action per screen.
-  The one bold thing: **the crimson SOS ring**.
-- **Command Center (tablet):** the "Field Terminal" register. Dense mono telemetry, tactical grid, live hop pulses.
-  The one bold thing: **the live mesh map**. The terminal look lives here and on the radar, nowhere else.
+### Two registers (still the core decision, now on Material)
+- **Civilian phone screens:** one primary action, `LargeButton` (56 dp), plain sentence-case copy, the SOS disc in the
+  critical role as the only loud element.
+- **Command Center (tablet):** dense dispatch board — tickets with priority labels, letter pins shared with the site plan.
 
 ### Anti-slop checklist (reject the screen if any box fails)
-- [ ] No default Material: no `Card`, no `AlertDialog`, no `Scaffold` FAB, no default purple/teal, no `TopAppBar` with a back arrow + title.
+- [ ] Material components configured by the theme (no default purple); one card variant (OutlinedCard); no AlertDialog for emergency flows; no FAB.
 - [ ] No identical rounded cards in a stack. Lists are rows with a severity rail; grouping is done with space, not boxes.
-- [ ] No ALL-CAPS tracked-out eyebrow labels above headings. Caps are allowed only for the 3-letter SIM/UWB/GPS badges.
+- [ ] No ALL-CAPS tracked-out eyebrow labels above headings.
 - [ ] No "A · B · C" metadata strings. Telemetry is laid out in aligned columns or as separate, labelled values.
 - [ ] No "→" glued to button text, no emoji as icons, no gradients as decoration, no drop shadows on black.
 - [ ] No single-word colour accent in a headline. Colour on text means state (verified, critical), nothing else.
@@ -113,13 +97,13 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 
 ## NEXT_SESSION_HANDOFF
-- Works on Honor (SIM): Home/SOS (0.6 s arm), Report (listen → preview → 3 s auto-send → sent), Feed + sheet,
-  lost & found without hardware (guardian banner → Found alert → Radar; Finder picks lost alert → shares sealed location),
-  Boot, Dev sheet. Command Center reviewed on the Tab S6 Lite (landscape is the stage layout).
-- `lane/ui` contains `iface/lost-found` (PR #15, waiting 👍 MESH + TRUST on #14). Do not merge lane/ui to main before #15.
-- Open asks: #8 MESH multi-hop control, #9 AI voice level, #10 report(raw, triaged), #16 AI hint must not downgrade critical.
-- Next: wire MESH `MeshDemoControls.allowedNeighbours` (#8) into the Dev sheet once
-  lane/mesh is on main; 130% font + TalkBack pass; then pitch screenshots. Protocol cards wait on TRUST protocols.json.
+- Read `DESIGN_RULES.md` first. UI = Material You tokens in `app/.../ui/theme/` (Color, Type, Shape, Spacing+Sizes, Motion, Theme);
+  icons = Material Symbols Rounded vectors `res/drawable/ic_*.xml` via `components/Symbols.kt`. Gate: `./gradlew :app:designCheck :app:lintDebug`.
+- All screens rebuilt (Home/SOS 0.6 s arm, Report, Feed + sheet, Finder, Found alert, Radar, Boot, Dev sheet, Command Center dispatch board).
+  Builds, designCheck 0, lint clean. **Not yet verified on device in the new look** (light + dark) — first thing to do.
+- Old look restorable: `git checkout ui-v1-field-terminal -- app/`.
+- `lane/ui` contains `iface/lost-found` (PR #15, waiting 👍 MESH + TRUST on #14). Open asks: #8, #9, #10, #16.
+- Next: device review (phone light/dark, tablet), 130% font + TalkBack, wire `MeshDemoControls` when on main, pitch screenshots.
 
 ## Progress log
 | Time | What |
@@ -129,6 +113,9 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 | 14:55 Fri | First full UI pass compiles: Home/SOS, Report, Feed, Command Center, Boot, Dev sheet, Wristbands, Finder. Requests #7 TRUST, #8 MESH, #9 AI, interface-change #10 |
 | 15:05 Fri | On-device review (Honor): SOS hold → voice ring → review → auto-send → "Alert sent, passed to 3 phones" works. Fixed: SOS label, truncated links, "Lost child" titles, duplicate kicker, Sending label |
 | 15:30 Fri | SOS arms only after a steady 0.6 s hold (arming arc); verified a swipe + tap no longer fires it |
+| 16:45 Fri | ui-android overhaul phase 2: every screen rebuilt on Material You tokens + Material Symbols; designCheck 304 → 0 violations; lint clean; core tests green. Device check pending (cable lent to MESH) |
+| 16:20 Fri | ui-android skill audited (MIT, markdown + templates only) and installed; phase 1 tokens approved (58/58 contrast pairs AA) |
+| 16:00 Fri | Command Center rebuilt as a dispatch board (tickets, someone's going / cleared, site plan with letter pins) |
 | 15:47 Fri | Command Center reviewed on the Tab S6 Lite (portrait + landscape). Fixed: map legend, 4-column stats grid, hop log uses map names |
 | 15:50 Fri | Nearest-help component on real OSM data: km distances, turning arrow only within 2 km, amber note when help is far (#11); "read steps aloud" when a protocol card exists |
 | 15:35 Fri | Wristband dropped (#14, PR #15). New: Finder picks the lost alert ("I'm with them") → sealed location; guardian banner, full-screen Found alert, Radar (sweep, blip, haptic ticks). Verified on Honor in SIM |
@@ -141,6 +128,10 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 | 14:48 Fri | Hand-drawn Canvas glyphs, no icon library or emoji | material-icons is not a dependency; one stroke grammar looks crafted | material-icons-extended (+MBs, stock look), emoji |
 | 14:50 Fri | Plain state back stack instead of navigation-compose | ~7 screens; type-safe routes need the serialization plugin in `:app` | navigation-compose with string routes / serializable routes |
 | 14:52 Fri | Tier 1 = RAM ≥ 7 GB **and** flagship SoC (SM8xxx / Exynos 2xxx / Tensor) or UWB | Honor X8b reports 7.5 GB RAM but has SM6225, would have tried to run the LLM | RAM-only threshold; raising RAM to 10 GB (would demote the S23+) |
+| 16:15 Fri | Replace "Field Terminal" with the ui-android skill's Material You anchor, teal seed, light + dark, Roboto Flex | Lead judged the neon-on-black look, glow and Grotesk/Mono pair as AI slop; a native Android safety app reads more trustworthy | Keep dark-only terminal look; Stripe/Notion/Editorial anchors |
+| 16:15 Fri | Ban decorative motion: no SOS halo pulse, no radar sweep | They read as "LED" decoration; motion now only answers events (arming arc, hop pulses, haptics) | Keep ambient animations with reduced-motion opt-out |
+| 16:20 Fri | designCheck Gradle task instead of detekt | detekt 1.23 can't parse Kotlin 2.4; regex gate gives the same slop checks in `check` | detekt 2.0 alpha; no automated gate |
+| 15:55 Fri | Tablet = dispatch board (queue first, map second) | A steward needs "who to send, where, how long waiting" from 2 m; judges still see live hops | Map-dominant plan; triage-band columns |
 | 15:30 Fri | SOS ring needs a 0.6 s steady hold, aborts on movement past touch slop | Brushing/scrolling across the ring triggered it | Instant press; double-tap; confirm dialog |
 | 15:35 Fri | Drop QR wristband; finder answers the guardian's lost alert, location sealed to the reporter key | No hardware; same privacy property; one fewer module (camera) | QR wristband + scanner; NFC |
 | 15:35 Fri | Radar = terminal register (sweep, rings, mono distance); found alert = civilian register in green | Good news must read instantly; the radar is a tool, can be dense | Map view (needs tiles, offline) |

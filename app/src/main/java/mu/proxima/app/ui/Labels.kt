@@ -21,6 +21,15 @@ fun IncidentType.label(): String = when (this) {
     IncidentType.ALL_CLEAR -> "All clear"
 }
 
+/** Material Symbol for each incident type (rows, chips, report buttons). */
+fun IncidentType.sym(): mu.proxima.app.ui.components.Sym = when (this) {
+    IncidentType.MEDICAL -> mu.proxima.app.ui.components.Sym.Medical
+    IncidentType.HAZARD -> mu.proxima.app.ui.components.Sym.Hazard
+    IncidentType.LOST_PERSON, IncidentType.SIGHTING -> mu.proxima.app.ui.components.Sym.LostPerson
+    IncidentType.FOUND -> mu.proxima.app.ui.components.Sym.Done
+    IncidentType.ALL_CLEAR -> mu.proxima.app.ui.components.Sym.Verified
+}
+
 fun Severity.label(): String = when (this) {
     Severity.CRITICAL -> "Critical"
     Severity.HIGH -> "Urgent"

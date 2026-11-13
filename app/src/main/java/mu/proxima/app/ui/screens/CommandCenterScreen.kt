@@ -3,7 +3,6 @@ package mu.proxima.app.ui.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,8 +22,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,21 +62,21 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import mu.proxima.app.ProximaGraph
-import mu.proxima.app.ui.components.Glyph
-import mu.proxima.app.ui.components.GlyphIcon
-import mu.proxima.app.ui.components.SimBadge
+import mu.proxima.app.ui.components.MeshStatus
+import mu.proxima.app.ui.components.SimLabel
+import mu.proxima.app.ui.components.VerifiedMark
 import mu.proxima.app.ui.components.rememberReducedMotion
 import mu.proxima.app.ui.incidentTitle
-import mu.proxima.app.ui.theme.Px
-import mu.proxima.app.ui.theme.color
-import mu.proxima.app.ui.theme.grotesk
+import mu.proxima.app.ui.theme.fill
+import mu.proxima.app.ui.theme.semantic
+import mu.proxima.app.ui.theme.sizes
+import mu.proxima.app.ui.theme.spacing
 import mu.proxima.core.model.DeviceTier
 import mu.proxima.core.model.GeoMath
 import mu.proxima.core.model.GeoPoint
@@ -77,6 +85,7 @@ import mu.proxima.core.model.IncidentRecord
 import mu.proxima.core.model.IncidentType
 import mu.proxima.core.model.Peer
 import mu.proxima.core.model.Severity
+import mu.proxima.core.model.TriageSource
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.max
@@ -85,19 +94,17 @@ import kotlin.math.sin
 
 /*
  * Command Center = dispatch board for a steward at a first-aid / police post, read from ~2 m.
- * Queue first (who to send, where, how long they've waited), a quiet site plan second.
- * Register rules for this screen: Space Grotesk only, tabular figures, sentence case, no mono, no KPI tiles.
+ * Queue first (who to send, where, how long they've waited), the site plan second. Density: dense.
  */
 
 private const val CELL_M = 25.0
 private const val EARTH_R = 6_371_000.0
 private const val HOP_MS = 900L
-/** Unhandled for this long and the waiting time turns amber. */
+/** Unhandled for this long and the waiting time switches to the caution role. */
 private const val STALE_MS = 5 * 60_000L
 
-/** Grotesk with tabular figures, so minutes and counts don't jitter as they change. */
-private fun figures(size: Int, weight: FontWeight = FontWeight.Bold, color: Color = Px.Text): TextStyle =
-    grotesk(size, weight, color).copy(fontFeatureSettings = "tnum")
+/** Tabular figures so minutes and counts don't jitter as they change. */
+private fun TextStyle.figures() = copy(fontFeatureSettings = "tnum")
 
 /** Triage-board wording a steward already knows. */
 private fun Severity.priority(): String = when (this) {
@@ -107,12 +114,12 @@ private fun Severity.priority(): String = when (this) {
     Severity.LOW -> "Minor"
 }
 
-/** Who sorted it, short enough to never clip on a ticket. Shown so judges see the AI tiering. */
-private fun mu.proxima.core.model.TriageSource.short(): String = when (this) {
-    mu.proxima.core.model.TriageSource.ON_DEVICE_LLM -> "On-device AI"
-    mu.proxima.core.model.TriageSource.OFFLOADED_LLM -> "AI via nearby phone"
-    mu.proxima.core.model.TriageSource.RULES -> "Keyword triage"
-    mu.proxima.core.model.TriageSource.MANUAL -> "Reported by hand"
+/** Who sorted it, short enough never to clip. Shown so judges see the AI tiering. */
+private fun TriageSource.short(): String = when (this) {
+    TriageSource.ON_DEVICE_LLM -> "On-device AI"
+    TriageSource.OFFLOADED_LLM -> "AI via nearby phone"
+    TriageSource.RULES -> "Keyword triage"
+    TriageSource.MANUAL -> "Reported by hand"
 }
 
 private fun compass(deg: Double): String =
@@ -141,7 +148,7 @@ private fun whereLabel(r: IncidentRecord, post: GeoPoint?): String? {
 
 private data class HopAnim(val hop: HopEvent, val startMs: Long)
 
-/** Board state only this tablet needs: who has been sent, and the stable letter that ties a ticket to its pin. */
+/** Board state only this tablet needs: who has been sent, and the stable letter tying a ticket to its pin. */
 private class Board {
     val claimedAt = mutableStateMapOf<String, Long>()
     private val letters = HashMap<String, String>()
@@ -152,6 +159,7 @@ private class Board {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CommandCenterScreen(graph: ProximaGraph, onDev: () -> Unit) {
     val peers by graph.mesh.peers.collectAsStateWithLifecycle()
@@ -163,6 +171,7 @@ fun CommandCenterScreen(graph: ProximaGraph, onDev: () -> Unit) {
     var selected by remember { mutableStateOf<String?>(null) }
     var sheetFor by remember { mutableStateOf<String?>(null) }
 
+    // Hop pulses: motion that answers an event (a packet crossed a link), not decoration.
     val anims = remember { mutableStateListOf<HopAnim>() }
     var lastHopMs by remember { mutableLongStateOf(0L) }
     var frame by remember { mutableLongStateOf(0L) }
@@ -183,7 +192,7 @@ fun CommandCenterScreen(graph: ProximaGraph, onDev: () -> Unit) {
     val open = incidents.filter {
         !it.resolved && it.incident.type != IncidentType.ALL_CLEAR && it.incident.type != IncidentType.FOUND
     }.sortedBy { it.incident.createdAtMs }
-    open.forEach { board.letter(it.incident.id) } // letters follow arrival order, never change
+    open.forEach { board.letter(it.incident.id) } // letters follow arrival order and never change
     val waiting = open.filter { it.incident.id !in board.claimedAt }
         .sortedWith(compareByDescending<IncidentRecord> { it.incident.severity }.thenBy { it.incident.createdAtMs })
     val handled = open.filter { it.incident.id in board.claimedAt }.sortedBy { board.claimedAt[it.incident.id] }
@@ -194,30 +203,48 @@ fun CommandCenterScreen(graph: ProximaGraph, onDev: () -> Unit) {
         board.claimedAt.remove(id)
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val landscape = maxWidth > maxHeight
-        val queue: @Composable (Modifier) -> Unit = { m ->
-            Queue(
-                graph, waiting, handled, cleared, peers, post, now, board, selected, onDev, m,
-                onOpen = { id -> selected = id; sheetFor = id },
-                onClaim = { id -> board.claimedAt[id] = System.currentTimeMillis(); selected = id },
-                onClear = ::clear,
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Proxima command",
+                        modifier = Modifier.combinedClickable(onClick = {}, onLongClick = onDev, onLongClickLabel = "Developer settings"),
+                    )
+                },
+                actions = {
+                    MeshStatus(peers.size)
+                    if (graph.simulation) {
+                        Spacer(Modifier.width(MaterialTheme.spacing.md))
+                        SimLabel()
+                    }
+                    Spacer(Modifier.width(MaterialTheme.spacing.xxl))
+                },
             )
-        }
-        val plan: @Composable (Modifier) -> Unit = { m ->
-            SitePlan(graph.mesh.selfNodeId, post, peers, open, board, anims, frame, selected, lastHopMs, now, m)
-        }
-        if (landscape) {
-            Row(Modifier.fillMaxSize()) {
-                queue(Modifier.weight(0.58f).fillMaxHeight())
-                Box(Modifier.width(1.dp).fillMaxHeight().background(Px.Line))
-                plan(Modifier.weight(0.42f).fillMaxHeight())
+        },
+    ) { padding ->
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+            val landscape = maxWidth > maxHeight
+            val queue: @Composable (Modifier) -> Unit = { m ->
+                Queue(waiting, handled, cleared, peers, post, now, board, selected, m,
+                    onOpen = { id -> selected = id; sheetFor = id },
+                    onClaim = { id -> board.claimedAt[id] = System.currentTimeMillis(); selected = id },
+                    onClear = ::clear)
             }
-        } else {
-            Column(Modifier.fillMaxSize()) {
-                queue(Modifier.weight(0.6f).fillMaxWidth())
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Px.Line))
-                plan(Modifier.weight(0.4f).fillMaxWidth())
+            val plan: @Composable (Modifier) -> Unit = { m ->
+                SitePlan(graph.mesh.selfNodeId, post, peers, open, board, anims, frame, selected, lastHopMs, now, m)
+            }
+            if (landscape) {
+                Row(Modifier.fillMaxSize()) {
+                    queue(Modifier.weight(0.58f).fillMaxHeight())
+                    VerticalDivider()
+                    plan(Modifier.weight(0.42f).fillMaxHeight())
+                }
+            } else {
+                Column(Modifier.fillMaxSize()) {
+                    queue(Modifier.weight(0.6f).fillMaxWidth())
+                    plan(Modifier.weight(0.4f).fillMaxWidth())
+                }
             }
         }
     }
@@ -226,10 +253,8 @@ fun CommandCenterScreen(graph: ProximaGraph, onDev: () -> Unit) {
     if (sheet != null) IncidentSheet(graph, sheet, post, onDismiss = { sheetFor = null })
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Queue(
-    graph: ProximaGraph,
     waiting: List<IncidentRecord>,
     handled: List<IncidentRecord>,
     cleared: Int,
@@ -238,67 +263,60 @@ private fun Queue(
     now: Long,
     board: Board,
     selected: String?,
-    onDev: () -> Unit,
     modifier: Modifier,
     onOpen: (String) -> Unit,
     onClaim: (String) -> Unit,
     onClear: (String) -> Unit,
 ) {
     val immediate = waiting.count { it.incident.severity == Severity.CRITICAL }
-    LazyColumn(modifier, contentPadding = PaddingValues(horizontal = 32.dp, vertical = 24.dp)) {
+    LazyColumn(
+        modifier,
+        contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.xxl, vertical = MaterialTheme.spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.md),
+    ) {
         item(key = "head") {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "Proxima",
-                    style = grotesk(16, FontWeight.Bold, Px.Dim),
-                    modifier = Modifier.combinedClickable(onClick = {}, onLongClick = onDev, onLongClickLabel = "Developer settings"),
-                )
-                Spacer(Modifier.weight(1f))
-                if (graph.simulation) SimBadge()
-            }
-            Spacer(Modifier.height(10.dp))
             Text(
                 when (waiting.size) { 0 -> "Nobody waiting"; 1 -> "1 needs someone now"; else -> "${waiting.size} need someone now" },
-                style = figures(36, color = if (immediate > 0) Px.Crimson else Px.Text),
+                style = MaterialTheme.typography.displaySmall.figures(),
+                color = if (immediate > 0) MaterialTheme.semantic.critical else MaterialTheme.colorScheme.onSurface,
             )
-            Spacer(Modifier.height(6.dp))
             Text(
                 buildList {
                     if (handled.isNotEmpty()) add("${handled.size} being handled.")
                     if (cleared > 0) add("$cleared cleared.")
                     add(if (peers.isEmpty()) "No phones connected yet." else "${peers.size} phones connected.")
                 }.joinToString(" "),
-                style = figures(18, FontWeight.Medium, Px.Dim),
+                style = MaterialTheme.typography.bodyLarge.figures(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(24.dp))
         }
-
         if (waiting.isEmpty()) {
             item(key = "empty") {
                 Text(
                     "New reports from phones nearby appear here, most urgent first. Nothing needs a person right now.",
-                    style = grotesk(18, FontWeight.Medium, Px.Dim),
-                    modifier = Modifier.padding(vertical = 24.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
         items(waiting, key = { it.incident.id }) { r ->
-            Column(Modifier.animateItem()) {
-                Ticket(r, board.letter(r.incident.id), post, now, r.incident.id == selected,
-                    onOpen = { onOpen(r.incident.id) }, onClaim = { onClaim(r.incident.id) }, onClear = { onClear(r.incident.id) })
-                Spacer(Modifier.height(14.dp))
-            }
+            Ticket(r, board.letter(r.incident.id), post, now, r.incident.id == selected, Modifier.animateItem(),
+                onOpen = { onOpen(r.incident.id) }, onClaim = { onClaim(r.incident.id) }, onClear = { onClear(r.incident.id) })
         }
-
         if (handled.isNotEmpty()) {
             item(key = "handled-head") {
-                Spacer(Modifier.height(20.dp))
-                Text("Someone is on it", style = grotesk(20, FontWeight.Bold, Px.Dim))
-                Spacer(Modifier.height(6.dp))
+                Text("Someone is on it", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = MaterialTheme.spacing.lg))
             }
             items(handled, key = { "h-" + it.incident.id }) { r ->
-                HandledRow(r, board.letter(r.incident.id), board.claimedAt[r.incident.id] ?: now, now, Modifier.animateItem(),
-                    onOpen = { onOpen(r.incident.id) }, onClear = { onClear(r.incident.id) })
+                val i = r.incident
+                val ago = waitingLabel(now - (board.claimedAt[i.id] ?: now)).let { if (it == "now") "just now" else "$it ago" }
+                ListItem(
+                    modifier = Modifier.animateItem().clip(MaterialTheme.shapes.large).clickable(role = Role.Button) { onOpen(i.id) },
+                    headlineContent = { Text(incidentTitle(i.type, i.subtype), style = MaterialTheme.typography.titleMedium) },
+                    supportingContent = { Text("Someone went $ago", style = MaterialTheme.typography.bodyMedium.figures()) },
+                    leadingContent = { LetterPin(board.letter(i.id), i.severity) },
+                    trailingContent = { OutlinedButton(onClick = { onClear(i.id) }) { Text("Cleared") } },
+                )
             }
         }
     }
@@ -306,12 +324,13 @@ private fun Queue(
 
 /** Letter pin: the same mark on the ticket and on the plan. */
 @Composable
-private fun LetterPin(letter: String, severity: Severity, size: Int = 36) {
+private fun LetterPin(letter: String, severity: Severity) {
+    val (fill, onFill) = severity.fill()
     Box(
-        Modifier.size(size.dp).clip(CircleShape).background(severity.color()).semantics { contentDescription = "Marker $letter" },
+        Modifier.size(MaterialTheme.sizes.pin).clip(CircleShape).background(fill).semantics { contentDescription = "Marker $letter" },
         contentAlignment = Alignment.Center,
     ) {
-        Text(letter, style = figures(size / 2, FontWeight.Bold, Px.Black))
+        Text(letter, style = MaterialTheme.typography.titleMedium, color = onFill)
     }
 }
 
@@ -322,6 +341,7 @@ private fun Ticket(
     post: GeoPoint?,
     now: Long,
     selected: Boolean,
+    modifier: Modifier,
     onOpen: () -> Unit,
     onClaim: () -> Unit,
     onClear: () -> Unit,
@@ -329,99 +349,65 @@ private fun Ticket(
     val i = r.incident
     val waitedMs = now - i.createdAtMs
     val stale = waitedMs > STALE_MS
-    val shape = RoundedCornerShape(18.dp)
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(if (selected) Px.SurfaceHi else Px.Surface)
-            .border(1.dp, if (selected) Px.Dim else Color.Transparent, shape)
-            .clickable(role = Role.Button, onClickLabel = "Details", onClick = onOpen)
-            .padding(start = 20.dp, end = 16.dp, top = 16.dp, bottom = 14.dp),
+    val (fill, onFill) = i.severity.fill()
+    OutlinedCard(
+        onClick = onOpen,
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surface,
+        ),
     ) {
-        Row(verticalAlignment = Alignment.Top) {
-            LetterPin(letter, i.severity)
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // The one loud element on the board: a solid priority tab. Black text on the fill for contrast.
-                    Box(Modifier.clip(RoundedCornerShape(6.dp)).background(i.severity.color()).padding(horizontal = 9.dp, vertical = 2.dp)) {
-                        Text(i.severity.priority(), style = grotesk(15, FontWeight.Bold, Px.Black))
+        Column(Modifier.padding(MaterialTheme.spacing.lg)) {
+            Row(verticalAlignment = Alignment.Top) {
+                LetterPin(letter, i.severity)
+                Spacer(Modifier.width(MaterialTheme.spacing.md))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(color = fill, contentColor = onFill, shape = MaterialTheme.shapes.small) {
+                            Text(
+                                i.severity.priority(),
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.padding(horizontal = MaterialTheme.spacing.sm, vertical = MaterialTheme.spacing.xs),
+                            )
+                        }
+                        Spacer(Modifier.width(MaterialTheme.spacing.md))
+                        Text(incidentTitle(i.type, i.subtype), style = MaterialTheme.typography.headlineSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Spacer(Modifier.width(12.dp))
-                    Text(incidentTitle(i.type, i.subtype), style = grotesk(28), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(MaterialTheme.spacing.xs))
+                    whereLabel(r, post)?.let { Text(it, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    Text(i.summary, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Spacer(Modifier.height(4.dp))
-                whereLabel(r, post)?.let { Text(it, style = grotesk(19, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis) }
-                Text(i.summary, style = grotesk(16, FontWeight.Medium, Px.Dim), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.width(MaterialTheme.spacing.md))
+                // The waiting time earns its size only once someone has actually been waiting.
+                if (waitedMs < 60_000) {
+                    Text("Just in", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            waitingLabel(waitedMs),
+                            style = MaterialTheme.typography.headlineMedium.figures(),
+                            color = if (stale) MaterialTheme.semantic.caution else MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            if (stale) "nobody sent yet" else "waiting",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (stale) MaterialTheme.semantic.caution else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
-            Spacer(Modifier.width(12.dp))
-            // Waiting time earns its size only once someone has actually been waiting.
-            if (waitedMs < 60_000) {
-                Text("Just in", style = grotesk(16, FontWeight.Bold, Px.Dim))
-            } else {
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(waitingLabel(waitedMs), style = figures(32, color = if (stale) Px.Amber else Px.Text))
-                    Text(if (stale) "nobody sent yet" else "waiting", style = grotesk(14, FontWeight.Medium, if (stale) Px.Amber else Px.Dim))
+            Spacer(Modifier.height(MaterialTheme.spacing.md))
+            Row(Modifier.padding(start = MaterialTheme.sizes.pin + MaterialTheme.spacing.md), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.lg), verticalAlignment = Alignment.CenterVertically) {
+                    if (i.reportCount > 1) Text("${i.reportCount} people reported it", style = MaterialTheme.typography.labelLarge.figures())
+                    VerifiedMark(r.signatureValid)
+                    Text(i.triagedBy.short(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
+                OutlinedButton(onClick = onClear) { Text("Cleared") }
+                Spacer(Modifier.width(MaterialTheme.spacing.sm))
+                FilledTonalButton(onClick = onClaim) { Text("Someone's going") }
             }
         }
-        Spacer(Modifier.height(10.dp))
-        Row(Modifier.padding(start = 52.dp), verticalAlignment = Alignment.CenterVertically) {
-            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (i.reportCount > 1) Text("${i.reportCount} people reported it", style = figures(15, FontWeight.Bold, Px.Text))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    GlyphIcon(if (r.signatureValid) Glyph.Check else Glyph.Alert, if (r.signatureValid) Px.Dim else Px.Amber, 14.dp)
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        if (r.signatureValid) "Verified" else "Not verified",
-                        style = grotesk(15, FontWeight.Medium, if (r.signatureValid) Px.Dim else Px.Amber),
-                    )
-                }
-                Text(i.triagedBy.short(), style = grotesk(15, FontWeight.Medium, Px.Dim), maxLines = 1)
-            }
-            BoardButton("Cleared", filled = false, onClick = onClear)
-            Spacer(Modifier.width(8.dp))
-            BoardButton("Someone's going", filled = true, onClick = onClaim)
-        }
-    }
-}
-
-@Composable
-private fun BoardButton(text: String, filled: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(14.dp)
-    Box(
-        Modifier
-            .defaultMinSize(minHeight = 52.dp)
-            .clip(shape)
-            .then(if (filled) Modifier.background(Px.Text) else Modifier.border(1.dp, Px.Line, shape))
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 22.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = grotesk(17, FontWeight.Bold, if (filled) Px.Black else Px.Text))
-    }
-}
-
-@Composable
-private fun HandledRow(r: IncidentRecord, letter: String, sentAt: Long, now: Long, modifier: Modifier, onOpen: () -> Unit, onClear: () -> Unit) {
-    val i = r.incident
-    val ago = waitingLabel(now - sentAt).let { if (it == "now") "just now" else "$it ago" }
-    Row(
-        modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(role = Role.Button, onClick = onOpen)
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        LetterPin(letter, i.severity, size = 28)
-        Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(1f)) {
-            Text(incidentTitle(i.type, i.subtype), style = grotesk(20), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("Someone went $ago", style = figures(15, FontWeight.Medium, Px.Dim))
-        }
-        BoardButton("Cleared", filled = false, onClick = onClear)
     }
 }
 
@@ -432,9 +418,26 @@ private fun local(origin: GeoPoint, p: GeoPoint): Pair<Double, Double> {
     return east to north
 }
 
+/** Colours and stroke widths resolved from the theme once, for the plan's DrawScope helpers. */
+private data class PlanInk(
+    val line: Color,
+    val node: Color,
+    val nodeFill: Color,
+    val post: Color,
+    val pulse: Color,
+    val label: TextStyle,
+    val postLabel: TextStyle,
+    val hairline: Float,
+    val stroke: Float,
+    val strokeBold: Float,
+    val pinRadius: Float,
+    val gap: Float,
+    val hatch: Float,
+)
+
 /**
- * The site plan: thin linework, incident zones as hatching, letter pins that match the queue,
- * small white pulses when an alert crosses a link. Quiet on purpose; the queue is the primary tool.
+ * The site plan: thin linework, anonymous incident zones as hatching, letter pins matching the queue,
+ * a pulse when an alert crosses a link. Quiet on purpose; the queue is the primary tool.
  */
 @Composable
 private fun SitePlan(
@@ -453,10 +456,26 @@ private fun SitePlan(
     val measurer = rememberTextMeasurer()
     val origin = post ?: peers.firstNotNullOfOrNull { it.location } ?: open.firstNotNullOfOrNull { it.incident.location }
     val direct = peers.count { it.direct }
+    val sevFills = Severity.entries.associateWith { it.fill() }
+    val ink = PlanInk(
+        line = MaterialTheme.colorScheme.outlineVariant,
+        node = MaterialTheme.colorScheme.onSurfaceVariant,
+        nodeFill = MaterialTheme.colorScheme.surface,
+        post = MaterialTheme.colorScheme.primary,
+        pulse = MaterialTheme.colorScheme.primary,
+        label = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+        postLabel = MaterialTheme.typography.labelLarge.copy(color = MaterialTheme.colorScheme.primary),
+        hairline = MaterialTheme.sizes.hairline.px(),
+        stroke = MaterialTheme.sizes.stroke.px(),
+        strokeBold = MaterialTheme.sizes.strokeBold.px(),
+        pinRadius = MaterialTheme.sizes.pin.px() / 2.6f,
+        gap = MaterialTheme.spacing.xs.px(),
+        hatch = MaterialTheme.spacing.sm.px(),
+    )
 
-    Column(modifier.padding(24.dp)) {
-        Text("Around this post", style = grotesk(20, FontWeight.Bold, Px.Dim))
-        Spacer(Modifier.height(8.dp))
+    Column(modifier.padding(MaterialTheme.spacing.xxl)) {
+        Text("Around this post", style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(MaterialTheme.spacing.sm))
         Box(Modifier.weight(1f).fillMaxWidth()) {
             Canvas(
                 Modifier.fillMaxSize().semantics {
@@ -480,83 +499,82 @@ private fun SitePlan(
                         ?: Offset(c.x + cos(i * 2.4f) * size.minDimension * 0.4f, c.y + sin(i * 2.4f) * size.minDimension * 0.4f)
                 }
 
-                // Links: hairlines. Direct = solid, relayed = dashed to the nearest direct phone.
                 val directPeers = peers.filter { it.direct }
-                directPeers.forEach { drawLine(Px.Dim.copy(alpha = 0.45f), c, pos.getValue(it.nodeId), 1.dp.toPx()) }
+                directPeers.forEach { drawLine(ink.line, c, pos.getValue(it.nodeId), ink.stroke) }
                 peers.filter { !it.direct }.forEach { p ->
                     val from = pos.getValue(p.nodeId)
                     val via = directPeers.minByOrNull { (pos.getValue(it.nodeId) - from).getDistance() }?.let { pos.getValue(it.nodeId) } ?: c
-                    drawLine(Px.Dim.copy(alpha = 0.35f), from, via, 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)))
+                    drawLine(ink.line, from, via, ink.hairline, pathEffect = PathEffect.dashPathEffect(floatArrayOf(ink.hatch, ink.hatch)))
                 }
 
-                drawZones(origin, c, pxPerM, open, selected)
+                drawZones(origin, c, pxPerM, open, selected, sevFills, ink)
 
                 anims.forEach { a ->
                     val from = pos[a.hop.fromNodeId] ?: return@forEach
                     val to = pos[a.hop.toNodeId] ?: return@forEach
                     val t = ((frame - a.startMs).toFloat() / HOP_MS).coerceIn(0f, 1f)
                     val head = from + (to - from) * t
-                    drawLine(Px.Text.copy(alpha = 0.35f * (1f - t)), from, head, 2.dp.toPx())
-                    drawCircle(Px.Text, 3.dp.toPx(), head)
+                    drawLine(ink.pulse.copy(alpha = 0.4f * (1f - t)), from, head, ink.strokeBold)
+                    drawCircle(ink.pulse, ink.strokeBold * 1.5f, head)
                 }
 
-                peers.forEach { drawPhone(it.tier, pos.getValue(it.nodeId)) }
+                peers.forEach { drawPhone(it.tier, pos.getValue(it.nodeId), ink) }
 
-                // This post: a filled square, labelled in words.
-                val s = 7.dp.toPx()
-                drawRect(Px.Text, c - Offset(s, s), Size(2 * s, 2 * s))
-                drawText(measurer, "This post", c + Offset(s + 6.dp.toPx(), -s - 2.dp.toPx()), grotesk(13, FontWeight.Bold, Px.Text))
+                val s = ink.pinRadius * 0.7f
+                drawRect(ink.post, c - Offset(s, s), Size(2 * s, 2 * s))
+                drawText(measurer, "This post", c + Offset(s + ink.gap * 2, -s - ink.gap * 4), ink.postLabel)
 
-                drawPins(origin, c, pxPerM, open, board, measurer)
-                drawScale(pxPerM, measurer)
+                drawPins(origin, c, pxPerM, open, board, measurer, sevFills, ink)
+                drawScale(pxPerM, measurer, ink)
             }
             if (origin == null) {
                 Text(
                     "Waiting for this tablet's location to draw the plan.",
-                    style = grotesk(16, FontWeight.Medium, Px.Dim),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.align(Alignment.Center),
                 )
             }
         }
-        Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).clip(CircleShape).background(if (peers.isNotEmpty()) Px.Green else Px.Amber))
-            Spacer(Modifier.width(10.dp))
-            Text(
-                buildString {
-                    append(if (peers.isEmpty()) "Live mesh: looking for phones." else "Live mesh: ${peers.size} phones, $direct linked directly.")
-                    if (lastHopMs > 0) append(" Last relay ${secondsLabel(now - lastHopMs)} ago.")
-                },
-                style = figures(15, FontWeight.Medium, Px.Dim),
-            )
-        }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(MaterialTheme.spacing.md))
+        Text(
+            buildString {
+                append(if (peers.isEmpty()) "Live mesh: looking for phones." else "Live mesh: ${peers.size} phones, $direct linked directly.")
+                if (lastHopMs > 0) append(" Last relay ${secondsLabel(now - lastHopMs)} ago.")
+            },
+            style = MaterialTheme.typography.bodyMedium.figures(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Text(
             "Square: phone that runs AI and relays. Circle: phone. Hatching: where reports came from.",
-            style = grotesk(13, FontWeight.Medium, Px.Dim),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
 
-/** Phones: square = runs AI + relays, circle = phone, diamond = another post. Outline only, so pins stay the loudest marks. */
-private fun DrawScope.drawPhone(tier: DeviceTier, at: Offset) {
-    val r = 5.dp.toPx()
-    val stroke = Stroke(1.5.dp.toPx())
+@Composable
+private fun Dp.px(): Float = with(androidx.compose.ui.platform.LocalDensity.current) { toPx() }
+
+/** Phones: square = runs AI + relays, circle = phone, diamond = another post. Outline only, so pins stay loudest. */
+private fun DrawScope.drawPhone(tier: DeviceTier, at: Offset, ink: PlanInk) {
+    val r = ink.pinRadius * 0.55f
+    val stroke = Stroke(ink.stroke)
     when (tier) {
         DeviceTier.TIER1_COMPUTE -> {
-            drawRect(Px.Black, at - Offset(r, r), Size(2 * r, 2 * r))
-            drawRect(Px.Text, at - Offset(r, r), Size(2 * r, 2 * r), style = stroke)
+            drawRect(ink.nodeFill, at - Offset(r, r), Size(2 * r, 2 * r))
+            drawRect(ink.node, at - Offset(r, r), Size(2 * r, 2 * r), style = stroke)
         }
         DeviceTier.TIER2_SCOUT -> {
-            drawCircle(Px.Black, r, at)
-            drawCircle(Px.Text, r, at, style = stroke)
+            drawCircle(ink.nodeFill, r, at)
+            drawCircle(ink.node, r, at, style = stroke)
         }
         DeviceTier.COMMAND_CENTER -> {
             val d = Path().apply {
                 moveTo(at.x, at.y - r * 1.3f); lineTo(at.x + r * 1.3f, at.y); lineTo(at.x, at.y + r * 1.3f); lineTo(at.x - r * 1.3f, at.y); close()
             }
-            drawPath(d, Px.Black)
-            drawPath(d, Px.Text, style = stroke)
+            drawPath(d, ink.nodeFill)
+            drawPath(d, ink.node, style = stroke)
         }
     }
 }
@@ -572,52 +590,59 @@ private fun cellOf(origin: GeoPoint, c: Offset, pxPerM: Float, key: Pair<Int, In
     return Rect(center.x - half, center.y - half, center.x + half, center.y + half)
 }
 
-/** Anonymous density: reports per 25 m cell (GeoMath.cellKey), drawn as plan hatching. Denser hatching = more reports. */
-private fun DrawScope.drawZones(origin: GeoPoint, c: Offset, pxPerM: Float, open: List<IncidentRecord>, selected: String?) {
+/** Anonymous density: reports per 25 m cell (GeoMath.cellKey), drawn as hatching. Denser hatching = more reports. */
+private fun DrawScope.drawZones(
+    origin: GeoPoint, c: Offset, pxPerM: Float, open: List<IncidentRecord>, selected: String?,
+    sevFills: Map<Severity, Pair<Color, Color>>, ink: PlanInk,
+) {
     open.filter { it.incident.location != null }
         .groupBy { GeoMath.cellKey(it.incident.location!!, CELL_M) }
         .forEach { (key, recs) ->
             val cell = cellOf(origin, c, pxPerM, key)
-            val worst = recs.maxOf { it.incident.severity }.color()
+            val worst = sevFills.getValue(recs.maxOf { it.incident.severity }).first
             val reports = recs.sumOf { it.incident.reportCount }
-            val gap = (9f - reports.coerceAtMost(4) * 1.5f).dp.toPx()
+            val gap = ink.hatch * (1.2f - reports.coerceAtMost(4) * 0.15f)
             clipRect(cell.left, cell.top, cell.right, cell.bottom) {
                 var x = cell.left - cell.height
                 while (x < cell.right) {
-                    drawLine(worst.copy(alpha = 0.7f), Offset(x, cell.bottom), Offset(x + cell.height, cell.top), 1.2.dp.toPx())
+                    drawLine(worst.copy(alpha = 0.6f), Offset(x, cell.bottom), Offset(x + cell.height, cell.top), ink.stroke * 0.75f)
                     x += gap
                 }
             }
             val sel = recs.any { it.incident.id == selected }
-            drawRect(worst, cell.topLeft, cell.size, style = Stroke(if (sel) 2.5.dp.toPx() else 1.dp.toPx()))
+            drawRect(worst, cell.topLeft, cell.size, style = Stroke(if (sel) ink.strokeBold else ink.hairline))
         }
 }
 
-private fun DrawScope.drawPins(origin: GeoPoint, c: Offset, pxPerM: Float, open: List<IncidentRecord>, board: Board, measurer: TextMeasurer) {
+private fun DrawScope.drawPins(
+    origin: GeoPoint, c: Offset, pxPerM: Float, open: List<IncidentRecord>, board: Board, measurer: TextMeasurer,
+    sevFills: Map<Severity, Pair<Color, Color>>, ink: PlanInk,
+) {
     open.filter { it.incident.location != null }
         .groupBy { GeoMath.cellKey(it.incident.location!!, CELL_M) }
         .forEach { (key, recs) ->
             val cell = cellOf(origin, c, pxPerM, key)
             recs.sortedByDescending { it.incident.severity }.forEachIndexed { n, r ->
-                val at = Offset(cell.right + 4.dp.toPx() + n * 26.dp.toPx(), cell.top - 4.dp.toPx())
-                val rad = 12.dp.toPx()
-                drawCircle(Px.Black, rad + 2.dp.toPx(), at)
-                drawCircle(r.incident.severity.color(), rad, at)
-                val t = measurer.measure(board.letter(r.incident.id), figures(13, FontWeight.Bold, Px.Black))
+                val (fill, onFill) = sevFills.getValue(r.incident.severity)
+                val at = Offset(cell.right + ink.gap + n * ink.pinRadius * 2.2f, cell.top - ink.gap)
+                drawCircle(ink.nodeFill, ink.pinRadius + ink.stroke, at)
+                drawCircle(fill, ink.pinRadius, at)
+                val t = measurer.measure(board.letter(r.incident.id), ink.label.copy(color = onFill))
                 drawText(t, topLeft = at - Offset(t.size.width / 2f, t.size.height / 2f))
             }
         }
 }
 
-private fun DrawScope.drawScale(pxPerM: Float, measurer: TextMeasurer) {
+private fun DrawScope.drawScale(pxPerM: Float, measurer: TextMeasurer, ink: PlanInk) {
     val len = 50f * pxPerM
-    val y = size.height - 8.dp.toPx()
-    drawLine(Px.Dim, Offset(0f, y), Offset(len, y), 1.5.dp.toPx())
-    drawLine(Px.Dim, Offset(0f, y - 4.dp.toPx()), Offset(0f, y + 1.dp.toPx()), 1.5.dp.toPx())
-    drawLine(Px.Dim, Offset(len, y - 4.dp.toPx()), Offset(len, y + 1.dp.toPx()), 1.5.dp.toPx())
-    drawText(measurer, "50 m", Offset(len + 8.dp.toPx(), y - 10.dp.toPx()), grotesk(13, FontWeight.Medium, Px.Dim))
+    val y = size.height - ink.gap * 2
+    val tick = ink.gap
+    drawLine(ink.node, Offset(0f, y), Offset(len, y), ink.stroke)
+    drawLine(ink.node, Offset(0f, y - tick), Offset(0f, y + tick), ink.stroke)
+    drawLine(ink.node, Offset(len, y - tick), Offset(len, y + tick), ink.stroke)
+    drawText(measurer, "50 m", Offset(len + ink.gap * 2, y - ink.gap * 4), ink.label)
     // North: a plain letter over a short tick, top right.
-    val n = Offset(size.width - 10.dp.toPx(), 4.dp.toPx())
-    drawLine(Px.Dim, n + Offset(0f, 18.dp.toPx()), n + Offset(0f, 34.dp.toPx()), 1.5.dp.toPx())
-    drawText(measurer, "N", n - Offset(4.dp.toPx(), 0f), grotesk(13, FontWeight.Bold, Px.Dim))
+    val n = Offset(size.width - ink.gap * 3, 0f)
+    drawText(measurer, "N", n, ink.label)
+    drawLine(ink.node, n + Offset(ink.gap, ink.gap * 5), n + Offset(ink.gap, ink.gap * 9), ink.stroke)
 }
