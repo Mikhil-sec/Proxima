@@ -8,18 +8,19 @@ Proxima lets people raise and route emergencies, find lost children and get guid
 
 <!-- ASSEMBLY STATUS (TRUST owns this file; remove this block before submitting)
      Filled: Problem & user · Data sources · Tech stack · How to run · AI disclosure (TRUST row) · draft decisions.
-     STILL NEEDED from each lane, by 10:30 Sat:
+     RECEIVED: MESH (measured-on-phones table, #47) · LOCATE (radar table + AI row, #60).
+     STILL NEEDED from each lane, by 10:30 Sat (#23):
        UI (Mikhil)   – the diagram in "How it works"; screenshots; AI-disclosure row
-       MESH (Chanum) – one line on hop limit / dedup / store-and-forward actually measured; AI row
-       AI (Seeya)    – which on-device LLM runtime shipped, and the tiering; AI row
-       LOCATE (Yorvan) – UWB vs GPS vs RSSI: what works on which phone; AI row
+       AI (Seeya)    – AI-disclosure row; their decision shortlist draft is in docs/lanes/AI.md
+     TRUST to decide before submitting: roles (#55) and friend find (#61) are built + tested on the TRUST side but
+     appear in the app only if MESH/UI wire them. Claim them ONLY if they are on screen in the demo build.
      Also: "Surprise card" once drawn, and the final 5–10 decision shortlist (AI lane compiles ~10:00 Sat).
 
      *** CHECK BEFORE SUBMITTING (was a blocker until 18:10 Fri) ***
-     The signing/sealing claims are now TRUE in the build with simulation OFF: TinkTrustEngine (Ed25519 + HPKE,
-     Keystore-backed) is wired in TrustModule. The 21-test security contract passes on the JVM AND on a Galaxy
-     S24 Ultra under the real Android Keystore (18:36 Fri, `:trust:connectedDebugAndroidTest`). Remaining before
-     submitting: one two-phone found-notice with simulation OFF (end-to-end over the mesh, asked on #19).
+     The signing/sealing/identity claims are TRUE in main with simulation OFF: TinkTrustEngine (Ed25519 + HPKE,
+     Keystore-backed, fresh identity per app session). Security contract on device: 21/21 on the Honor (18:50),
+     22/22 on the S24 Ultra built from main incl. per-session identity (19:47, M2 step 3).
+     Remaining: the M2 two-phone lost & found with simulation OFF (#53 step 2) - record its result here.
 -->
 
 ## Problem & user
@@ -43,8 +44,9 @@ Everything is one `Incident` on one pipeline — lost person, sighting, found, m
 1. **One-button SOS (voice or tap).** On-device AI turns panicked speech into a ~200-byte structured incident
    (type, severity, landmark). A rules-based classifier (`RuleTriageEngine`, keywords in English, French and
    Kreol Morisien) runs on every phone as the fallback, so the feature never depends on a model loading.
-2. **Multi-hop mesh.** The incident is signed and relayed phone to phone over Bluetooth / Wi-Fi with no
-   network. Severity sets the hop budget (3 / 5 / 7 / 10); duplicates are dropped by packet id.
+2. **Multi-hop mesh.** The incident is **signed (Ed25519)** and relayed phone to phone over Bluetooth / Wi-Fi with
+   no network. A node's id is derived from its key, so an altered alert, or one claiming someone else's id, is
+   rejected. Severity sets the hop budget (3 / 5 / 7 / 10); duplicates are dropped by packet id.
 3. **Guided response.** The incident resolves to a **vetted protocol card with a cited source**, read aloud,
    plus the **nearest real help point** from the Mauritian dataset with distance and bearing.
 4. **Lost & found, privately.** The guardian reports a lost child — minimal description, **no name, no photo**.
@@ -136,7 +138,7 @@ cards already cover.
 ## Tech stack
 
 Kotlin · Jetpack Compose · Google Nearby Connections · Room · androidx UWB · Fused Location ·
-Google Tink (Ed25519 signing, HPKE sealing) · on-device LLM: **Gemma 4 E2B on Google LiteRT-LM** (model file
+Google Tink (Ed25519 signing, HPKE X25519 sealing, keys under the Android Keystore) · on-device LLM: **Gemma 4 E2B on Google LiteRT-LM** (model file
 sideloaded, GPU with CPU fallback; Gemini Nano through ML Kit where Android AICore offers it) ·
 Android SpeechRecognizer / TextToSpeech (offline recognizer)
 
@@ -213,6 +215,9 @@ ever travels encrypted to the guardian's key.
 
 - No names, no photos and no profiles. Lost-person alerts carry a minimal description only.
 - A child's location travels **sealed to the guardian's public key**; relays forward it and cannot read it.
+- **No stable identifier.** A phone gets a fresh key, and with it a fresh node id, every app session, so a node id
+  cannot be used to follow one phone around the venue. Previous keys stay on the phone for 24 h only, so a
+  guardian whose app restarts mid-search still receives the finder's message.
 - Crowd density is reported as **anonymous ~25 m grid cells**, never as individual positions.
 - No account, no server, no analytics. The app declares no camera and no contacts permission.
 
