@@ -56,7 +56,7 @@ _Updated 18:53 Fri. `lane/locate` = `main` (PR #39 merged 18:34) + README/lane-d
 - `app/` doesn't set `MeshBeaconInfo.location` → AI's crowd heatmap empty with sim OFF (asked UI in #40).
 
 **Exact next step**
-1. Open PR `lane/locate` → main (README + lane doc), merge after CI.
+1. ~~Open PR lane/locate → main~~ done 19:00 (#42 merged).
 2. (📱 2 phones, ~10 min OUTDOORS) `radar_test.sh setup` → `track <S23+> <other> gps` → compare distance/bearing; check
    `status` heading against a real compass app. Re-check UWB arrow smoothness indoors. Then `cleanup`.
 3. Watch #40 (UI wiring of help-point arrow + beacon location) and #14/#15 (`trackFinder` fix); help UI if asked.
@@ -92,6 +92,10 @@ Chanum's S26+ (SM-S947B, API 37) has UWB + AoA support flag; comma-decimal local
 | 18:31 Fri | Help-point direction: `LocateTargets.helpPoint(HelpPoint)` → reuse `track()` (GPS + compass, live relative bearing); UWB now starts only once the target is a mesh peer with `hasUwb` (no REQUEST flood for help points / non-UWB phones). Build + tests green |
 | 18:40 Fri | PR #39 merged (CI green). Asked UI in #40 (help-point arrow + wire `MeshBeaconInfo.location`). README radar section + AI-disclosure row written (#23) |
 | 18:53 Fri | Reviewed #14/#15 for LOCATE: 👍 + non-blocking `trackFinder` fix (newest `atMs`, same finder). Saving protocol |
+| 19:00 Fri | New session: merged main (#41), build + locate tests green, **PR #42 merged** (README radar + lane doc). Reviewed UI's RadarScreen (lane/ui) against `RadarFix`: compatible; posted ±0 m accuracy-label nit on #40 |
+| 19:13 Fri | **Smoothed UWB arrow verified on phones** (S23+ guardian → Chanum S26+, normal `mu.proxima.app` reinstalled on both at user request, sim OFF, mesh connect 3 s). 313 fixes ~3 Hz: ahead ≈ 352–358° at 1.8 m, right ≈ +52…+62°, left ≈ −23…−38° (at ~0.5 m); arrow follows a turn in ~1 s; at ≥0.4 m no visible step >30° (raw had ±40° spikes). Only jumps (35–89°) at 0.30–0.34 m, mostly across hidden gaps. Arrow hidden <0.3 m as designed |
+| 19:25 Fri | Outdoor GPS radar, site 1 (S26+ fixed point, S23+ walks): distance smooth, 59.5 m at the far spot vs 70 steps (≈49–60 m), bearing steady ±1°, auto handover UWB→GPS at ~6 m and back to UWB at ~1 m. **Heading ≈ +70° off** (pointing at target read 250° vs 180° true), steady, also on the walk back |
+| 19:37 Fri | Outdoor GPS radar, site 2 (35 steps ≈ 26 m): **heading correct** (walking away 285–290° vs 278–286° true; pointing at target rel 353–1°; walking back rel 0–19°), spin tracked smoothly. GPS distance peaked 23.8 m, drifted to 18 m while standing (±6 m GPS). UWB re-acquired at **10.8 m** walking back, arrow rel 0–5° to contact. → heading code OK; the site-1 error was environment/uncalibrated magnetometer, not code |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |

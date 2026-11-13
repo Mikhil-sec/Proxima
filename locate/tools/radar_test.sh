@@ -39,7 +39,9 @@ set_sim() {  # set_sim <serial> true|false
 case "${1:-}" in
   setup)
     [ -n "$(serials)" ] || { echo "No phone visible to adb (USB debugging on? prompt accepted?)"; exit 1; }
-    ./gradlew -I locate/tools/locatetest.init.gradle :app:assembleDebug --console=plain -q
+    # PKG=mu.proxima.app → the team's normal build (installs over / replaces it); default → side-by-side test build.
+    if [ "$PKG" = "$TEAM_PKG" ]; then ./gradlew :app:assembleDebug --console=plain -q
+    else ./gradlew -I locate/tools/locatetest.init.gradle :app:assembleDebug --console=plain -q; fi
     for s in $(serials); do
       echo "== $s ($(model "$s"))"
       "$ADB" -s "$s" install -r --user 0 "$APK" | tr -d '\r' | tail -1
