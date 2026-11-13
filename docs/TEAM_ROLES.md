@@ -11,7 +11,7 @@ Each member owns one lane: one Gradle module and one lane file. Lanes only touch
 | **AI** (triage, voice) | | | Galaxy S24 Ultra (recommended) | Strongest on-device LLM (12 GB) |
 | **LOCATE** (radar, UWB, map) | | | Galaxy S26+ (recommended) | UWB + newest sensors |
 | **MESH** (Nearby, relay) | | | Galaxy S23+ (recommended) | Tier 1 relay; UWB partner for LOCATE tests |
-| **TRUST** (crypto, QR, dataset) | Member 5 — Diya | @Diya-Ramkalawon | Galaxy S24 Ultra | Tier 1 in practice — also usable as 2nd UWB phone (LOCATE) and relay (MESH). See note below |
+| **TRUST** (crypto, QR, dataset) | Member 5 — Diya | @diya-r6 | Galaxy S24 Ultra | Tier 1 in practice — also usable as 2nd UWB phone (LOCATE) and relay (MESH). See note below |
 
 Phones are shared for tests: LOCATE needs a second UWB phone (S23+ or S24 Ultra), and MESH needs 3+ phones for hops.
 
