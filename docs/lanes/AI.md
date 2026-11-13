@@ -27,7 +27,7 @@ Implement `TriageEngine` + `VoiceIo` and return them from `AiModule`. The `TRIAG
 **Pivot (#30, 17:40 Fri)**
 - [x] B hands-free guided first aid: device-tested on S24U.
 - [~] D crowd-crush early warning: code + tests; needs UI wiring + multi-phone test.
-- [ ] On-device LLM: Gemma 4 E2B (Nano unusable on team phones).
+- [~] On-device LLM: Gemma 4 E2B (Nano unusable on team phones). `LiteRtLmBackend` + 7 JVM tests done 18:48; model downloaded; device test pending a phone.
 **P2**
 - [ ] Kreol/French voice input; hazard photo classification (multimodal model) if time allows.
 - [ ] **10:00 Sat: compile all decision logs into a shortlist** for the README.
@@ -86,6 +86,8 @@ _Saved 18:40 Fri by Seeya's session. Branch `lane/ai`, pushed, clean. Last AI me
 | 18:25 Fri | B device-tested on S24U (all 5 commands). Found+fixed on device: language fallback stuck on en-MU, no offline speech pack (now requested), TTS silent under music (audio focus), "he stop breathing" ended the guide. Nano UNAVAILABLE on S24U too. |
 | 18:33 Fri | D crowd-crush early warning built (CrowdRiskModel + CrowdRiskMonitor, 15 tests, 72 ai tests green). |
 | 18:40 Fri | Saving protocol: handoff rewritten; #35 answered (fix on lane/ai). |
+| 18:46 Fri | PR #41 merged to main (offload, B, D, voice fix); #35 + #1 notified. Gemma 4 E2B model downloaded (2,588,147,712 bytes, size matches HF). |
+| 18:48 Fri | `LiteRtLmBackend` (Gemma via LiteRT-LM, shared engine) + `FirstReadyBackend` (Gemma → Nano) wired in AiModule; GPU native libs declared; 7 new JVM tests green. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -109,4 +111,7 @@ _Saved 18:40 Fri by Seeya's session. Branch `lane/ai`, pushed, clean. Last AI me
 | 18:25 Fri | Gemini Nano not usable on team phones (S26+ SLSI: download cancelled; S24U: UNAVAILABLE) | AICore eligibility is outside our control | Waiting on AICore updates |
 | 18:33 Fri | D: density alone never exceeds WATCH; WARNING requires a human crowd report; only the Command Center raises alerts | Phone counts are app users only (lower bound) and a packed stage front is normal; one raiser avoids alert storms; merger dedups the rest | Pure density thresholds; every phone raising alerts |
 | 18:33 Fri | D excludes its own alerts by incident id (not just by text) | An LLM re-triaging the alert can rewrite its summary → self-escalation loop | Prefix-only exclusion |
+| 18:44 Fri | Merge lane/ai → main now (PR #41), before Gemma work | #35 (Honor voice) was blocked on it; B/D/offload need integration time before the 08:00 freeze; a Gemma change shouldn't hold back tested work | Waiting to merge everything together with Gemma |
+| 18:48 Fri | **On-device LLM = Gemma 4 E2B via LiteRT-LM** (`gemma-4-E2B-it.litertlm`, Apache 2.0, sideloaded), Gemini Nano kept as second choice via `FirstReadyBackend` | Nano unusable on all team phones; Gemma is not gated, runs on any Android GPU/CPU, Google reports 0.3 s TTFT / ~52 tok/s GPU on S26 Ultra | Qwen3-1.7B (fallback if Gemma fails on device); rules + offload only; the `-gpu.litertlm` file (it is the Web build) |
+| 18:48 Fri | One LLM engine per process, loaded once in the background at startup, shared by triage + guide behind a mutex; `isReady` false while loading | 2.6 GB can't be loaded twice; load takes up to ~10 s and must never block an SOS (rules answer meanwhile) | Lazy load on first SOS (first report would hit the timeout); one engine per feature |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |
