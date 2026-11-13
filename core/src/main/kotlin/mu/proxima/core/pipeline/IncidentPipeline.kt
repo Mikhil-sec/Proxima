@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -158,9 +159,17 @@ class IncidentPipeline(
 
     /** Guardian side: radar target that follows the finder's sealed location updates. */
     fun trackFinder(notice: FoundNotice, label: String = "Finder"): TrackTarget {
-        val locations: Flow<GeoPoint> = foundNotices
-            .filter { it.tagId == notice.tagId }
-            .mapNotNull { it.location }
+        // Only this finder, and only newer positions: store-and-forward can flush older notices late, and a second
+        // person answering the same alert must not move this radar (LOCATE review on #14).
+        val locations: Flow<GeoPoint> = flow {
+            var newest = Long.MIN_VALUE
+            foundNotices.collect { n ->
+                if (n.tagId == notice.tagId && n.finderNodeId == notice.finderNodeId && n.atMs > newest) {
+                    newest = n.atMs
+                    n.location?.let { emit(it) }
+                }
+            }
+        }
         return TrackTarget(nodeId = notice.finderNodeId, label = label, locations = locations)
     }
 
