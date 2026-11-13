@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AI lane: merged into the app manifest automatically. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- VoiceIo: speech-to-text for SOS reports. Requested at runtime via AiModule voice.requiredPermissions. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Android 11+ package visibility: let us bind to the speech recognizer and TTS engines. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+</manifest>

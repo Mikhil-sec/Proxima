@@ -4,7 +4,6 @@ import android.content.Context
 import mu.proxima.core.engine.HelpPointRepository
 import mu.proxima.core.engine.ProtocolRepository
 import mu.proxima.core.engine.TrustEngine
-import mu.proxima.core.fake.EmptyProtocolRepository
 import mu.proxima.core.fake.FakeTrustEngine
 
 /**
@@ -12,10 +11,12 @@ import mu.proxima.core.fake.FakeTrustEngine
  * Owns: keys/signing/sealing, wristband QR, and the real datasets (help points + protocol cards).
  */
 object TrustModule {
-    fun createTrust(context: Context, simulation: Boolean): TrustEngine {
-        // TODO(TRUST): if (!simulation) return TinkTrustEngine(context)
-        return FakeTrustEngine()
-    }
+    /**
+     * Simulation OFF (the demo) = real Ed25519 signing + HPKE sealing, keys in the Android Keystore.
+     * Simulation ON = `FakeTrustEngine`, which signs with "SIM" and base64s instead of encrypting - dev only.
+     */
+    fun createTrust(context: Context, simulation: Boolean): TrustEngine =
+        if (simulation) FakeTrustEngine() else TinkTrustEngine(context)
 
     /**
      * Real OSM dataset, always - there is no simulated variant. 524 Mauritius help points parsed from
@@ -23,8 +24,10 @@ object TrustModule {
      */
     fun createHelpPoints(context: Context): HelpPointRepository = AssetHelpPointRepository(context)
 
-    fun createProtocols(context: Context): ProtocolRepository {
-        // TODO(TRUST): AssetProtocolRepository(context, "data/protocols.json")
-        return EmptyProtocolRepository()
-    }
+    /**
+     * Vetted protocol cards, always real. Transcribed from the IFRC 2020 first aid guidelines with a
+     * citation on each card; `bestFor` returns null for subtypes the source does not cover rather than
+     * substituting an unrelated card.
+     */
+    fun createProtocols(context: Context): ProtocolRepository = AssetProtocolRepository(context)
 }

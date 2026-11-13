@@ -73,8 +73,12 @@ class RuleTriageEngine : TriageEngine {
 
     fun classify(report: RawReport): TriageResult {
         val text = report.text.lowercase()
-        val hinted = report.typeHint
-        val match = rules.firstOrNull { r -> (hinted == null || r.type == hinted) && r.matches(text) }
+        // #16: a panicking user can tap the wrong quick button. The button keeps its type unless the
+        // words match a CRITICAL rule of another type ("not breathing", "fire", "stampede"...): then the words win.
+        val critical = rules.firstOrNull { r -> r.severity == Severity.CRITICAL && r.matches(text) }
+        val hinted = report.typeHint?.takeUnless { critical != null && critical.type != it }
+        val match = (if (hinted == null) critical else null)
+            ?: rules.firstOrNull { r -> (hinted == null || r.type == hinted) && r.matches(text) }
             ?: rules.firstOrNull { r -> r.matches(text) }
 
         val type = hinted ?: match?.type ?: IncidentType.MEDICAL
