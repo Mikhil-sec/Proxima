@@ -117,6 +117,9 @@ TRUST's draft stopped at 18:05; the main change is adding the evening decisions.
 | 18:55 Fri | Fix: timed-out Gemma call no longer blocks the next SOS (streaming + cancelProcess, +1 test). Pinged Mikhil on #30. |
 | 19:00 Fri | Triage accuracy eval (`ai/eval/`, 32 cases, rules vs model vs shipped). Laptop run blocked by Windows Application Control (WinError 4551) → added on-phone eval mode to the probe. |
 | 19:10 Fri | #30 approved by all lanes → PR #49 merged: guide + crowd contract in `core/`, deprecated aliases in `ai/`. README tech stack + AI disclosure row written (#23), no LLM results claimed yet. |
+| 20:10 Fri | Lead merged all lanes (PR #67 took lane/ai at a1923f3); pulled main fb20894, build+tests green (#68); posted Gemma push steps. Aliases removed + "1 phone" fix on lane/ai. |
+| 20:23 Fri | Fresh teammate set (12) run once on Diya's S24U with the team build (no install, eval folder removed after): EN+FR shipped under-triage 4/7, Kreol 1/5. |
+| 20:35 Fri | Seizure/electrical → CRITICAL, "fils", "old lady", lost/found floor; README reports fresh set pre-fix; REPORT_v3_fresh.md frozen. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -147,4 +150,7 @@ TRUST's draft stopped at 18:05; the main change is adding the evening decisions.
 | 19:00 Fri | Accuracy eval scores the **shipped** path (real prompt, parser, sanitize, rules safety net, 6 s budget) with labels fixed before any run | Judges and we need a number that reflects what the app does, not the raw model; fixing labels first prevents tuning to results | Scoring raw model output; eyeballing a few examples |
 | 19:00 Fri | Do not bypass Windows Application Control to run the eval on the laptop; run it on the phone instead | Security policy on the machine; the phone run also gives real latency/RAM | Disabling Smart App Control (irreversible without reset) |
 | 19:05 Fri | Contract move to `core/` keeps deprecated typealiases at the old `ai/` names | UI had already merged code importing the `ai/` names (#46); aliases avoid breaking `app/` (UI-owned) near the freeze | Moving and breaking imports in the same hour |
+| 20:20 Fri | Fresh test set written by a teammate (labels verbatim, committed before the run, run once) is the headline accuracy number | Every earlier set was written by the same person who tuned the code; only an independent set is honest | Reporting the tuned 1-of-44 figure |
+| 20:30 Fri | **Seizure and live wire raised HIGH → CRITICAL** (rules + severity floor), adopting the teammate's ratings (Seeya) | Under-triage is the dangerous error; both justify the widest alert (hop budget 10 vs 7) | Keeping HIGH and reporting them as policy disagreements |
+| 20:30 Fri | Fix the two real fresh-set misses, but report the fresh number as measured **before** the fixes (Seeya) | Fixing after seeing a test set inflates it; judges get the unbiased number plus what we changed | Re-scoring after fixes; not fixing |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |
