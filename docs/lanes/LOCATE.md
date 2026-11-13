@@ -98,6 +98,7 @@ mismatch → uninstall first, tell them to reinstall).
 | 18:20 Fri | Debug adb radar trigger (TRACK/STOP/STATUS) + `locate/tools/radar_test.sh`; build + tests green, merged latest main |
 | 18:10 Fri | **UWB radar proven on phones, simulation OFF** (S23+ guardian → S26+ target over the real mesh): TRACK → first `src=UWB` fix in 0.5 s, aoa=true, ~3 Hz, d 0.21–0.31 m side by side; arrow hidden <0.3 m as designed. CONTROL "uwb" delivered by NearbyMeshEngine (#24 satisfied) |
 | 18:16 Fri | UWB arrow check (S23+ flat, S26+ at ~1.7 m): ahead → rel ≈ +5…+20°, 45° right → ≈ +30…+40°, 45° left → ≈ 340…350° (−10…−20°). **Sign correct, not mirrored** (`UWB_AZIMUTH_SIGN` stays +1). Angles compressed/biased ~+8° and raw azimuth jitters (single ±40° spikes, a few exact 270° values) → needs smoothing + outlier rejection before the UI arrow |
+| 18:25 Fri | #24 confirmed on phones + commented; merged main (MESH dbb943e: no store-and-forward for CONTROL, fine with our 3 s retry). Test builds removed from S23+ and Chanum's S26+ |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
