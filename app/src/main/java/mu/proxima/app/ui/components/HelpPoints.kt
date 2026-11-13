@@ -25,6 +25,7 @@ import mu.proxima.core.model.GeoMath
 import mu.proxima.core.model.GeoPoint
 import mu.proxima.core.model.HelpCategory
 import mu.proxima.core.model.RankedHelpPoint
+import mu.proxima.core.model.Role
 
 /** Beyond this, a walking arrow misleads (Ganga Talao: the nearest clinic is ~8.5 km). Show distance and place. */
 private const val WALKABLE_M = 2_000.0
@@ -51,6 +52,14 @@ fun NearestHelp(graph: ProximaGraph, from: GeoPoint?, categories: Set<HelpCatego
             .onFailure { failed = true }
     }
     val heading by graph.locate.headingDeg.collectAsStateWithLifecycle()
+    // Live posts (#55): phones whose organiser-signed role the mesh verified on their own beacons. They move with
+    // the tent, and at a festival they are usually far closer than any fixed point in the dataset.
+    val peers by graph.mesh.peers.collectAsStateWithLifecycle()
+    val posts = if (from == null) emptyList() else peers
+        .filter { p -> p.location != null && p.role?.let { it.serves(categories) } == true }
+        .map { it to GeoMath.distanceM(from, it.location!!) }
+        .sortedBy { it.second }
+        .take(2)
     if (failed) {
         Text(
             "Nearby help points couldn't load on this phone. Ask a steward for the nearest first aid post.",
@@ -61,11 +70,28 @@ fun NearestHelp(graph: ProximaGraph, from: GeoPoint?, categories: Set<HelpCatego
         return
     }
     // Loading: render nothing rather than a spinner; the dataset is local and answers in milliseconds.
-    val list = help ?: return
-    if (list.isEmpty()) return
+    val list = help ?: if (posts.isEmpty()) return else emptyList()
+    if (list.isEmpty() && posts.isEmpty()) return
 
     Column(modifier) {
         Text("Nearest help", style = MaterialTheme.typography.titleLarge)
+        posts.forEach { (post, distanceM) ->
+            ListItem(
+                headlineContent = { Text(post.roleLabel ?: post.role!!.label(), style = MaterialTheme.typography.bodyLarge) },
+                supportingContent = { Text("${post.role!!.label()} on site now, verified by the organiser", style = MaterialTheme.typography.bodySmall) },
+                leadingContent = {
+                    val to = post.location!!
+                    if (heading != null) {
+                        val rel = GeoMath.relativeBearingDeg(GeoMath.bearingDeg(from!!, to), heading!!.toDouble()).toFloat()
+                        SymbolIcon(Sym.Direction, description = "Direction to ${post.roleLabel ?: "the post"}", modifier = Modifier.rotate(rel), tint = MaterialTheme.colorScheme.primary)
+                    } else {
+                        SymbolIcon(Sym.Verified, description = "Verified", tint = MaterialTheme.semantic.safe)
+                    }
+                },
+                trailingContent = { Text(distanceLabel(distanceM), style = MaterialTheme.typography.titleMedium) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            )
+        }
         list.forEach { h ->
             val walkable = h.distanceM <= WALKABLE_M
             ListItem(
@@ -83,7 +109,7 @@ fun NearestHelp(graph: ProximaGraph, from: GeoPoint?, categories: Set<HelpCatego
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
         }
-        if (list.first().distanceM > WALKABLE_M) {
+        if (posts.isEmpty() && list.isNotEmpty() && list.first().distanceM > WALKABLE_M) {
             Text(
                 "Help is ${distanceLabel(list.first().distanceM)} away. Tell people around you; your alert keeps spreading phone to phone.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -93,3 +119,20 @@ fun NearestHelp(graph: ProximaGraph, from: GeoPoint?, categories: Set<HelpCatego
         }
     }
 }
+
+fun Role.label(): String = when (this) {
+    Role.MEDIC -> "Medic"
+    Role.STEWARD -> "Steward"
+    Role.POLICE -> "Police"
+}
+
+/** Which live posts answer which need: medics for anything clinical, police for police, stewards for everything. */
+private fun Role.serves(categories: Set<HelpCategory>): Boolean = when (this) {
+    Role.MEDIC -> categories.any { it in CLINICAL }
+    Role.POLICE -> HelpCategory.POLICE in categories
+    Role.STEWARD -> categories.isNotEmpty()
+}
+
+private val CLINICAL = setOf(
+    HelpCategory.HOSPITAL, HelpCategory.HEALTH_CENTRE, HelpCategory.FIRST_AID_POST, HelpCategory.AMBULANCE, HelpCategory.DEFIBRILLATOR,
+)

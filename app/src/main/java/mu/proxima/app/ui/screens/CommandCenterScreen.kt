@@ -69,6 +69,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import mu.proxima.app.ProximaGraph
 import mu.proxima.app.ui.components.MeshStatus
+import mu.proxima.app.ui.components.label
 import mu.proxima.app.ui.components.SimLabel
 import mu.proxima.app.ui.components.StateLabel
 import mu.proxima.app.ui.components.VerifiedMark
@@ -434,6 +435,7 @@ private data class PlanInk(
     val post: Color,
     val pulse: Color,
     val density: Color,
+    val verified: Color,
     val label: TextStyle,
     val postLabel: TextStyle,
     val hairline: Float,
@@ -479,6 +481,7 @@ private fun SitePlan(
         post = MaterialTheme.colorScheme.primary,
         pulse = MaterialTheme.colorScheme.primary,
         density = MaterialTheme.colorScheme.primary,
+        verified = MaterialTheme.semantic.safe,
         label = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
         postLabel = MaterialTheme.typography.labelLarge.copy(color = MaterialTheme.colorScheme.primary),
         hairline = MaterialTheme.sizes.hairline.px(),
@@ -553,6 +556,13 @@ private fun SitePlan(
                 }
 
                 peers.forEach { drawPhone(it.tier, pos.getValue(it.nodeId), ink) }
+                // Verified posts (#55): medic tents and stewards whose organiser-signed role checked out. Ring + name.
+                peers.filter { it.role != null }.forEach { p ->
+                    val at = pos.getValue(p.nodeId)
+                    drawCircle(ink.verified, ink.pinRadius * 0.9f, at, style = Stroke(ink.stroke))
+                    val t = measurer.measure(p.roleLabel ?: p.role!!.label(), ink.postLabel)
+                    drawText(t, color = ink.verified, topLeft = at + Offset(ink.pinRadius * 1.2f, -t.size.height / 2f))
+                }
 
                 val s = ink.pinRadius * 0.7f
                 drawRect(ink.post, c - Offset(s, s), Size(2 * s, 2 * s))
@@ -581,7 +591,7 @@ private fun SitePlan(
         )
         Text(
             "Shading: phones per 25 m square, from their beacons; no one is tracked. Square: phone that runs AI and " +
-                "relays. Circle: phone. Hatching: where reports came from.",
+                "relays. Circle: phone. Green ring with a name: medic or steward post, verified by the organiser. Hatching: where reports came from.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
