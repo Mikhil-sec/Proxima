@@ -11,9 +11,17 @@ Each member fills in their own GitHub @ and actual phone in their first PR.
 | **LOCATE** (radar, UWB, position) | **Yorvan** (Member 2) | | Galaxy S26+ (recommended) | UWB + newest sensors | #5 |
 | **MESH** (Nearby, relay) | **Chanum** (Member 3) | | Galaxy S23+ (recommended) | Tier 1 relay; UWB partner for LOCATE tests | #3 |
 | **AI** (triage, voice) | **Seeya** (Member 4) | @seeya0611 | Galaxy S26+ | Tier 1 (≥7 GB RAM) for on-device LLM; shared with LOCATE for UWB | #4 |
-| **TRUST** (crypto, QR, dataset) | **Diya** (Member 5) | | Galaxy A56 (recommended) | Tier 2: proves crypto + QR run on mid-range | #6 |
+| **TRUST** (crypto, QR, dataset) | **Diya** (Member 5) | @diya-r6 | Galaxy S24 Ultra | Tier 1 in practice - see the phone note below | #6 |
 
 Phones are shared for tests: LOCATE needs a second UWB phone (S23+ or S24 Ultra), and MESH needs 3+ phones for hops.
+
+> **Phone note (TRUST, 13 Nov):** Diya tests on a Galaxy S24 Ultra, which is **Tier 1** (`docs/ARCHITECTURE.md` device
+> tiers), not the Tier 2 A56 this lane assumed. Three consequences:
+> 1. The "crypto + QR run on mid-range" proof point is **not** demonstrated by the TRUST phone. It needs Mikhil's
+>    Honor X8b or another Tier 2 device. Raised in #11.
+> 2. Diya's S24 Ultra is the same handset Seeya (AI) is down for, so there may be only one between the two lanes -
+>    agree who gets it for the LLM device check vs. crypto/QR runs.
+> 3. Upside: it is a usable second UWB phone for Yorvan (LOCATE) and a Tier 1 relay for Chanum (MESH).
 
 ## How to tell your Claude its lane
 In a fresh session after cloning, say:

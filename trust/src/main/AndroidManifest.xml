@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TRUST lane owns this file. Merged into the app manifest automatically.
+
+     No permissions. The QR wristband was dropped by team decision at 15:35 Fri (#14), so this lane no
+     longer needs CAMERA. Nothing here requests a permission the app does not use - the privacy claims
+     are part of what is being judged. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

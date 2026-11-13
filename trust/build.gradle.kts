@@ -27,3 +27,11 @@ dependencies {
 
     testImplementation(libs.junit)
 }
+
+// Print each test result: `build/` is deny-listed for the agents, so the console is the only report we read.
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = false
+    }
+}
