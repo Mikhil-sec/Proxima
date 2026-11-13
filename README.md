@@ -94,7 +94,29 @@ dropped if its id was seen before (Room table, so this survives a restart). Othe
 **Not measured:** range outdoors, chains longer than 3 phones, and behaviour with dozens of phones. Nearby caps
 connections per phone, so a large crowd forms a partial mesh, and relaying is what covers the gaps.
 
-<!-- UI: architecture diagram here. Source: docs/ARCHITECTURE.md -->
+**Architecture** (full detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))
+
+```mermaid
+flowchart LR
+    subgraph Phone["Phone that needs help"]
+        SOS["SOS: voice or typed"] --> TRI{"Triage<br/>Gemma on device → nearby AI phone → keyword rules"}
+        TRI --> REV["Review screen<br/>(what is sent = what is shown)"]
+        REV --> SIGN["Incident, signed (Ed25519)"]
+    end
+    SIGN -->|Bluetooth / Wi-Fi, no network| R1["Relay phone"]
+    R1 -->|"hop budget 3/5/7/10<br/>dedup · surge control"| R2["Relay phone"]
+    R2 --> CC["Command Center tablet<br/>queue · site plan · density · crowd risk"]
+    R1 --> PH["Every phone nearby<br/>alert + cited protocol card + nearest help"]
+    subgraph LF["Lost & found"]
+        G["Guardian reports a lost child"] -.alert.-> F["Finder: 'I'm with them'"]
+        F -->|"location sealed to the guardian's key (HPKE)<br/>relays carry it, can't read it"| G2["Guardian's radar<br/>UWB → GPS"]
+    end
+```
+
+`:core` (pure Kotlin) holds the shared contract and the one `IncidentPipeline`; each lane owns one module behind a
+factory: `:mesh` (Nearby, store-and-forward, surge control), `:ai` (triage, voice, hands-free guide, crowd risk),
+`:locate` (GPS, compass, UWB radar), `:trust` (Tink keys, sealing, verified roles, friend find, cited data) and
+`:app` (Compose UI).
 
 ## Data sources
 
@@ -223,6 +245,9 @@ Full logs: `docs/DECISIONS.md` and `docs/lanes/*.md`.
 3. **Put the phone in airplane mode** — that is the demo. Keep Bluetooth, Wi-Fi and Location switched on; they
    carry the mesh without any network.
 4. Two or more phones show relaying; three or more show multi-hop. A tablet (≥ 600dp) opens the Command Center.
+5. **A fresh install starts in simulation mode** (yellow "Simulation" badge): simulated phones and alerts, so a single
+   phone shows what a busy festival looks like. For the real mesh: press and hold **"Proxima"** at the top left →
+   Developer → **Simulation off** → Restart. Our live demo runs with simulation off.
 
 Nothing leaves the device except signed incident packets passed to nearby phones, and a child's location only
 ever travels encrypted to the guardian's key.
