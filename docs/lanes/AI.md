@@ -45,7 +45,11 @@ Steps come from TRUST's cited protocol cards.
 - B code: `ai/.../guide/` (`HandsFreeGuide`, `GuideCommands`,
   `GuideIntentClassifier`, temp `GuideContract.kt` until #30 lands in core). `AiModule.createGuide(voice, protocols, caps, scope)`.
   Device test: allow mic in Proxima, then `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez guide true [--es card cpr-adult]`.
-- **D crowd-crush warning:** not started (design in #30).
+- **D crowd-crush warning (code + 15 JVM tests, 18:33; not device-tested):** `ai/.../crowd/` (`CrowdRiskModel` pure scoring,
+  `CrowdRiskMonitor` 10 s ticker, temp `CrowdContract.kt`). `AiModule.createCrowdRisk(mesh, locate, pipeline, caps, scope)`.
+  Inputs: peers' anonymous 25 m cells (#28) + self location + pipeline incidents. Density alone ≤ WATCH; WARNING needs a crowd
+  report; DANGER = several reports or report + high + rising density. Only COMMAND_CENTER raises HAZARD/CROWD_CRUSH (1 per area
+  per 10 min); own alerts excluded by id. Needs from UI: wire factory + tint cells; MESH #28 in main. TODO when #10 lands: pass triaged.
 - The S26+ used today was **Chanum's** phone: it now has the AI-lane build (my debug key). He must `adb uninstall mu.proxima.app` before installing his.
 - **Works (JVM-tested):** `ai/.../triage/` — `LlmBackend` interface, `GeminiNanoBackend` (ML Kit Prompt API),
   `TriagePrompt` (prompt + strict validator), `LlmTriageEngine` (6 s budget, rules fallback, severity safety net).
@@ -84,6 +88,7 @@ Steps come from TRUST's cited protocol cards.
 | 17:14 Fri | Tier 2 offload: TieredTriageEngine + TriageServer + LLM-ready announcements; shared sanitize/merge; 40 ai tests green. |
 | 18:04 Fri | Nano download fails on S26+ (Samsung SLSI AICore); B hands-free guide built (16 tests, 56 ai tests green); #30 opened. |
 | 18:25 Fri | B device-tested on S24U (all 5 commands). Found+fixed on device: language fallback stuck on en-MU, no offline speech pack (now requested), TTS silent under music (audio focus), "he stop breathing" ended the guide. Nano UNAVAILABLE on S24U too. |
+| 18:33 Fri | D crowd-crush early warning built (CrowdRiskModel + CrowdRiskMonitor, 15 tests, 72 ai tests green). |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -105,4 +110,6 @@ Steps come from TRUST's cited protocol cards.
 | 18:25 Fri | Guide/voice hold transient audio focus with USAGE_ASSISTANCE_NAVIGATION_GUIDANCE | On device the instructions were inaudible under music and the mic transcribed it | Ducking only; relying on media volume |
 | 18:25 Fri | Breathing status is checked before "stop"; "stop breathing" = not breathing | Recognizer wrote "stopped" as "stop" and the guide ended mid-CPR | Whole-word stop alone |
 | 18:25 Fri | Gemini Nano not usable on team phones (S26+ SLSI: download cancelled; S24U: UNAVAILABLE) | AICore eligibility is outside our control | Waiting on AICore updates |
+| 18:33 Fri | D: density alone never exceeds WATCH; WARNING requires a human crowd report; only the Command Center raises alerts | Phone counts are app users only (lower bound) and a packed stage front is normal; one raiser avoids alert storms; merger dedups the rest | Pure density thresholds; every phone raising alerts |
+| 18:33 Fri | D excludes its own alerts by incident id (not just by text) | An LLM re-triaging the alert can rewrite its summary → self-escalation loop | Prefix-only exclusion |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |
