@@ -18,6 +18,7 @@ import mu.proxima.core.model.ProtocolCard
 import mu.proxima.core.model.RadarFix
 import mu.proxima.core.model.RankedHelpPoint
 import mu.proxima.core.model.RawReport
+import mu.proxima.core.model.RolePass
 import mu.proxima.core.model.TrackTarget
 import mu.proxima.core.model.TriageCapability
 import mu.proxima.core.model.TriageResult
@@ -100,6 +101,13 @@ interface TrustEngine {
 
     /** Same as [ownsKey] for node ids, so "is this lost report mine?" survives an app restart. */
     fun ownsNodeId(nodeId: String): Boolean = nodeId == identity.nodeId
+
+    /**
+     * True only if [pass] is signed by the event organiser, unexpired at [nowMs], AND [packet] (e.g. the holder's
+     * beacon) verifies and was signed by `pass.holderKey` - so an overheard pass cannot be replayed by another phone.
+     * Default false: an engine without the organiser's key never shows anyone as verified (#38).
+     */
+    fun verifyRoleClaim(pass: RolePass, packet: MeshPacket, nowMs: Long): Boolean = false
 
     /** Guardian side: mint a new wristband tag bound to this phone's key. */
     fun createWristband(): WristbandTag
