@@ -4,9 +4,12 @@ import android.app.Application
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import mu.proxima.ai.AiModule
+import mu.proxima.core.model.TriageCapability
 import mu.proxima.core.pipeline.IncidentPipeline
 import mu.proxima.locate.LocateModule
+import mu.proxima.mesh.MeshBeaconInfo
 import mu.proxima.mesh.MeshModule
 import mu.proxima.trust.TrustModule
 
@@ -29,6 +32,13 @@ class ProximaGraph(app: Application, val simulation: Boolean) {
     val voice = AiModule.createVoice(app, simulation)
 
     val pipeline = IncidentPipeline(mesh, triage, trust, locate, protocols, scope)
+
+    init {
+        // What this phone's BEACON advertises (issue #28). The mesh snaps the location to its anonymous 25 m cell
+        // before sending (MeshBeaconInfo.coarse); llmReady lets Tier 2 phones pick a peer to offload triage to.
+        scope.launch { locate.selfLocation.collect { MeshBeaconInfo.location.value = it } }
+        scope.launch { triage.capability.collect { MeshBeaconInfo.llmReady.value = it == TriageCapability.ON_DEVICE_LLM } }
+    }
 
     /** Every runtime permission any engine needs — request these once from the UI. */
     val requiredPermissions: List<String>
