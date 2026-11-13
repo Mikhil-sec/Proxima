@@ -43,7 +43,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.proxima.app.ProximaGraph
+import mu.proxima.app.ui.LostFound
 import mu.proxima.app.ui.Nav
+import mu.proxima.app.ui.Screen
 import mu.proxima.app.ui.ageLabel
 import mu.proxima.app.ui.components.BackButton
 import mu.proxima.app.ui.components.Glyph
@@ -62,6 +64,7 @@ import mu.proxima.app.ui.theme.mono
 import mu.proxima.core.model.GeoMath
 import mu.proxima.core.model.GeoPoint
 import mu.proxima.core.model.IncidentRecord
+import mu.proxima.core.model.IncidentType
 import mu.proxima.core.model.ProtocolCard
 import mu.proxima.core.model.RankedHelpPoint
 
@@ -74,7 +77,7 @@ fun rememberNow(periodMs: Long = 1_000): Long {
 }
 
 @Composable
-fun FeedScreen(graph: ProximaGraph, nav: Nav) {
+fun FeedScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav) {
     val incidents by graph.pipeline.incidents.collectAsStateWithLifecycle()
     val me by graph.locate.selfLocation.collectAsStateWithLifecycle()
     val open = incidents.civilianVisible().sortedWith(
@@ -107,7 +110,14 @@ fun FeedScreen(graph: ProximaGraph, nav: Nav) {
     }
 
     val current = incidents.firstOrNull { it.incident.id == selected }
-    if (current != null) IncidentSheet(graph, current, me, onDismiss = { selected = null })
+    if (current != null) {
+        val answerable = current.incident.type == IncidentType.LOST_PERSON && !current.resolved && !lostFound.isMine(current)
+        IncidentSheet(
+            graph, current, me, onDismiss = { selected = null },
+            canResolve = current.incident.type != IncidentType.LOST_PERSON || lostFound.isMine(current),
+            onWithThem = if (answerable) ({ if (lostFound.startSharing(current)) { selected = null; nav.go(Screen.Finder) } }) else null,
+        )
+    }
 }
 
 @Composable
@@ -170,7 +180,14 @@ fun IncidentRow(record: IncidentRecord, me: GeoPoint?, now: Long, modifier: Modi
 /** Incident detail: what it is, who sorted it, what to do, where help is. Bottom sheet, never a dialog. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IncidentSheet(graph: ProximaGraph, record: IncidentRecord, me: GeoPoint?, onDismiss: () -> Unit) {
+fun IncidentSheet(
+    graph: ProximaGraph,
+    record: IncidentRecord,
+    me: GeoPoint?,
+    onDismiss: () -> Unit,
+    canResolve: Boolean = true,
+    onWithThem: (() -> Unit)? = null,
+) {
     val i = record.incident
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -234,7 +251,11 @@ fun IncidentSheet(graph: ProximaGraph, record: IncidentRecord, me: GeoPoint?, on
             }
 
             Spacer(Modifier.height(24.dp))
-            if (!record.resolved) {
+            if (onWithThem != null) {
+                PrimaryAction("I'm with this person", onWithThem, glyph = Glyph.Person)
+                Spacer(Modifier.height(8.dp))
+            }
+            if (!record.resolved && canResolve) {
                 PrimaryAction("Mark as resolved", onClick = {
                     graph.scope.launch { graph.pipeline.resolve(i.id) }
                     scope.launch { state.hide() }.invokeOnCompletion { onDismiss() }

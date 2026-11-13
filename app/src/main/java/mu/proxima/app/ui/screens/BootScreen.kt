@@ -52,7 +52,6 @@ private fun group(perms: List<String>): List<PermissionGroup> {
         nearby.takeIf { it.isNotEmpty() }?.let { PermissionGroup(Glyph.Mesh, "Nearby phones", "Pass alerts from phone to phone without mobile signal.", it) },
         location.takeIf { it.isNotEmpty() }?.let { PermissionGroup(Glyph.Scan, "Location", "So help can find you, and you can find your child.", it) },
         mic.takeIf { it.isNotEmpty() }?.let { PermissionGroup(Glyph.Mic, "Microphone", "Describe an emergency by voice. Nothing is recorded.", it) },
-        camera.takeIf { it.isNotEmpty() }?.let { PermissionGroup(Glyph.Wristband, "Camera", "Scan a child's wristband code.", it) },
         alerts.takeIf { it.isNotEmpty() }?.let { PermissionGroup(Glyph.Alert, "Alerts", "Wake you when your child is found.", it) },
         (perms - known).takeIf { it.isNotEmpty() }?.let { PermissionGroup(Glyph.Check, "Other", "Needed by the mesh.", it) },
     )

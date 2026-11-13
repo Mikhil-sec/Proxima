@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import mu.proxima.app.ProximaGraph
+import mu.proxima.app.ui.LostFound
 import mu.proxima.app.ui.Nav
 import mu.proxima.app.ui.Screen
 import mu.proxima.app.ui.VoiceCapture
@@ -87,17 +88,25 @@ fun List<IncidentRecord>.civilianVisible() =
     filter { !it.resolved && it.incident.type != IncidentType.SIGHTING && it.incident.type != IncidentType.ALL_CLEAR }
 
 @Composable
-fun HomeScreen(graph: ProximaGraph, capture: VoiceCapture, nav: Nav, onDev: () -> Unit) {
+fun HomeScreen(graph: ProximaGraph, capture: VoiceCapture, lostFound: LostFound, nav: Nav, onDev: () -> Unit) {
     val peers by graph.mesh.peers.collectAsStateWithLifecycle()
     val incidents by graph.pipeline.incidents.collectAsStateWithLifecycle()
     val open = incidents.civilianVisible()
+    val myLost = lostFound.myOpenLost(incidents).firstOrNull()
 
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         TopLine(graph.simulation, peers.size, onDev)
-        Spacer(Modifier.height(28.dp))
-        Text("Need help?", style = grotesk(34))
-        Spacer(Modifier.height(6.dp))
-        Text("Hold the red button and say what's happening.", style = grotesk(18, FontWeight.Medium, Px.Dim))
+        if (myLost != null) {
+            Spacer(Modifier.height(12.dp))
+            GuardianBanner(myLost, lostFound.notices[myLost.incident.id] != null) {
+                if (lostFound.notices[myLost.incident.id] != null) nav.go(Screen.Found(myLost.incident.id))
+            }
+        } else {
+            Spacer(Modifier.height(28.dp))
+            Text("Need help?", style = grotesk(34))
+            Spacer(Modifier.height(6.dp))
+            Text("Hold the red button and say what's happening.", style = grotesk(18, FontWeight.Medium, Px.Dim))
+        }
 
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             SosRing(capture, onRelease = { nav.go(Screen.Report(fromHold = true)) })
@@ -107,10 +116,7 @@ fun HomeScreen(graph: ProximaGraph, capture: VoiceCapture, nav: Nav, onDev: () -
         Spacer(Modifier.height(20.dp))
         AlertsStrip(open, onClick = { nav.go(Screen.Feed) })
         Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth()) {
-            LinkCell(Glyph.Scan, "I found someone", Px.Text, Modifier.weight(1f)) { nav.go(Screen.Finder) }
-            LinkCell(Glyph.Wristband, "My wristbands", Px.Dim, Modifier.weight(1f)) { nav.go(Screen.Wristbands) }
-        }
+        LinkCell(Glyph.Person, "I'm with someone who is lost", Px.Text, Modifier.fillMaxWidth()) { nav.go(Screen.Finder) }
         Spacer(Modifier.height(8.dp))
     }
 }
@@ -269,16 +275,48 @@ private fun SosRing(capture: VoiceCapture, onRelease: () -> Unit) {
 /** Secondary destinations: glyph + one-line label, quieter than the report row, full-width halves. */
 @Composable
 private fun LinkCell(glyph: Glyph, label: String, color: androidx.compose.ui.graphics.Color, modifier: Modifier, onClick: () -> Unit) {
-    Column(
+    Row(
         modifier
+            .height(56.dp)
             .clip(RoundedCornerShape(14.dp))
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .clickable(role = Role.Button, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
     ) {
         GlyphIcon(glyph, color, 22.dp)
-        Spacer(Modifier.height(6.dp))
-        Text(label, style = grotesk(15, FontWeight.Medium, color), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.width(12.dp))
+        Text(label, style = grotesk(17, FontWeight.Medium, color), maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/**
+ * Guardian with an open lost report: this replaces the headline until it is resolved.
+ * Amber while searching, green once someone is with the child (tap opens the found alert).
+ */
+@Composable
+private fun GuardianBanner(lost: IncidentRecord, someoneWithThem: Boolean, onClick: () -> Unit) {
+    val color = if (someoneWithThem) Px.Green else Px.Amber
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, color, RoundedCornerShape(20.dp))
+            .clickable(enabled = someoneWithThem, role = Role.Button, onClick = onClick)
+            .padding(18.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        GlyphIcon(if (someoneWithThem) Glyph.Check else Glyph.Person, color, 28.dp)
+        Spacer(Modifier.width(14.dp))
+        Column {
+            Text(if (someoneWithThem) "Someone is with your child" else "Looking for your child", style = grotesk(22, FontWeight.Bold, color))
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (someoneWithThem) "Tap to see where." else "Phones nearby can see your description. We'll alert you the moment someone is with them.",
+                style = grotesk(15, FontWeight.Medium, Px.Text),
+            )
+            Spacer(Modifier.height(6.dp))
+            Text("“${lost.incident.summary}”", style = grotesk(14, FontWeight.Medium, Px.Dim))
+        }
     }
 }
 

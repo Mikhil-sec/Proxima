@@ -37,9 +37,10 @@ import mu.proxima.app.ui.screens.CommandCenterScreen
 import mu.proxima.app.ui.screens.DevSheet
 import mu.proxima.app.ui.screens.FeedScreen
 import mu.proxima.app.ui.screens.FinderScreen
+import mu.proxima.app.ui.screens.FoundAlertScreen
+import mu.proxima.app.ui.screens.RadarScreen
 import mu.proxima.app.ui.screens.HomeScreen
 import mu.proxima.app.ui.screens.ReportScreen
-import mu.proxima.app.ui.screens.WristbandsScreen
 import mu.proxima.app.ui.theme.Px
 import mu.proxima.core.model.DeviceTier
 import mu.proxima.core.model.IncidentType
@@ -50,8 +51,10 @@ sealed interface Screen {
     /** [fromHold]: the SOS ring is already listening; don't start a second capture. */
     data class Report(val hint: IncidentType? = null, val fromHold: Boolean = false) : Screen
     data object Feed : Screen
-    data object Wristbands : Screen
     data object Finder : Screen
+    /** Guardian: someone is with your child ([lostId] = your LOST_PERSON incident). */
+    data class Found(val lostId: String) : Screen
+    data class Radar(val lostId: String) : Screen
     data object Command : Screen
 }
 
@@ -75,6 +78,7 @@ fun ProximaRoot(graph: ProximaGraph) {
     val reducedMotion = rememberReducedMotion()
     val uiScope = rememberCoroutineScope()
     val capture = remember { VoiceCapture(graph.voice, uiScope) }
+    val lostFound = remember { LostFound(graph) }
 
     val homeScreen = if (graph.capabilities.tier == DeviceTier.COMMAND_CENTER) Screen.Command else Screen.Home
     val needsBoot = remember { missingPermissions(context, graph.requiredPermissions).isNotEmpty() }
@@ -100,6 +104,16 @@ fun ProximaRoot(graph: ProximaGraph) {
         }
     }
 
+    // Guardian: the first sealed notice about our lost report interrupts whatever is on screen.
+    LaunchedEffect(Unit) {
+        graph.pipeline.foundNotices.collect { notice ->
+            if (lostFound.onNotice(notice)) {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                nav.go(Screen.Found(notice.tagId))
+            }
+        }
+    }
+
     BackHandler(enabled = nav.canGoBack) {
         if (nav.current is Screen.Report) capture.cancel()
         nav.back()
@@ -116,11 +130,12 @@ fun ProximaRoot(graph: ProximaGraph) {
         ) { screen ->
             when (screen) {
                 Screen.Boot -> BootScreen(graph, onDone = { ready = true; nav.reset(homeScreen) }, onDev = { devOpen = true })
-                Screen.Home -> HomeScreen(graph, capture, nav, onDev = { devOpen = true })
+                Screen.Home -> HomeScreen(graph, capture, lostFound, nav, onDev = { devOpen = true })
                 is Screen.Report -> ReportScreen(graph, capture, nav, screen.hint, screen.fromHold)
-                Screen.Feed -> FeedScreen(graph, nav)
-                Screen.Wristbands -> WristbandsScreen(graph, nav)
-                Screen.Finder -> FinderScreen(graph, nav)
+                Screen.Feed -> FeedScreen(graph, lostFound, nav)
+                Screen.Finder -> FinderScreen(graph, lostFound, nav)
+                is Screen.Found -> FoundAlertScreen(graph, lostFound, nav, screen.lostId)
+                is Screen.Radar -> RadarScreen(graph, lostFound, nav, screen.lostId)
                 Screen.Command -> CommandCenterScreen(graph, onDev = { devOpen = true })
             }
         }

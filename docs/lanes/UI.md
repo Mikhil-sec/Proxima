@@ -113,11 +113,13 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 
 ## NEXT_SESSION_HANDOFF
-- Built (compiles, on `lane/ui`): theme/fonts, Home (SOS hold-to-talk ring, quick report row, alerts strip), Report flow
-  (listen → preview → 3 s auto-send → sent), Feed + incident sheet, Command Center map/panel, Boot (permissions),
-  hidden Dev sheet (long-press wordmark: sim toggle + restart, switch phone/CC view), Wristbands (mint/list), Finder frame.
-- Waiting on: TRUST #7 (QR bitmap + scanner), MESH #8 (force multi-hop), AI #9 (Level 12 Hz), interface-change #10.
-- Next: screenshot review on the Honor against the checklists, then tablet Command Center, then P1 guardian FOUND alert + radar.
+- Works on Honor (SIM): Home/SOS (0.6 s arm), Report (listen → preview → 3 s auto-send → sent), Feed + sheet,
+  lost & found without hardware (guardian banner → Found alert → Radar; Finder picks lost alert → shares sealed location),
+  Boot, Dev sheet. Command Center built but **not yet reviewed on the tablet**.
+- `lane/ui` contains `iface/lost-found` (PR #15, waiting 👍 MESH + TRUST on #14). Do not merge lane/ui to main before #15.
+- Open asks: #8 MESH multi-hop control, #9 AI voice level, #10 report(raw, triaged), #16 AI hint must not downgrade critical.
+- Next: tablet review of Command Center; guided-response card (help point with km + no arrow > 2 km, protocol read aloud);
+  130% font + TalkBack pass; then pitch screenshots.
 
 ## Progress log
 | Time | What |
@@ -126,6 +128,8 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 | 14:45 Fri | Design plan + anti-slop checklist + mobile UI guidelines written (this file) |
 | 14:55 Fri | First full UI pass compiles: Home/SOS, Report, Feed, Command Center, Boot, Dev sheet, Wristbands, Finder. Requests #7 TRUST, #8 MESH, #9 AI, interface-change #10 |
 | 15:05 Fri | On-device review (Honor): SOS hold → voice ring → review → auto-send → "Alert sent, passed to 3 phones" works. Fixed: SOS label, truncated links, "Lost child" titles, duplicate kicker, Sending label |
+| 15:30 Fri | SOS arms only after a steady 0.6 s hold (arming arc); verified a swipe + tap no longer fires it |
+| 15:45 Fri | Wristband dropped (#14, PR #15). New: Finder picks the lost alert ("I'm with them") → sealed location; guardian banner, full-screen Found alert, Radar (sweep, blip, haptic ticks). Verified on Honor in SIM |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -135,4 +139,7 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 | 14:48 Fri | Hand-drawn Canvas glyphs, no icon library or emoji | material-icons is not a dependency; one stroke grammar looks crafted | material-icons-extended (+MBs, stock look), emoji |
 | 14:50 Fri | Plain state back stack instead of navigation-compose | ~7 screens; type-safe routes need the serialization plugin in `:app` | navigation-compose with string routes / serializable routes |
 | 14:52 Fri | Tier 1 = RAM ≥ 7 GB **and** flagship SoC (SM8xxx / Exynos 2xxx / Tensor) or UWB | Honor X8b reports 7.5 GB RAM but has SM6225, would have tried to run the LLM | RAM-only threshold; raising RAM to 10 GB (would demote the S23+) |
+| 15:30 Fri | SOS ring needs a 0.6 s steady hold, aborts on movement past touch slop | Brushing/scrolling across the ring triggered it | Instant press; double-tap; confirm dialog |
+| 15:35 Fri | Drop QR wristband; finder answers the guardian's lost alert, location sealed to the reporter key | No hardware; same privacy property; one fewer module (camera) | QR wristband + scanner; NFC |
+| 15:45 Fri | Radar = terminal register (sweep, rings, mono distance); found alert = civilian register in green | Good news must read instantly; the radar is a tool, can be dense | Map view (needs tiles, offline) |
 | 14:55 Fri | Show the AI result for 3 s, auto-send unless cancelled; proposed `report(raw, triaged)` (#10) | User can catch a wrong triage; what you see is what is sent | Send instantly (no human check), require a confirm tap (slower in panic) |
