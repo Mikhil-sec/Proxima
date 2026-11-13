@@ -1,7 +1,12 @@
 package mu.proxima.mesh
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.util.Log
 import com.google.android.gms.nearby.Nearby
@@ -140,12 +145,44 @@ class NearbyMeshEngine(
         jobs += scope.launch(serial) { // demo allow-list (issue #8)
             MeshDemoControls.allowedNeighbours.collect { applyAllowList() }
         }
+        registerDebugPing()
+    }
+
+    // ---------------------------------------------------------------- debug-only adb hook
+
+    private var pingReceiver: BroadcastReceiver? = null
+
+    /**
+     * Debug builds only: `adb shell am broadcast -a mu.proxima.mesh.PING` sends a CONTROL packet
+     * (channel "ping", ignored by the incident pipeline) so multi-hop can be tested without UI.
+     */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private fun registerDebugPing() {
+        if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0) return
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context, intent: Intent) {
+                scope.launch {
+                    val p = packets.create(PacketKind.CONTROL, "ping from $selfNodeId", Severity.HIGH, channel = "ping")
+                    Log.i(TAG, "tx PING ${p.packetId.take(8)} to ${endpoints.values.count { it.connected }} neighbours")
+                    send(p)
+                }
+            }
+        }
+        val filter = IntentFilter(ACTION_PING)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+        } else {
+            context.registerReceiver(receiver, filter)
+        }
+        pingReceiver = receiver
     }
 
     override suspend fun stop() {
         if (!_running.value) return
         jobs.forEach { it.cancel() }
         jobs.clear()
+        pingReceiver?.let { runCatching { context.unregisterReceiver(it) } }
+        pingReceiver = null
         client.stopAdvertising()
         client.stopDiscovery()
         client.stopAllEndpoints()
@@ -178,6 +215,7 @@ class NearbyMeshEngine(
             Log.i(TAG, "rx ${packet.kind} ${packet.packetId.take(8)} from=$fromNode hops=${packet.hopCount} ttl=${packet.ttl}")
             _hops.tryEmit(HopEvent(packet.packetId, packet.kind, packet.severity, fromNode, selfNodeId, clock()))
         } else {
+            Log.d(TAG, "rx BEACON from=$fromNode origin=${packet.originNodeId} hops=${packet.hopCount}")
             onBeacon(packet)
         }
         _inbound.tryEmit(packet)
@@ -373,6 +411,7 @@ class NearbyMeshEngine(
     companion object {
         private const val TAG = "Proxima"
         const val SERVICE_ID = "mu.proxima.mesh"
+        const val ACTION_PING = "mu.proxima.mesh.PING"
         private const val BEACON_INTERVAL_MS = 10_000L
         private const val PEER_EXPIRY_MS = 35_000L
         private const val STORE_MS = 30 * 60 * 1000L
