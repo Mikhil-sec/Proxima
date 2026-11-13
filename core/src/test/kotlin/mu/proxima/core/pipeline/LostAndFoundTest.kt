@@ -169,3 +169,39 @@ class LostAndFoundTest {
         scope.cancel()
     }
 }
+
+/** #10: the alert that goes out is the one on the review screen, and triage (maybe a 6 s LLM call) is not run twice. */
+class ReportShownResultTest {
+    @Test
+    fun `report with a shown result sends that result and does not triage again`() = runBlocking {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        var calls = 0
+        val counting = object : mu.proxima.core.engine.TriageEngine {
+            override val capability: StateFlow<mu.proxima.core.model.TriageCapability> =
+                MutableStateFlow(mu.proxima.core.model.TriageCapability.RULES_ONLY)
+            override suspend fun triage(report: RawReport): mu.proxima.core.model.TriageResult {
+                calls++
+                return RuleTriageEngine().classify(report)
+            }
+        }
+        val mesh = LoopMesh("A", MutableSharedFlow(extraBufferCapacity = 64), scope)
+        val pipeline = IncidentPipeline(mesh, counting, FakeTrustEngine(), FakeLocateEngine(scope), EmptyProtocolRepository(), scope)
+        pipeline.start()
+        mesh.awaitReady()
+
+        val raw = RawReport("someone fell", System.currentTimeMillis())
+        val shown = mu.proxima.core.model.TriageResult(
+            type = IncidentType.MEDICAL, severity = mu.proxima.core.model.Severity.CRITICAL, subtype = "unconscious",
+            summary = "Shown on the review screen", source = mu.proxima.core.model.TriageSource.ON_DEVICE_LLM, confidence = 0.9f,
+        )
+        val sent = pipeline.report(raw, shown)
+        assertEquals(0, calls)
+        assertEquals("Shown on the review screen", sent.summary)
+        assertEquals(mu.proxima.core.model.Severity.CRITICAL, sent.severity)
+        assertEquals(mu.proxima.core.model.TriageSource.ON_DEVICE_LLM, sent.triagedBy)
+
+        pipeline.report(raw) // no shown result: triage runs as before
+        assertEquals(1, calls)
+        scope.cancel()
+    }
+}

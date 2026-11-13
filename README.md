@@ -54,6 +54,17 @@ Everything is one `Incident` on one pipeline — lost person, sighting, found, m
    so relays carry it but cannot read it. The guardian then gets a radar pointing the way.
 5. **Command Center** (tablet at a first-aid or police post): live incident heatmap from **anonymous grid
    cells only**, mesh topology, and merged report counts ("Fire — 15 reports").
+6. **My people (friend find).** Friends pair once by comparing a six-digit number on both screens. Each phone's
+   beacon then carries a tag that changes every 10 minutes and that only its paired friends can recognise. If a
+   friend can't call for help, your phone spots their tag in beacons it already hears and shows the 25 m square
+   their phone was last heard in, with the radar to it. **Nobody broadcasts a search**, so no relay or bystander
+   learns that anyone is being looked for. *Status: crypto and beacon matching are unit-tested (TRUST, MESH); the
+   pairing screen is built; pairing between two real phones has not been run yet.*
+7. **Verified posts.** A medic tent's or steward's phone carries a pass signed by the event organiser. Every phone
+   checks that signature together with the beacon it arrived in, then shows the post, live, in "Nearest help" and
+   on the Command Center plan. At Ganga Talao the nearest fixed help point is 8.6 km away; a medic tent is not.
+   *Status: signing and verification are unit-tested; passes are issued from the organiser's laptop over adb; the
+   on-screen display has not been run with a real role phone yet.*
 
 **The radar, honestly: what works on which phone** (measured 13 Nov, simulation off, real mesh)
 | Source | Phones | What we measured |
@@ -182,7 +193,7 @@ AGP 9.5.1 · Kotlin 2.4.21 · Gradle 9.9.1 · minSdk 26 · compileSdk 37.
 | Claude Code — LOCATE lane | Wrote the radar engine (GPS, compass heading, UWB session over the mesh), the arrow filter and all LOCATE unit tests, plus the adb device-test tools. Every claim in the radar table above comes from logs on real phones, not from the model; the member placed the phones and judged the arrow direction. |
 | Claude Code — MESH lane | Wrote the Nearby mesh engine (relay, dedup, reconnect backoff, store-and-forward, beacons, allow-list), the acoustic modem and all 34 MESH unit tests (including synthetic-audio tests for noise, echo and clock drift), plus the adb device-test script. The member ran every phone test, chose to install test builds side by side so teammates' phones kept their data, and moved the acoustic tones to near-ultrasound after the audible version disturbed other teams. Every number in the mesh table comes from phone logs. |
 | Claude Code — AI lane | Wrote the triage engine (Gemini Nano and Gemma/LiteRT-LM backends, prompt, strict output validator, rules safety net), the mesh offload, offline voice in/out, the hands-free guide, the crowd-crush risk model, their unit tests and the accuracy-eval harness. The member chose the runtime and the pivot to the guide and crowd warning, ran every phone test and spoke every voice command. The eval's expected answers were fixed before any model was run. No medical text is generated: the model only picks a type and subtype, and steps come from TRUST's cited cards. |
-<!-- UI: add your row -->
+| Claude Code — UI lane (lead) | Wrote every screen (Compose, Material You tokens, the `designCheck` gate), the Command Center plan, the pairing and radar screens, the per-device install script and the team's integration merges. Screens were reviewed from real screenshots on the Honor X8b and Tab S6 Lite in light and dark; the member chose the design direction (rejecting the first "terminal" look), ran the devices and made the scope calls. |
 
 ## Key decisions
 

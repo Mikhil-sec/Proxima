@@ -122,6 +122,8 @@ encryption in the pitch yet. Protocol cards: 9 IFRC cards on main; crowd crush /
 ## Progress log
 | Time | What |
 |---|---|
+| 00:50 Sat | Lead override session: `report(raw, triaged)` (#10, core test), verified roles shown in Nearest help + Command Center + role pass wired, **My people** (friend find pairing + radar, shared RadarView), tablet boot copy, 8 GB tier fix. Build, all tests, lint, designCheck 0. **Not yet seen on a device** (tablet locked) |
+| 23:30 Fri | All 6 devices reinstalled on `0f7dcf8` (sim OFF, Gemma on S24U + S26P); M2 logic test delegated to Seeya + Yorvan on #75 |
 | 19:15 Fri | Tab S6 Lite (landscape) on main build: Command Center queue + plan readable; crowd-risk areas + reasons draw; #20 no-card line confirmed; hands-free guide UI works (buttons; no speech pack yet); rotation keeps state. To fix: boot screen says "phone" and stretches full width on tablet |
 | 19:05 Fri | Merged PR #15 (lost & found contract), PR #46 (lane/ui to main), PR #48 (trackFinder fix from LOCATE); #30 wired (guide + crowd risk); posted #53 team sync (19:45 cutoff, one build, M2 sim OFF) |
 | 18:05 Fri | Command Center crowd density from beacons (25 m cells, shade + count); fixed cell projection drift (hatching was offset). Built; tablet review pending (Tab S6 Lite not on the cable) |
@@ -143,6 +145,9 @@ encryption in the pitch yet. Protocol cards: 9 IFRC cards on main; crowd crush /
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
 |---|---|---|---|
+| 00:30 Sat | Friend pairing = pick the phone whose row shows the same six digits, then "The numbers match" on both | No camera (dropped in #18) and node ids change per session; one number both people can read aloud identifies the phone and authenticates the keys in one step | Typing node ids; QR; pairing with no confirmation (anyone in range could add you) |
+| 00:30 Sat | Friend invites travel as CONTROL packets on channel "friend", sealed to the peer | No new packet kind (one pipeline rule); CONTROL is live-only, so a stale invite is never replayed from store-and-forward | New PacketKind (contract change at 00:30); SEALED (pipeline would try to parse it as a FoundNotice) |
+| 00:35 Sat | Verified posts go first in "Nearest help", fixed OSM points after | A tent 80 m away beats a hospital 8.6 km away; the far-help warning is hidden when a live post is in range | A separate "staff" list (two places to look under stress) |
 | 17:50 Fri | Activity handles uiMode/keyboard/orientation config changes itself | Honor is on night mode "auto": a report in progress at sunset was thrown away with the back stack; Compose-only activity re-themes in place (Android guidance) | Saveable back stack (Parcelable routes, still loses in-flight capture state) |
 | 17:55 Fri | Mic fallback is a calm tonal note showing the engine's own reason | Not an emergency; red is reserved for SOS; the AI lane's reasons already say what to do | Generic crimson error text |
 | 17:58 Fri | Demo chain switch seeds the allow-list with the phones linked right now | Nothing drops until you untick one, so a misclick can't break the stage mesh | Start from an empty list (drops every link at once) |

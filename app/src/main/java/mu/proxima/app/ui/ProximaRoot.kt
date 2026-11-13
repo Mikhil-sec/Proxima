@@ -35,9 +35,12 @@ import mu.proxima.app.ui.screens.CommandCenterScreen
 import mu.proxima.app.ui.screens.DevSheet
 import mu.proxima.app.ui.screens.FeedScreen
 import mu.proxima.app.ui.screens.FinderScreen
+import mu.proxima.app.ui.screens.FriendRadarScreen
 import mu.proxima.app.ui.screens.FoundAlertScreen
 import mu.proxima.app.ui.screens.RadarScreen
 import mu.proxima.app.ui.screens.HomeScreen
+import mu.proxima.app.ui.screens.PairSheet
+import mu.proxima.app.ui.screens.PeopleScreen
 import mu.proxima.app.ui.screens.ReportScreen
 import mu.proxima.core.model.DeviceTier
 import mu.proxima.core.model.IncidentType
@@ -53,6 +56,9 @@ sealed interface Screen {
     data class Found(val lostId: String) : Screen
     data class Radar(val lostId: String) : Screen
     data object Command : Screen
+    /** Friend find (#38): pair with the people you came with, see where their phone was last heard. */
+    data object People : Screen
+    data class FriendRadar(val label: String) : Screen
 }
 
 /** Plain back stack. ~7 screens don't justify navigation-compose + the serialization plugin in :app. */
@@ -76,6 +82,7 @@ fun ProximaRoot(graph: ProximaGraph) {
     val uiScope = rememberCoroutineScope()
     val capture = remember { VoiceCapture(graph.voice, uiScope) }
     val lostFound = remember { LostFound(graph) }
+    val friends = remember { FriendLink(graph) }
 
     val homeScreen = if (graph.capabilities.tier == DeviceTier.COMMAND_CENTER) Screen.Command else Screen.Home
     val needsBoot = remember { missingPermissions(context, graph.requiredPermissions).isNotEmpty() }
@@ -111,6 +118,9 @@ fun ProximaRoot(graph: ProximaGraph) {
         }
     }
 
+    // Friend find: another phone confirmed the pairing code and sent its sealed invite.
+    LaunchedEffect(Unit) { graph.mesh.inbound.collect { friends.onPacket(it) } }
+
     BackHandler(enabled = nav.canGoBack) {
         if (nav.current is Screen.Report) capture.cancel()
         nav.back()
@@ -127,15 +137,26 @@ fun ProximaRoot(graph: ProximaGraph) {
         ) { screen ->
             when (screen) {
                 Screen.Boot -> BootScreen(graph, onDone = { ready = true; nav.reset(homeScreen) }, onDev = { devOpen = true })
-                Screen.Home -> HomeScreen(graph, capture, lostFound, nav, onDev = { devOpen = true })
+                Screen.Home -> HomeScreen(graph, capture, lostFound, nav, onDev = { devOpen = true }, people = friends.available)
                 is Screen.Report -> ReportScreen(graph, capture, nav, screen.hint, screen.fromHold)
                 Screen.Feed -> FeedScreen(graph, lostFound, nav)
                 Screen.Finder -> FinderScreen(graph, lostFound, nav)
                 is Screen.Found -> FoundAlertScreen(graph, lostFound, nav, screen.lostId)
                 is Screen.Radar -> RadarScreen(graph, lostFound, nav, screen.lostId)
                 Screen.Command -> CommandCenterScreen(graph, onDev = { devOpen = true })
+                Screen.People -> PeopleScreen(graph, friends, nav)
+                is Screen.FriendRadar -> FriendRadarScreen(graph, friends, nav, screen.label)
             }
         }
         if (devOpen) DevSheet(graph, nav, onDismiss = { devOpen = false })
+        friends.incoming?.let { request ->
+            PairSheet(
+                code = request.code,
+                intro = "A phone next to you wants to pair. Only go on if their screen shows this number.",
+                taken = friends.labels,
+                onConfirm = { label -> friends.confirm(request.peerKey, label) },
+                onDismiss = friends::decline,
+            )
+        }
     }
 }
