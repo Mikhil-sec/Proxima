@@ -35,6 +35,16 @@ class StoreAndForwardTest {
         assertEquals(listOf("fresh"), MeshRelay.flushOrder(stored, "C", now, storeMs).map { it.packetId })
     }
 
+    @Test fun controlAndBeaconPacketsAreNeverReplayed() {
+        val uwb = p("uwb", Severity.HIGH, 1_000).copy(kind = PacketKind.CONTROL)
+        val beacon = p("beacon", Severity.LOW, 1_000).copy(kind = PacketKind.BEACON)
+        val sos = p("sos", Severity.CRITICAL, 1_000)
+        assertFalse(MeshRelay.isStorable(uwb))
+        assertFalse(MeshRelay.isStorable(beacon))
+        assertTrue(MeshRelay.isStorable(sos))
+        assertEquals(listOf("sos"), MeshRelay.flushOrder(listOf(uwb, beacon, sos), "C", now, storeMs).map { it.packetId })
+    }
+
     @Test fun neighbourAlreadyOnPathGetsNothing() {
         val stored = listOf(p("x", Severity.HIGH, 1_000, path = listOf("A", "B")))
         assertTrue(MeshRelay.flushOrder(stored, "B", now, storeMs).isEmpty())

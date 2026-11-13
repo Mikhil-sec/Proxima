@@ -310,7 +310,7 @@ class NearbyMeshEngine(
 
     /** Store-and-forward: keep live packets (memory + Room) so new neighbours get them, even after a restart. */
     private fun remember(packet: MeshPacket) {
-        if (packet.kind == PacketKind.BEACON) return
+        if (!MeshRelay.isStorable(packet)) return
         outbox.removeAll { it.packetId == packet.packetId }
         outbox.addLast(packet)
         while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
