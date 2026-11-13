@@ -78,6 +78,8 @@ class AndroidLocateEngine(
     private var declinationFrom: GeoPoint? = null
     private val smoother = HeadingSmoother()
     private val rotation = FloatArray(9)
+    /** Debug builds only (no-op otherwise): adb TRACK/STOP/STATUS, see [LocateDebugTrigger]. */
+    private val debugTrigger = LocateDebugTrigger(appContext, this, mesh, scope)
 
     // ---------- lifecycle ----------
 
@@ -86,6 +88,7 @@ class AndroidLocateEngine(
         started = true
         startHeading()
         uwb?.startResponder() // so a guardian can range to us when we are the finder
+        debugTrigger.register()
         if (hasLocationPermission()) startLocation()
         else waitForPermission = scope.launch {
             // The UI asks for permissions once; pick location up as soon as it's granted.
@@ -98,6 +101,7 @@ class AndroidLocateEngine(
         if (!started) return
         started = false
         waitForPermission?.cancel()
+        debugTrigger.unregister()
         sensors.unregisterListener(headingListener)
         if (locationActive) fused.removeLocationUpdates(locationListener)
         locationActive = false

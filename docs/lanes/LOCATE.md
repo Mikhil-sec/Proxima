@@ -95,6 +95,7 @@ mismatch → uninstall first, tell them to reinstall).
 | 16:30 Fri | Opened #24 (LOCATE→MESH: deliver CONTROL "uwb"); PR #26 opened |
 | 17:50 Fri | Merged latest main (MESH real engine, TRUST, AI), resolved TEAM_ROLES conflict, full build+tests green, **PR #26 merged** |
 | 17:56 Fri | Saving protocol: handoff + how-my-part-works written |
+| 18:20 Fri | Debug adb radar trigger (TRACK/STOP/STATUS) + `locate/tools/radar_test.sh`; build + tests green, merged latest main |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -110,3 +111,4 @@ mismatch → uninstall first, tell them to reinstall).
 | 16:15 Fri | UWB session setup over the mesh (signed CONTROL "uwb" REQUEST/ACCEPT/STOP), tracker = controller, target auto-answers | No pairing screen for a panicking parent; reuses the one pipeline/wire format | Separate BLE GATT exchange; manual pairing UI |
 | 16:15 Fri | Per-session random static-STS key sent in the signed (not sealed) CONTROL payload | TrackTarget has no recipient key to seal to; key is single-use and carries no location/personal data | Fixed key (replayable); sealing (needs contract change) |
 | 17:55 Fri | Device-test the radar via a debug-only adb trigger instead of waiting for the UI radar screen | Lets M1 "engine real" be proven today; same pattern MESH used | Waiting for UI's radar screen |
+| 18:15 Fri | Trigger is a receiver registered by `AndroidLocateEngine.start()`, runtime-gated on FLAG_DEBUGGABLE | Has the live engine instance with no static hook and no edit to UI-owned `app/`; identical to MESH's PING | Static engine hook in `LocateModule` + manifest receiver in `src/debug`; asking UI to expose the graph |
