@@ -9,18 +9,18 @@ Packets reach every phone in the crowd with no network: multi-hop, de-duplicated
 Implement `MeshEngine` (`core/.../engine/Engines.kt`) and return it from `MeshModule.create()` when `!simulation`.
 
 ## Tasks
-_`[~]` = coded + compiles, not yet verified on phones._
+_`[x]` = verified on phones · `[~]` = coded + unit-tested, not yet verified on phones._
 **P0 (by 15:00 device check, M1 18:00)**
-- [~] `NearbyMeshEngine` on Google Nearby Connections, `Strategy.P2P_CLUSTER`; advertise and discover at the same time; auto-accept;
+- [x] `NearbyMeshEngine` on Google Nearby Connections, `Strategy.P2P_CLUSTER`; advertise and discover at the same time; auto-accept;
       serviceId `mu.proxima.mesh`; endpoint name = `nodeId|tier`. Check API and permissions via **Context7**.
-- [~] Permissions per API level declared in the mesh manifest + exposed in `requiredPermissions`
+- [x] Permissions per API level declared in the mesh manifest + exposed in `requiredPermissions`
       (BLE scan/advertise/connect, NEARBY_WIFI_DEVICES, location for older APIs).
-- [~] Payload = `ProximaJson` `MeshPacket` as BYTES. Log tag `Proxima`.
-- [~] Relay: receive → drop if `packetId` already seen (Room table) → deliver to `inbound` →
+- [x] Payload = `ProximaJson` `MeshPacket` as BYTES. Log tag `Proxima`.
+- [~] Relay (dedup + deliver verified on 2 phones; forwarding needs 3): receive → drop if `packetId` already seen (Room table) → deliver to `inbound` →
       if `ttl > 1` forward to all other endpoints with `ttl-1`, `hopCount+1`, `path + selfNodeId` → emit `HopEvent`s.
 - [~] Foreground service (connectedDevice type) so relaying continues with the screen off / in airplane mode with BT+Wi-Fi on.
 **P1 (M2 23:00)**
-- [~] (in-memory, Room persistence TODO) Store-and-forward: keep live packets in Room ~30 min; on a new connection, flush them, CRITICAL first.
+- [~] Store-and-forward (Room, unit-tested): keep live packets in Room ~30 min; on a new connection, flush them, CRITICAL first.
 - [~] Beacons every ~10 s (`PacketKind.BEACON`, `Beacon` payload, coarse location) → `peers` includes indirect nodes (`direct=false`).
 - [~] **Demo multi-hop control:** neighbour allow-list so phones in one room form a chain A→B→C. Expose e.g.
       `object MeshDemoControls { val allowedNeighbours: MutableStateFlow<Set<String>?> }` and tell UI via a `request` issue.
@@ -34,20 +34,24 @@ Location services must be ON for discovery on many devices. Test the A56 + Honor
 Nearby has per-device connection limits, so the cluster may not be a full mesh: relaying covers that.
 
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
+1. Every phone runs Google **Nearby Connections** (Bluetooth + Wi-Fi, no internet): it advertises and searches at the same time and auto-connects to other Proxima phones in range.
+2. A message is a signed `MeshPacket`. When a phone receives one, it drops it if it has seen that `packetId` before, otherwise shows it and passes it to every *other* neighbour.
+3. Each hop lowers `ttl` by 1 and appends the phone to `path`, so a CRITICAL alert travels up to 10 hops and never bounces back the way it came. The signature stays valid because relays only touch ttl/hop/path.
+4. Phones keep live alerts for 30 min (Room database) and send them to anyone who walks into range later, most severe first: a crowd moving around becomes the delivery network.
+5. A foreground service keeps relaying with the screen off. For the stage demo, `MeshDemoControls` limits who links to whom, so judges can watch A → B → tablet in one room.
 
 ## NEXT_SESSION_HANDOFF
-- **Works (compiles, 5/5 JVM tests):** `NearbyMeshEngine` (P2P_CLUSTER, auto-accept, tie-break connect + 6 s fallback),
-  `MeshRelay` (pure relay rules), Room dedup `SeenStore`, 30-min in-memory outbox flushed CRITICAL-first on a new link,
-  beacons every 10 s → indirect peers, `MeshDemoControls.allowedNeighbours` (#8), `MeshService` (connectedDevice FGS).
-  `MeshModule` returns the real engine when `simulation == false`.
-- **Verified on 2 phones (15:48):** connect, beacons, PING both ways, discovery retry after unlock. Not yet: 3-phone
-  multi-hop, allow-list, store-and-forward flush, screen-off relaying.
-- node ids change every launch (trust still gives `SELF-xxxx`) → allow-list needs stable ids from TRUST (request filed).
-- **Gaps:** outbox is in memory (lost on restart; Room persistence = P1). Beacon `location` = null, `llmReady` = false
-  (mesh has no locate/AI handle). App has no permission prompt or sim toggle yet (UI lane), so the test script grants
-  permissions and writes `simulation=false` prefs via adb.
-- **Exact next step:** plug in 2 phones → `bash mesh/tools/mesh_device_test.sh` → `bash mesh/tools/mesh_device_test.sh logs`
-  (expect `connected <node>`) → `... ping <serial>` → the other phone logs `rx CONTROL`. Then 3 phones + allow-list for A→B→C.
+- **Works:** `NearbyMeshEngine` (P2P_CLUSTER, auto-accept, tie-break connect + 6 s fallback, advertise/discovery retry
+  every 10 s), `MeshRelay` (pure relay + flush-order rules), Room dedup `SeenStore`, Room store-and-forward
+  (`stored_packets`, 30 min, restored on start, CRITICAL first), beacons every 10 s → indirect peers,
+  `MeshDemoControls.allowedNeighbours` (#8), `MeshService` (connectedDevice FGS). 10/10 JVM tests.
+- **Verified on 2 phones (15:48):** connect, beacons, PING both ways, discovery retry after unlock. Not yet on device:
+  3-phone forwarding, allow-list, store-and-forward flush after restart, screen-off relaying.
+- node ids change every launch (trust still gives `SELF-xxxx`) → allow-list needs stable ids from TRUST (#19).
+- **Gaps:** beacon `location` = null, `llmReady` = false (mesh has no locate/AI handle). App has no permission prompt or
+  sim toggle yet (UI lane), so the test script grants permissions and writes `simulation=false` prefs via adb.
+- **Exact next step (needs 3 phones, after #19):** `bash mesh/tools/mesh_device_test.sh` on all 3, then set the
+  allow-list A={B}, B={A,C}, C={B} and `... ping <A serial>` → C logs `rx CONTROL ... hops=1`. Then screen-off test.
 - **Machine note (Chanum):** build output goes to `C:/dev/proxima-build` via `~/.gradle/init.d/` (OneDrive locks `build/`).
 - Files: `mesh/src/main/AndroidManifest.xml`, `mesh/src/main/java/mu/proxima/mesh/{NearbyMeshEngine,MeshRelay,SeenStore,MeshService,MeshDemoControls,MeshModule}.kt`,
   `mesh/src/test/java/mu/proxima/mesh/MeshRelayTest.kt`, `mesh/tools/mesh_device_test.sh`.
@@ -59,6 +63,7 @@ Nearby has per-device connection limits, so the cluster may not be a full mesh: 
 | 15:20 Fri | NearbyMeshEngine + relay + dedup + outbox + beacons + FGS + allow-list; 5/5 relay tests green |
 | 15:28 Fri | Debug adb PING hook + `mesh/tools/mesh_device_test.sh`; waiting on phones for the device check |
 | 15:48 Fri | ✅ **Device check passed** (S947B API 37 + S23+ API 36): Nearby connect ~6 s, beacons + PING both ways. Fixed: location needed on API 37, discovery retry |
+| 15:57 Fri | Store-and-forward persisted in Room (survives restart) + 5 more JVM tests (10/10); "how my part works" written |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
