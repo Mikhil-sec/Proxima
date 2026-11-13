@@ -98,6 +98,7 @@ Chanum's S26+ (SM-S947B, API 37) has UWB + AoA support flag; comma-decimal local
 | 19:37 Fri | Outdoor GPS radar, site 2 (35 steps ≈ 26 m): **heading correct** (walking away 285–290° vs 278–286° true; pointing at target rel 353–1°; walking back rel 0–19°), spin tracked smoothly. GPS distance peaked 23.8 m, drifted to 18 m while standing (±6 m GPS). UWB re-acquired at **10.8 m** walking back, arrow rel 0–5° to contact. → heading code OK; the site-1 error was environment/uncalibrated magnetometer, not code |
 | 19:45 Fri | Sync (#53): merged main, build + locate tests green, **PR #60 merged** at the 19:45 cutoff; 👍 + M2 heads-ups on #53. Paused until main reopens. Next: arrow cutoff 0.3→0.5 m, compass-calibration hint (heading accuracy from rotation vector) |
 | 20:15 Fri | Pulled main fb20894 (#68), build + all tests green. UWB arrow cutoff 0.3 → 0.5 m (+ boundary tests), README row updated (0.5 m, UWB from 10.8 m outdoors) |
+| 20:25 Fri | Compass reliability logging: rotation-vector heading accuracy (`values[4]`) + accuracy status in the debug STATUS line and on every status change. Needed before a calibration hint: must know what the S23+ reports when it is right vs ~70° off |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
