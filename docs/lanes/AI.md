@@ -18,12 +18,12 @@ Implement `TriageEngine` + `VoiceIo` and return them from `AiModule`. The `TRIAG
 - [ ] `VoiceIo`: `SpeechRecognizer` (prefer offline; check the offline English pack is installed), RMS → `VoiceEvent.Level`
       for the waveform; `TextToSpeech` for reading protocol steps aloud.
 **P1 (M2 23:00)**
-- [ ] `LlmTriageEngine`: few-shot prompt → strict JSON matching `TriageResult` → parse with `ProximaJson` → validate enums;
+- [~] `LlmTriageEngine` (code + 17 JVM tests done 15:37; on-device validation pending Nano download): few-shot prompt → strict JSON matching `TriageResult` → parse with `ProximaJson` → validate enums;
       6 s timeout → fall back to `RuleTriageEngine`. Fill `subtype` from the codes in `RuleTriageEngine` so protocols match.
 - [ ] Tiered engine: Tier 1 with model loaded = `ON_DEVICE_LLM`; otherwise, if a peer has `llmReady` = `OFFLOAD_TO_PEER`
       (TRIAGE_REQUEST ttl 2, wait ≤5 s for TRIAGE_RESULT); otherwise `RULES_ONLY`.
 - [ ] `TriageServer` on Tier 1: answers TRIAGE_REQUESTs from mesh.inbound.
-- [ ] Kreol keywords: a Mauritian teammate verifies and extends the list in `RuleTriageEngine`. Add unit tests (`./gradlew :core:test`).
+- [~] Kreol keywords (10 `RuleTriageEngineTest` cases pin current EN/FR/Kreol behaviour; native-speaker check still TODO): a Mauritian teammate verifies and extends the list in `RuleTriageEngine`. Add unit tests (`./gradlew :core:test`).
 **P2**
 - [ ] Kreol/French voice input; hazard photo classification (multimodal model) if time allows.
 - [ ] **10:00 Sat: compile all decision logs into a shortlist** for the README.
@@ -35,21 +35,32 @@ Steps come from TRUST's cited protocol cards.
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 
 ## NEXT_SESSION_HANDOFF
-- Device spike in progress on Galaxy S26+ (SM-S947B, Android 17, 11.4 GB). Probe: `ai/src/debug/.../LlmProbeActivity.kt`
-  (debug builds only). Run: `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity [--ez nanoDownload true] [--es backend cpu|gpu]`,
-  read `adb logcat -d -s Proxima:*`.
-- Gemini Nano (ML Kit `genai-prompt` 1.0.0-beta5) status = DOWNLOADABLE. Download requested 15:24 but not started:
-  phone had no Wi-Fi (mobile data + hotspot only). Next: phone on Wi-Fi + charging, rerun probe with `--ez nanoDownload true`, record latency/JSON validity.
-- LiteRT-LM (0.19.1) wired in the probe but untested: no `.litertlm` sideloaded (Gemma only if Nano disappoints).
-- Context7 note: MediaPipe's current Android packages no longer list `tasks-genai`; LLM generation now goes through LiteRT-LM. Treat `mediapipe-tasks-genai` as legacy.
-- Phone lent to MESH/LOCATE for testing 15:27 Fri.
+- **Works (JVM-tested):** `ai/.../triage/` — `LlmBackend` interface, `GeminiNanoBackend` (ML Kit Prompt API),
+  `TriagePrompt` (prompt + strict validator), `LlmTriageEngine` (6 s budget, rules fallback, severity safety net).
+  `AiModule.createTriage` returns it on TIER1_COMPUTE, `RuleTriageEngine` otherwise. Capability = RULES_ONLY until Nano is on the phone
+  (re-checked every 60 s), so behaviour today is unchanged: rules.
+- Tests: `./gradlew :ai:testDebugUnitTest` (17) and `./gradlew :core:test` (10 RuleTriageEngine cases). All green.
+- **Not verified on device yet:** Gemini Nano status = DOWNLOADABLE on S26+; download waits for Wi-Fi (phone was on mobile data + hotspot).
+- **Exact next step:** phone on real Wi-Fi + USB → `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez nanoDownload true`
+  → `adb logcat -d -s Proxima:*` → record load/latency/RAM/JSON-valid per case → finalise the runtime decision below.
+  If Nano is weak/slow (>6 s): sideload Gemma 3 1B `.litertlm` and add a `LiteRtLmBackend` (probe already supports it).
+- Then: `VoiceIo` (P0), Tier 2 offload + `TriageServer` (P1).
+- Files touched: `ai/build.gradle.kts`, `ai/src/main/.../AiModule.kt`, `ai/src/main/.../triage/*`, `ai/src/debug/*`, `ai/src/test/*`,
+  `core/src/test/.../RuleTriageEngineTest.kt`, `gradle/libs.versions.toml` (+mlkit-genai-prompt).
+- Phone lent to MESH/LOCATE 15:27 Fri.
 
 ## Progress log
 | Time | What |
 |---|---|
 | 15:05 Fri | Onboarded on S26+; wiring check runs (TIER1_COMPUTE, uwb=true). |
 | 15:18 Fri | LLM probe built and run: Gemini Nano DOWNLOADABLE on S26+, AICore prod build present. |
+| 15:37 Fri | LlmTriageEngine + GeminiNanoBackend + TriagePrompt wired into AiModule (Tier 1); 17 ai tests + 10 RuleTriageEngine tests green. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
 |---|---|---|---|
+| 15:20 Fri | Provisional runtime: **Gemini Nano via ML Kit Prompt API** (pending latency test) | Supported on S26+ (AICore prod build); no model file to sideload, no licence click-through, OS manages memory; fully offline once downloaded | MediaPipe `tasks-genai` (no longer in MediaPipe's current package list → legacy); LiteRT-LM + Gemma kept as fallback behind `LlmBackend` |
+| 15:30 Fri | `LlmBackend` interface between engine and runtime | Runtime decision isn't final; swapping Nano↔Gemma must not touch triage logic or tests | Calling ML Kit directly from the engine |
+| 15:32 Fri | Keyword rules can **raise** LLM severity (same type), never lower it | Under-triage is the dangerous error; "not breathing" must stay CRITICAL even if the model says MEDIUM | Trusting the LLM alone; averaging |
+| 15:33 Fri | Zero-shot prompt with explicit schema + strict validator (not few-shot); invalid type/severity → rules | Shorter prompt = lower latency on device; validator makes bad output harmless | Few-shot examples (revisit if on-device accuracy is poor) |
+| 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |

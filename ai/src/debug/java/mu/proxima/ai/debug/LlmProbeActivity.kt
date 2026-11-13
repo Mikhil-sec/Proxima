@@ -26,8 +26,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import mu.proxima.core.model.TriageResult
-import mu.proxima.core.pipeline.ProximaJson
+import mu.proxima.ai.triage.TriagePrompt
+import mu.proxima.core.model.RawReport
 import java.io.File
 
 /**
@@ -154,12 +154,7 @@ class LlmProbeActivity : Activity() {
     // ---------- helpers ----------
     private fun report(tag: String, i: Int, case: String, raw: String?, ms: Long) {
         if (raw == null) { log("$tag case$i TIMEOUT >${TIMEOUT_MS}ms"); return }
-        val json = raw.substringAfter("{", "").substringBeforeLast("}", "").let { if (it.isEmpty()) "" else "{$it}" }
-        val parsed = runCatching {
-            // `source`/`confidence` are filled by our code, not the model
-            val withMeta = json.trimEnd('}') + ""","source":"ON_DEVICE_LLM","confidence":0.0}"""
-            ProximaJson.decodeFromString(TriageResult.serializer(), withMeta)
-        }
+        val parsed = runCatching { TriagePrompt.parse(raw, RawReport(text = case, createdAtMs = 0)) ?: error("invalid") }
         val verdict = parsed.fold({ "OK ${it.type}/${it.severity}/${it.subtype}" }, { "BAD_JSON(${it.javaClass.simpleName})" })
         log("$tag case$i ms=$ms $verdict")
         Log.i(TAG, "$tag case$i in=\"$case\" out=${raw.replace('\n', ' ').take(400)}")
@@ -196,21 +191,8 @@ class LlmProbeActivity : Activity() {
             "an old man just collapsed near the temple steps, he is not breathing",
         )
 
-        fun userPrompt(report: String) = "Report: \"$report\"\nJSON:"
-
-        val SYSTEM_PROMPT = """
-            You classify emergency reports from a crowded festival in Mauritius.
-            Reports may be in English, French or Mauritian Kreol.
-            Reply with ONLY one JSON object, no markdown, no extra text:
-            {"type":"...","severity":"...","subtype":"...","summary":"...","landmark":"...","peopleCount":0}
-            type: LOST_PERSON | SIGHTING | FOUND | MEDICAL | HAZARD | ALL_CLEAR
-            severity: LOW | MEDIUM | HIGH | CRITICAL
-            subtype for MEDICAL: CARDIAC_ARREST | UNCONSCIOUS | SEIZURE | BLEEDING | CHEST_PAIN | HEAT_EXHAUSTION | FRACTURE | GENERAL
-            subtype for HAZARD: CROWD_CRUSH | FIRE | ELECTRICAL | FALLEN_BRANCH | FLOOD
-            subtype for other types: null
-            summary: English, at most 140 characters, no names.
-            landmark: the place mentioned, or null. peopleCount: number of people involved, or null.
-            Never give advice or instructions.
-        """.trimIndent()
+        // Same prompt + validator as the shipped LlmTriageEngine, so the probe measures what ships.
+        fun userPrompt(report: String) = TriagePrompt.user(RawReport(text = report, createdAtMs = 0))
+        val SYSTEM_PROMPT = TriagePrompt.SYSTEM
     }
 }
