@@ -37,6 +37,8 @@ import java.io.File
  * Launch:   adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity
  * Options:  --ez nanoDownload true   allow Gemini Nano download via AICore (off by default)
  *           --es backend cpu|gpu     LiteRT-LM backend (default gpu, falls back to cpu)
+ *           --ez voice true          voice check only: speak a sentence, then listen once (mic permission needed)
+ *           --es lang en-MU|fr-MU|mfe  language for the voice check
  * LiteRT-LM runs only if a *.litertlm file is in /sdcard/Android/data/mu.proxima.app/files/models/
  * Results:  adb logcat -d -s Proxima:*
  */
@@ -57,6 +59,10 @@ class LlmProbeActivity : Activity() {
 
         val allowNanoDownload = intent.getBooleanExtra("nanoDownload", false)
         val backend = intent.getStringExtra("backend") ?: "gpu"
+        if (intent.getBooleanExtra("voice", false)) {
+            scope.launch { runCatching { probeVoice(intent.getStringExtra("lang") ?: "en-MU") }.onFailure { log("VOICE error: ${it.javaClass.simpleName}: ${it.message}") } }
+            return
+        }
         scope.launch {
             log("=== LLM probe start · ${android.os.Build.MODEL} · sdk ${android.os.Build.VERSION.SDK_INT} ===")
             mem("baseline")
@@ -149,6 +155,26 @@ class LlmProbeActivity : Activity() {
         } finally {
             engine.close()
         }
+    }
+
+    // ---------- VoiceIo check ----------
+    private suspend fun probeVoice(lang: String) {
+        log("=== VOICE probe start · lang=$lang ===")
+        val voice = mu.proxima.ai.voice.AndroidVoiceIo(this, log = { log(it) })
+        val t0 = SystemClock.elapsedRealtime()
+        voice.speak("Voice check. After the beep, describe an emergency in one sentence.", lang)
+        log("VOICE speak_ms=${SystemClock.elapsedRealtime() - t0}")
+        var levels = 0
+        var maxLevel = 0f
+        val t1 = SystemClock.elapsedRealtime()
+        voice.listen(lang).collect { e ->
+            when (e) {
+                is mu.proxima.core.model.VoiceEvent.Level -> { levels++; maxLevel = maxOf(maxLevel, e.rms) }
+                else -> log("VOICE +${SystemClock.elapsedRealtime() - t1}ms $e")
+            }
+        }
+        log("VOICE levels=$levels maxLevel=${"%.2f".format(maxLevel)}")
+        log("=== VOICE probe done ===")
     }
 
     // ---------- helpers ----------

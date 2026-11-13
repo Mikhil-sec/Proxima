@@ -15,7 +15,7 @@ Implement `TriageEngine` + `VoiceIo` and return them from `AiModule`. The `TRIAG
       Gemma 3 1B or Gemma 3n E2B), MediaPipe LLM Inference (`tasks-genai`), or ML Kit GenAI / Gemini Nano if supported.
       Use **Context7**. Measure load time, latency for one triage prompt, and RAM. Pick ONE and log the decision.
       Models are sideloaded: `adb push <model> /sdcard/Android/data/mu.proxima.app/files/models/`. Never commit them.
-- [ ] `VoiceIo`: `SpeechRecognizer` (prefer offline; check the offline English pack is installed), RMS → `VoiceEvent.Level`
+- [~] `VoiceIo` (`AndroidVoiceIo` + 8 JVM tests done 15:53; on-device test pending phone): `SpeechRecognizer` (prefer offline; check the offline English pack is installed), RMS → `VoiceEvent.Level`
       for the waveform; `TextToSpeech` for reading protocol steps aloud.
 **P1 (M2 23:00)**
 - [~] `LlmTriageEngine` (code + 17 JVM tests done 15:37; on-device validation pending Nano download): few-shot prompt → strict JSON matching `TriageResult` → parse with `ProximaJson` → validate enums;
@@ -44,9 +44,14 @@ Steps come from TRUST's cited protocol cards.
 - **Exact next step:** phone on real Wi-Fi + USB → `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez nanoDownload true`
   → `adb logcat -d -s Proxima:*` → record load/latency/RAM/JSON-valid per case → finalise the runtime decision below.
   If Nano is weak/slow (>6 s): sideload Gemma 3 1B `.litertlm` and add a `LiteRtLmBackend` (probe already supports it).
-- Then: `VoiceIo` (P0), Tier 2 offload + `TriageServer` (P1).
+- **VoiceIo (code done, not device-tested):** `ai/.../voice/AndroidVoiceIo.kt` + `VoiceSupport.kt`. AiModule returns it whenever the phone has a
+  recognizer (FakeVoiceIo only on emulators without one). Adds RECORD_AUDIO + `<queries>` in `ai/src/main/AndroidManifest.xml`.
+  Device test: allow mic in the app, then `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez voice true [--es lang en-MU|fr-MU|mfe]`.
+  Check: on-device recognizer used? which language picked? Partial/Final arrive? speak works offline (airplane mode)?
+- Then: Tier 2 offload + `TriageServer` (P1).
 - Files touched: `ai/build.gradle.kts`, `ai/src/main/.../AiModule.kt`, `ai/src/main/.../triage/*`, `ai/src/debug/*`, `ai/src/test/*`,
-  `core/src/test/.../RuleTriageEngineTest.kt`, `gradle/libs.versions.toml` (+mlkit-genai-prompt).
+  `core/src/test/.../RuleTriageEngineTest.kt`, `gradle/libs.versions.toml` (+mlkit-genai-prompt),
+  `ai/src/main/AndroidManifest.xml`, `ai/src/main/.../voice/*`, `ai/src/test/.../voice/*`.
 - Phone lent to MESH/LOCATE 15:27 Fri.
 
 ## Progress log
@@ -55,6 +60,7 @@ Steps come from TRUST's cited protocol cards.
 | 15:05 Fri | Onboarded on S26+; wiring check runs (TIER1_COMPUTE, uwb=true). |
 | 15:18 Fri | LLM probe built and run: Gemini Nano DOWNLOADABLE on S26+, AICore prod build present. |
 | 15:37 Fri | LlmTriageEngine + GeminiNanoBackend + TriagePrompt wired into AiModule (Tier 1); 17 ai tests + 10 RuleTriageEngine tests green. |
+| 15:53 Fri | AndroidVoiceIo (offline-first STT + TTS) wired into AiModule; probe gains `--ez voice true`; 25 ai tests green. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -63,4 +69,6 @@ Steps come from TRUST's cited protocol cards.
 | 15:30 Fri | `LlmBackend` interface between engine and runtime | Runtime decision isn't final; swapping Nano↔Gemma must not touch triage logic or tests | Calling ML Kit directly from the engine |
 | 15:32 Fri | Keyword rules can **raise** LLM severity (same type), never lower it | Under-triage is the dangerous error; "not breathing" must stay CRITICAL even if the model says MEDIUM | Trusting the LLM alone; averaging |
 | 15:33 Fri | Zero-shot prompt with explicit schema + strict validator (not few-shot); invalid type/severity → rules | Shorter prompt = lower latency on device; validator makes bad output harmless | Few-shot examples (revisit if on-device accuracy is poor) |
+| 15:53 Fri | Voice: on-device SpeechRecognizer first, language chain en-MU→en-GB→en-US; Kreol (mfe)→fr-FR | No network at the venue; no speech model exists for Mauritian locales; Kreol is French-based so French STT is the closest | Online recognizer (fails offline); English-only |
+| 15:53 Fri | Real VoiceIo even in SIM mode (fake only on emulators without a recognizer) | Voice must be exercised on real phones before the demo; sim flag is about mesh/locate data, not the mic | Fake voice whenever sim=true |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |

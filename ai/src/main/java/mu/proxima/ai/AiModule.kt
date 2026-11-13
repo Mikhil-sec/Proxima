@@ -1,6 +1,7 @@
 package mu.proxima.ai
 
 import android.content.Context
+import android.speech.SpeechRecognizer
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import mu.proxima.core.engine.MeshEngine
@@ -10,6 +11,7 @@ import mu.proxima.core.engine.VoiceIo
 import mu.proxima.core.fake.FakeVoiceIo
 import mu.proxima.ai.triage.GeminiNanoBackend
 import mu.proxima.ai.triage.LlmTriageEngine
+import mu.proxima.ai.voice.AndroidVoiceIo
 import mu.proxima.core.model.DeviceCapabilities
 import mu.proxima.core.model.DeviceTier
 import mu.proxima.core.pipeline.RuleTriageEngine
@@ -39,7 +41,9 @@ object AiModule {
     }
 
     fun createVoice(context: Context, simulation: Boolean): VoiceIo {
-        // TODO(AI): offline SpeechRecognizer + TextToSpeech
-        return FakeVoiceIo()
+        // Real offline-first voice whenever the phone has a recognizer (even in SIM mode, so it gets tested).
+        // The scripted fake is only for emulators without one.
+        if (simulation && !SpeechRecognizer.isRecognitionAvailable(context)) return FakeVoiceIo()
+        return AndroidVoiceIo(context, log = { Log.i("Proxima", it) })
     }
 }
