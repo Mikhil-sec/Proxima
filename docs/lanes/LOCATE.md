@@ -37,13 +37,20 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
   Record: distance y/n, azimuth y/n, typical error, range. Then log the result here + on #5.
 - Files: `locate/src/debug/.../UwbCheckActivity.kt`, `locate/src/debug/AndroidManifest.xml`,
   `locate/src/main/AndroidManifest.xml` (UWB perm + overrideLibrary), `locate/tools/uwb_check.sh`, `locate/build.gradle.kts`.
-- Next after the check: `AndroidLocateEngine` (fused location + rotation-vector heading → `track()`).
+- `AndroidLocateEngine` written + wired in `LocateModule` (used when simulation=false). Fused GPS 1 s,
+  rotation-vector heading (works flat or upright) + true-north declination + smoothing, `track()` = GPS → RSSI
+  → stale GPS. `RadarMath` pure maths has 6 passing JVM tests. **Not yet tested on a phone** (S23+ is with MESH).
+  `uwbAvailable=false` until UWB is wired into `track()`.
+- On-phone test when S23+ is back: needs a sim=false build (ask UI how to toggle) → check heading vs a real compass
+  outdoors, `adb logcat -s Proxima:*` shows "declination" and "fused location started".
+- Next: help-point bearing helper for the guided-response card (coordinate with UI), then UWB mode in `track()`.
 
 ## Progress log
 | Time | What |
 |---|---|
 | 15:00 Fri | Onboarding done: lane branch pushed, app installed on S23+ in SIM mode |
 | 15:46 Fri | UWB device-check tool (debug-only activity + adb script) builds; waiting for 2 phones |
+| 15:54 Fri | AndroidLocateEngine (GPS + true-north heading + RSSI fallback) builds, RadarMath tests pass |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -51,3 +58,6 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 | 15:40 Fri | UWB check exchanges session params over adb, not the mesh | Mesh is still a fake; answers "does UWB AoA work" today without blocking on MESH | Waiting for real mesh; manual typing of addresses on-screen |
 | 15:40 Fri | Device-check screen lives in `locate/src/debug` | Never ships in release, doesn't touch UI lane's `app/` | Adding a screen to `app/` (not our lane) |
 | 15:40 Fri | Static STS key for the check only; real engine will use per-session random key sent sealed | Simplest way to prove ranging works; security handled in the real engine | Provisioned STS (needs FiRa provisioning) |
+| 15:50 Fri | Heading = horizontal sum of phone's top edge + back vector | One formula works flat, tilted and upright (camera grip) with no jump at a threshold | `getOrientation` azimuth (breaks when upright); remap at a pitch threshold (jumps) |
+| 15:50 Fri | Apply magnetic declination (GeomagneticField) | Mauritius ≈ −20°: uncorrected arrow points ~20° off in a crowd | Magnetic heading only |
+| 15:50 Fri | Fix chain GPS (fresh <30 s) → RSSI (heard <10 s) → stale GPS; `uwbAvailable=false` until UWB wired | Indoors GPS is stale, RSSI still says warmer/colder; never claim UWB we don't deliver | Report hardware UWB flag now |

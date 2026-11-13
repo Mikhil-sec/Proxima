@@ -8,4 +8,6 @@
 
     <uses-feature android:name="android.hardware.uwb" android:required="false" />
     <uses-permission android:name="android.permission.UWB_RANGING" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 </manifest>
