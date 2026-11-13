@@ -1,5 +1,6 @@
 # LANE: TRUST (crypto, wristband QR, real dataset)
-Owner: **Diya** (Member 5) · recommended phone: Galaxy A56 · Branch `lane/trust` · Issue `[LANE:TRUST]`
+Owner: **Diya** (Member 5, @diya-r6) - test phone **Galaxy S24 Ultra** (Tier 1, not the A56 this lane
+assumed) - Branch `lane/trust` - Issue `[LANE:TRUST]` #6
 
 ## Mission
 Make the app trustworthy and real: signed packets, child location only the guardian can read, and the Mauritian dataset that powers "nearest help".
@@ -10,10 +11,10 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 
 ## Tasks
 **P0 (M1 18:00)**
-- [ ] **Dataset first** (it's a hard rule): `bash scripts/fetch_help_points.sh` (OSM Overpass; retries mirrors; it was
+- [x] **Dataset first** (it's a hard rule): `bash scripts/fetch_help_points.sh` (OSM Overpass; retries mirrors; it was
       overloaded at 13:40 Fri) → `trust/src/main/assets/data/osm_help_points_raw.json`. Commit the raw file + fetch date.
       Optionally cross-check health facilities with data.govmu.org.
-- [ ] `AssetHelpPointRepository`: parse OSM → `HelpPoint` (amenity/emergency → `HelpCategory`, source "OpenStreetMap (ODbL)"),
+- [x] `AssetHelpPointRepository`: parse OSM → `HelpPoint` (amenity/emergency → `HelpCategory`, source "OpenStreetMap (ODbL)"),
       `nearest()` with `GeoMath`. Unit test with a known location.
 - [ ] `TinkTrustEngine` (**Context7: Tink**): Ed25519 sign/verify of `MeshPacket.signingBytes()`; HPKE (X25519) hybrid seal/open;
       keysets persisted with the Android Keystore. `identity.publicKey` must carry both public keys (e.g. `sigB64.encB64`);
@@ -31,14 +32,85 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 - [ ] **README assembly** by 10:30 Sat (each lane supplies its section).
 
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
+1. **Dataset:** `scripts/fetch_help_points.sh` pulls real Mauritius facilities from OpenStreetMap (ODbL) via Overpass;
+   the raw response is committed so the source and fetch date stay verifiable. 524 points: hospitals, clinics,
+   pharmacies, police, fire stations, water, toilets.
+2. **Nearest help:** `AssetHelpPointRepository.nearest(location, type.helpCategories)` ranks them with `GeoMath`
+   (haversine distance + compass bearing) and hands the guided-response screen the closest few.
+3. **Keys:** every node has an Ed25519 signing key and an X25519 encryption key; `publicKey` carries both and
+   `nodeId` is derived from it, so a node id cannot be forged.
+4. **Sealed child location:** a FoundNotice is HPKE-encrypted to the guardian's key, so relays carry it but
+   cannot read it. Wristband QR holds only a random tag id plus the guardian's public key - no names, no photos.
+5. **Protocols:** guidance cards are transcribed from the IFRC 2020 first-aid guidelines with a cited source.
+   The AI only *selects* a card; it never writes a medical step.
+
 
 ## NEXT_SESSION_HANDOFF
-- Not started. First step: run the dataset fetch script, commit the raw data.
+**Works (compiled, tests green)**
+- Onboarding complete: `lane/trust` pushed, TEAM_ROLES row filled, gh authed as @diya-r6 (lane issue **#6**),
+  Context7 MCP connected, Android Studio installed (JBR = JDK 25).
+- **P0 dataset done**: `trust/src/main/assets/data/osm_help_points_raw.json`, 524 real Mauritius OSM features,
+  fetched 14:43 Fri, OSM base `2026-11-13T10:42:12Z`. All 524 map to a `HelpCategory`.
+- **P0 repository done**: `OsmHelpPoints` (pure parser + `rankNearest`) and `AssetHelpPointRepository`
+  (Android asset load, cached, off-main-thread). `TrustModule.createHelpPoints` returns the real one.
+- **8 unit tests, all PASSING** (`./gradlew :trust:test`, 15:12 Fri) in `trust/src/test/.../OsmHelpPointsTest.kt`,
+  asserted against the real dataset by stable OSM id. No compiler warnings.
+- Toolchain is set up: Android Studio + JBR (**JDK 25**, works with Gradle 9.9.1 and AGP as configured),
+  SDK platform `android-37.0`, build-tools 36.0.0, adb, `local.properties` written (gitignored, forward-slash
+  `sdk.dir` - `printf` with backslashes silently mangles it).
+- `trust/build.gradle.kts` now prints per-test results, because `build/` is deny-listed so a silent `test` task
+  looks identical to one that ran zero tests.
+
+**Not done yet**
+- `TrustEngine` is still `FakeTrustEngine`. `ProtocolRepository` is still `EmptyProtocolRepository`.
+- No wristband QR, no scanner (asked for by UI in #7).
+- Never run on a phone: `installDebug` has not been tried, the S24 Ultra has not been connected.
+
+**Exact next step**
+1. `TinkTrustEngine` - **query Context7 for Tink before writing any of it** (CLAUDE.md section 3): Ed25519 over
+   `MeshPacket.signingBytes()`, HPKE X25519 seal/open, keysets in the Android Keystore,
+   `identity.publicKey = "<sigB64>.<encB64>"`, `nodeId` = first 8 hex of SHA-256(publicKey).
+   **Then tell MESH on the bus that it must use this nodeId.**
+2. `wristbandQrBitmap(tag, sizePx)` - zxing is already a dependency, no new plumbing needed.
+3. `WristbandScanner` - needs the compose plugin + CameraX + ML Kit in `trust/build.gradle.kts`
+   (stubbed as comments there). **Context7 first** per CLAUDE.md section 3.
+4. `protocols.json` transcribed from IFRC International First Aid Guidelines 2020. Never AI-written.
+   Subtype codes must match `RuleTriageEngine`. A second member proof-reads them.
+
+**Open asks on the bus (posted on #6)**
+- UI: "works on mid-range" needs the Honor X8b; my S24 Ultra is Tier 1.
+- LOCATE: assembly/meeting points must come from venue data - OSM Mauritius has none.
+- UI: `IncidentType.helpCategories` never routes to `PHARMACY`/`WATER`/`TOILETS` (292 of 524 points).
+  **No core change needed** - UI can call `nearest(loc, setOf(PHARMACY))` directly for a non-emergency list.
+  Deliberately NOT added to `MEDICAL`: a pharmacy 80 m away would then outrank a hospital for a cardiac arrest.
+
+**Files touched**
+`trust/src/main/java/mu/proxima/trust/{OsmHelpPoints,AssetHelpPointRepository,TrustModule}.kt`,
+`trust/src/test/java/mu/proxima/trust/OsmHelpPointsTest.kt`,
+`trust/src/main/assets/data/osm_help_points_raw.json`, `docs/lanes/TRUST.md`, `docs/TEAM_ROLES.md` (my row).
+No `core/` changes. No interface changes.
 
 ## Progress log
 | Time | What |
 |---|---|
+| 14:30 Fri | Onboarding checklist run. Machine was bare: only git. Installed GitHub CLI via winget; fixed a typo in the global git email (`diyaramkalwon6@` → `diyaramkalawon6@gmail.com`) so commits attribute correctly. |
+| 14:38 Fri | `lane/trust` branch created and pushed (push succeeded → collaborator access confirmed, despite `doctor.sh` reporting "repo not reachable", which only reflects `gh` being logged out). TEAM_ROLES row filled. |
+| 14:43 Fri | **P0 dataset done.** `fetch_help_points.sh` → 524 real OSM features for Mauritius, committed raw with fetch date. Counts: pharmacy 169, toilets 117, police 85, clinic 53, hospital 42, doctors 31, fire_station 11, drinking_water 6; healthcare tags add hospital 34 / clinic 42 / centre 7. |
+| 14:44 Fri | Context7 MCP added and reporting Connected. |
+| 14:52 Fri | `OsmHelpPoints` (pure parser + `rankNearest`) and `AssetHelpPointRepository` written; `TrustModule.createHelpPoints` now returns the real repository. 7 unit tests against the real dataset. **Not compiled yet** - no SDK. |
+| 14:55 Fri | Found that `IncidentType.helpCategories` never routes to `PHARMACY`/`WATER`/`TOILETS` (292 of 524 points). Resolved without a `core/` change: UI passes explicit categories. Not folded into `MEDICAL` - see decision log. |
+| 14:56 Fri | Android Studio installed via winget (JBR = JDK 25). SDK still pending the first-run wizard. |
+| 15:10 Fri | SDK installed (platform android-37.0, build-tools 36.0.0, adb). `local.properties` written. |
+| 15:12 Fri | **`./gradlew :trust:test` BUILD SUCCESSFUL - 8/8 tests pass, no compiler warnings.** First compile of this lane's code. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
 |---|---|---|---|
+| 14:40 Fri | TRUST tests on a Galaxy S24 Ultra, not the planned Galaxy A56 | It is the phone the member actually has; waiting on hardware would burn P0 time | Borrowing an A56 (none available); swapping lanes with AI (would discard TRUST onboarding already done) |
+| 14:41 Fri | Because of that, the "crypto + QR run on mid-range" claim must be proved on the UI lane's Honor X8b, not on the TRUST phone | The S24 Ultra is Tier 1 (RAM ≥ 7 GB) per `docs/ARCHITECTURE.md`, so it proves nothing about Tier 2 | Dropping the mid-range claim from the pitch (it is a real differentiator for a crowd where most phones are mid-range) |
+| 14:43 Fri | Commit the **raw** Overpass response verbatim and parse it at runtime, rather than committing a pre-transformed `help_points_mu.json` | Provenance: judges and teammates can re-verify the ODbL source and the fetch timestamp against OSM; transformation logic stays reviewable in Kotlin and unit-testable | Transforming at fetch time in bash (loses provenance, hides the mapping, untestable); hand-curating the list (not "real data only") |
+| 14:44 Fri | `ASSEMBLY_POINT` / `MEETING_POINT` / `AMBULANCE` / `DEFIBRILLATOR` will NOT come from OSM | The Mauritius extract contains zero such features (`emergency` has only 6 `yes` values) — pretending otherwise would ship empty categories | Querying a wider bbox (same gap); inventing assembly points (violates "real data only") |
+| 14:52 Fri | Keep the distance/bearing ranking in the pure `OsmHelpPoints.rankNearest`, with `AssetHelpPointRepository.nearest()` as a one-line delegate | `nearest()` is the logic judges and the guided-response screen depend on; this way it is covered by a plain JVM unit test instead of needing an instrumented device or Robolectric | Robolectric (extra dependency, slow, and the build does not compile here yet); testing only the parser and leaving ranking unverified |
+| 14:53 Fri | Unnamed OSM features keep a category label ("Pharmacy", "Police station") instead of being dropped | ~180 of 524 real facilities have no `name` tag; hiding a pharmacy 100 m away because OSM never named it would be worse than showing it by category | Dropping unnamed features (loses a third of the dataset); showing a blank name (unusable for a panicking parent) |
+| 14:54 Fri | Asset stays `data/osm_help_points_raw.json`; no derived `help_points_mu.json` is generated | One file, one provenance chain; `docs/ARCHITECTURE.md` names `help_points_mu.json` but that is a doc in another lane's path, so it is flagged on the bus rather than edited silently | Generating a second trimmed asset at build time (two files to keep in sync, and the raw one still has to ship for ODbL) |
+| 14:55 Fri | Do NOT add `PHARMACY` to `IncidentType.MEDICAL.helpCategories`; UI queries it as a separate non-emergency list instead | Ranking is by distance alone, so a pharmacy 80 m away would outrank a hospital 800 m away for a cardiac arrest - that is bad guidance, and "AI selects, never authors medical advice" cuts the same way for routing | Adding PHARMACY to the MEDICAL set (unsafe ordering); making `helpCategories` severity-aware (a `core/` interface change for something the UI can already do by passing explicit categories) |

@@ -22,3 +22,5 @@ Log generously. Correct times if they're off; all are Fri 13 Nov unless marked.
 | 13:40 | AGP 9.5.1 (built-in Kotlin), Kotlin 2.4.21, Gradle 9.9.1, minSdk 26 / UWB API 31+ | Latest stable at kickoff; Tab S6 Lite compatible | Older AGP 8.x |
 | 13:40 | Release APK signed with the debug key | Judges must be able to sideload the APK | Play signing (no time) |
 | 14:22 | Lanes assigned: Mikhil UI+lead, Yorvan LOCATE, Chanum MESH, Seeya AI, Diya TRUST | One owner per module = parallel work, zero merge conflicts; everyone explains their part | Pair programming on shared modules |
+| 15:35 | **Drop the QR wristband.** Lost & found = guardian's lost-person alert → finder taps "I'm with them" → location sealed to the guardian's key → radar | We have no wristband hardware/printing; the alert already carries the guardian's key, so the privacy property is unchanged | QR wristband + camera scanner (needs printed bands); NFC tags |
+| 15:30 | SOS ring arms only after a 0.6 s steady hold | A brush or scroll across the ring was triggering it on the Honor | Instant press-to-talk; double-tap |
