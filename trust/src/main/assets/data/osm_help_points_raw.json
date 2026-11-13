@@ -1,0 +1,6465 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-11-13T10:42:12Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 317032737,
+  "lat": -20.1643756,
+  "lon": 57.4976832,
+  "tags": {
+    "amenity": "police",
+    "name": "Préfecture de Police",
+    "name:en": "Police Headquater - Line Barraks",
+    "name:fr": "Préfecture de Police"
+  }
+},
+{
+  "type": "node",
+  "id": 693046470,
+  "lat": -20.1708328,
+  "lon": 57.4666916,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacy Pointe aux Sables",
+    "name:en": "Hwa Yen Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 693046481,
+  "lat": -20.1710924,
+  "lon": 57.4673984,
+  "tags": {
+    "amenity": "police",
+    "name": "La Tour Koenig Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 821712201,
+  "lat": -20.1611449,
+  "lon": 57.4986101,
+  "tags": {
+    "amenity": "toilets",
+    "fee": "no",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 828422978,
+  "lat": -20.2921344,
+  "lon": 57.4066809,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 828423328,
+  "lat": -20.2828561,
+  "lon": 57.3646403,
+  "tags": {
+    "amenity": "toilets",
+    "fixme": "location approximate"
+  }
+},
+{
+  "type": "node",
+  "id": 889891650,
+  "lat": -20.2642778,
+  "lon": 57.4789096,
+  "tags": {
+    "amenity": "fire_station",
+    "name": "Quatre Bornes Fire Station"
+  }
+},
+{
+  "type": "node",
+  "id": 1006773233,
+  "lat": -20.3739145,
+  "lon": 57.7272054,
+  "tags": {
+    "amenity": "police",
+    "name": "Vieux Grand Port Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 1397554020,
+  "lat": -20.3532462,
+  "lon": 57.3655849,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "London Way Pharma"
+  }
+},
+{
+  "type": "node",
+  "id": 1564822771,
+  "lat": -20.0354041,
+  "lon": 57.5452768,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 1662930789,
+  "lat": -20.0136080,
+  "lon": 57.5856186,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Grand Bay Pharma"
+  }
+},
+{
+  "type": "node",
+  "id": 1663007632,
+  "lat": -20.0149024,
+  "lon": 57.5831028,
+  "tags": {
+    "amenity": "police",
+    "check_date": "2024-06-17",
+    "name": "Grande Baie Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 1757755699,
+  "lat": -20.3208640,
+  "lon": 57.5199860,
+  "tags": {
+    "amenity": "pharmacy",
+    "dispensing": "yes",
+    "name": "Pharmacie du Jardin"
+  }
+},
+{
+  "type": "node",
+  "id": 1782461845,
+  "lat": -20.0973873,
+  "lon": 57.6307800,
+  "tags": {
+    "amenity": "police",
+    "designation": "Police Station",
+    "name": "Piton Police Station",
+    "source": "Local person from Piton"
+  }
+},
+{
+  "type": "node",
+  "id": 1793503162,
+  "lat": -20.3233571,
+  "lon": 57.5183069,
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "commercial",
+    "contact:phone": "+230 674 6008",
+    "dispensing": "yes",
+    "name": "Pharmacie Espace Santé",
+    "opening_hours": "Mo-Th 08:30-19:30; Fr-Sa 08:30-20:00; Su 08:30-13:00"
+  }
+},
+{
+  "type": "node",
+  "id": 1815074700,
+  "lat": -20.1404964,
+  "lon": 57.5250204,
+  "tags": {
+    "addr:street": "Pamplemousses Road",
+    "amenity": "pharmacy",
+    "name": "First- Aid Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 1823089241,
+  "lat": -20.2789361,
+  "lon": 57.4026821,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Medical Trading Cascavelle"
+  }
+},
+{
+  "type": "node",
+  "id": 1891159832,
+  "lat": -20.2174788,
+  "lon": 57.5176468,
+  "tags": {
+    "amenity": "police",
+    "name": "Moka Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 2049580431,
+  "lat": -19.9937794,
+  "lon": 57.5912301,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 2132084367,
+  "lat": -20.2418548,
+  "lon": 57.7843203,
+  "tags": {
+    "amenity": "police"
+  }
+},
+{
+  "type": "node",
+  "id": 2132094765,
+  "lat": -20.2563579,
+  "lon": 57.7570826,
+  "tags": {
+    "addr:city": "Bel Air Rivière Sèche",
+    "amenity": "police",
+    "name": "Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 2153000065,
+  "lat": -20.0048105,
+  "lon": 57.5666538,
+  "tags": {
+    "amenity": "police",
+    "name": "pointe aux canonniers"
+  }
+},
+{
+  "type": "node",
+  "id": 2153362362,
+  "lat": -20.0156641,
+  "lon": 57.5808760,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacy Ducasse"
+  }
+},
+{
+  "type": "node",
+  "id": 2153376271,
+  "lat": -20.0085091,
+  "lon": 57.5598529,
+  "tags": {
+    "amenity": "hospital",
+    "emergency": "yes",
+    "healthcare": "hospital",
+    "name": "Clinique du Nord"
+  }
+},
+{
+  "type": "node",
+  "id": 2157530287,
+  "lat": -20.1013339,
+  "lon": 57.5411418,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmancy Decase Arsenal"
+  }
+},
+{
+  "type": "node",
+  "id": 2162695370,
+  "lat": -20.1262728,
+  "lon": 57.4975591,
+  "tags": {
+    "amenity": "police",
+    "name": "Police Baie du Tombeau"
+  }
+},
+{
+  "type": "node",
+  "id": 2162892430,
+  "lat": -20.0348878,
+  "lon": 57.6462286,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Pharma Goodlands"
+  }
+},
+{
+  "type": "node",
+  "id": 2166841963,
+  "lat": -20.1898231,
+  "lon": 57.4552524,
+  "tags": {
+    "amenity": "police",
+    "name": "Petit Riviere"
+  }
+},
+{
+  "type": "node",
+  "id": 2167049053,
+  "lat": -20.0622197,
+  "lon": 57.5511668,
+  "tags": {
+    "amenity": "police",
+    "name": "Police Triolet"
+  }
+},
+{
+  "type": "node",
+  "id": 2173148641,
+  "lat": -20.1722145,
+  "lon": 57.4474169,
+  "tags": {
+    "amenity": "police",
+    "name": "Pointe aux Sables Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 2173164897,
+  "lat": -20.1616147,
+  "lon": 57.5027911,
+  "tags": {
+    "addr:city": "Port Louis",
+    "addr:street": "Queen street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Newton Parmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 2173175817,
+  "lat": -20.2068716,
+  "lon": 57.4174942,
+  "tags": {
+    "amenity": "police",
+    "name": "Police Station Albion"
+  }
+},
+{
+  "type": "node",
+  "id": 2177249371,
+  "lat": -20.4191978,
+  "lon": 57.5525635,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Grand Bois Pharma"
+  }
+},
+{
+  "type": "node",
+  "id": 2288182164,
+  "lat": -20.4432944,
+  "lon": 57.7190634,
+  "tags": {
+    "amenity": "police",
+    "name": "Police Station Blue Bay"
+  }
+},
+{
+  "type": "node",
+  "id": 2306425869,
+  "lat": -20.3626066,
+  "lon": 57.3717444,
+  "tags": {
+    "amenity": "police",
+    "name": "Black River Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 2337754885,
+  "lat": -20.1580215,
+  "lon": 57.5107059,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 2338149154,
+  "lat": -20.3828794,
+  "lon": 57.4211851,
+  "tags": {
+    "amenity": "toilets",
+    "check_date": "2024-11-07",
+    "fee": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2586874892,
+  "lat": -20.0068368,
+  "lon": 57.6675350,
+  "tags": {
+    "amenity": "police",
+    "name": "Police Station Goodlands"
+  }
+},
+{
+  "type": "node",
+  "id": 2601372375,
+  "lat": -20.0230642,
+  "lon": 57.6295245,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Petite Farmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 2601381237,
+  "lat": -20.0372657,
+  "lon": 57.6493905,
+  "tags": {
+    "amenity": "police",
+    "name": "Police Station Goodlands"
+  }
+},
+{
+  "type": "node",
+  "id": 2601381563,
+  "lat": -20.0386085,
+  "lon": 57.6513858,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Pharmacy Cadress"
+  }
+},
+{
+  "type": "node",
+  "id": 2606373799,
+  "lat": -20.2463140,
+  "lon": 57.6507440,
+  "tags": {
+    "amenity": "police",
+    "name": "Camp de Masque Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 2624972983,
+  "lat": -20.1603100,
+  "lon": 57.5028101,
+  "tags": {
+    "addr:city": "Port Louis",
+    "addr:street": "Farquar Street",
+    "amenity": "pharmacy",
+    "contact:facebook": "https://www.facebook.com/pharmacyfarquhar",
+    "contact:phone": "+230 212 1426",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Farquhar",
+    "opening_hours": "Mo-Fr 08:00-17:30; Sa 8:00-17:00; Su 08:00-12:00"
+  }
+},
+{
+  "type": "node",
+  "id": 2656293192,
+  "lat": -20.4747703,
+  "lon": 57.6175984,
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "L'Escalier Medi Clinic"
+  }
+},
+{
+  "type": "node",
+  "id": 2656296562,
+  "lat": -20.4696492,
+  "lon": 57.6217156,
+  "tags": {
+    "amenity": "police",
+    "name": "Police Station L'Escalier"
+  }
+},
+{
+  "type": "node",
+  "id": 2666894669,
+  "lat": -20.4744900,
+  "lon": 57.4219055,
+  "tags": {
+    "amenity": "drinking_water"
+  }
+},
+{
+  "type": "node",
+  "id": 2924443143,
+  "lat": -20.0163393,
+  "lon": 57.5782663,
+  "tags": {
+    "amenity": "police",
+    "name": "Grande Baie Coast Guard"
+  }
+},
+{
+  "type": "node",
+  "id": 2953184726,
+  "lat": -20.1714546,
+  "lon": 57.6582683,
+  "tags": {
+    "amenity": "police",
+    "name": "Brisee Verdiere Police station"
+  }
+},
+{
+  "type": "node",
+  "id": 3103743801,
+  "lat": -20.1756797,
+  "lon": 57.4692974,
+  "tags": {
+    "amenity": "clinic",
+    "name": "Medical Laboratory"
+  }
+},
+{
+  "type": "node",
+  "id": 3104081558,
+  "lat": -20.1618332,
+  "lon": 57.5010409,
+  "tags": {
+    "addr:street": "John Kennedy Street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie du Port",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 3111783529,
+  "lat": -20.1744128,
+  "lon": 57.4375903,
+  "tags": {
+    "amenity": "toilets",
+    "fee": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3113610308,
+  "lat": -20.1766483,
+  "lon": 57.4673627,
+  "tags": {
+    "access": "permissive",
+    "amenity": "toilets",
+    "level": "0"
+  }
+},
+{
+  "type": "node",
+  "id": 3113610309,
+  "lat": -20.1769830,
+  "lon": 57.4673870,
+  "tags": {
+    "access": "permissive",
+    "amenity": "toilets",
+    "level": "0"
+  }
+},
+{
+  "type": "node",
+  "id": 3113610310,
+  "lat": -20.1770383,
+  "lon": 57.4676017,
+  "tags": {
+    "access": "permissive",
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 3113610311,
+  "lat": -20.1774388,
+  "lon": 57.4678352,
+  "tags": {
+    "access": "permissive",
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 3113610312,
+  "lat": -20.1773832,
+  "lon": 57.4675508,
+  "tags": {
+    "access": "permissive",
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 3215377680,
+  "lat": -20.0195466,
+  "lon": 57.5804318,
+  "tags": {
+    "addr:street": "Sottisse Road",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Grand Bay Medical and Diagnostic Centre"
+  }
+},
+{
+  "type": "node",
+  "id": 3450648915,
+  "lat": -20.0959769,
+  "lon": 57.6317881,
+  "tags": {
+    "amenity": "fire_station",
+    "name": "Piton Fire Station",
+    "phone": "+230 264 1522"
+  }
+},
+{
+  "type": "node",
+  "id": 3617888762,
+  "lat": -20.2248177,
+  "lon": 57.4970441,
+  "tags": {
+    "amenity": "toilets",
+    "check_date": "2026-08-02"
+  }
+},
+{
+  "type": "node",
+  "id": 3617889272,
+  "lat": -20.2243810,
+  "lon": 57.4966005,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 3658931594,
+  "lat": -20.2140077,
+  "lon": 57.4080645,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Albion Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 3753991177,
+  "lat": -20.1484001,
+  "lon": 57.6840757,
+  "tags": {
+    "amenity": "hospital",
+    "name": "Primary School",
+    "note": "Ramsaroop RAmgutty Aryan Vedic Aided School"
+  }
+},
+{
+  "type": "node",
+  "id": 3754024938,
+  "lat": -20.2700827,
+  "lon": 57.4758527,
+  "tags": {
+    "amenity": "police",
+    "contact:phone": "4252772",
+    "name": "Quatre Bornes Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 3754024943,
+  "lat": -20.2710777,
+  "lon": 57.4749529,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Oxpharm"
+  }
+},
+{
+  "type": "node",
+  "id": 3754025131,
+  "lat": -20.1111657,
+  "lon": 57.5697960,
+  "tags": {
+    "amenity": "police",
+    "name": "Pamplemousses Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 3754148453,
+  "lat": -20.0288247,
+  "lon": 57.5976273,
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "The Vale Area Health Centre"
+  }
+},
+{
+  "type": "node",
+  "id": 3754488545,
+  "lat": -20.0604634,
+  "lon": 57.5553179,
+  "tags": {
+    "addr:city": "Triolet",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Triolet Medi Clinic"
+  }
+},
+{
+  "type": "node",
+  "id": 3758574421,
+  "lat": -20.2438325,
+  "lon": 57.4771101,
+  "tags": {
+    "addr:city": "Rose Hill",
+    "amenity": "police",
+    "name": "Rose Hill Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 3990469159,
+  "lat": -20.1988439,
+  "lon": 57.4043599,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 3992054883,
+  "lat": -20.5246152,
+  "lon": 57.5301876,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 3992067575,
+  "lat": -20.4958859,
+  "lon": 57.5519672,
+  "tags": {
+    "amenity": "fire_station",
+    "name": "St Aubin Fire Station",
+    "operator": "Mauritius Fire and Rescue Service",
+    "phone": "+230 626 4428",
+    "source": "survey"
+  }
+},
+{
+  "type": "node",
+  "id": 3992078698,
+  "lat": -20.4434980,
+  "lon": 57.7174836,
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "toilets:disposal": "flush",
+    "unisex": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3995063593,
+  "lat": -20.2700184,
+  "lon": 57.4755695,
+  "tags": {
+    "addr:street": "Saint Jean Road",
+    "amenity": "pharmacy",
+    "name": "La Louise Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 3999764439,
+  "lat": -20.1050965,
+  "lon": 57.5822980,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 4151568709,
+  "lat": -20.4918463,
+  "lon": 57.3778833,
+  "tags": {
+    "amenity": "doctors",
+    "healthcare": "doctor"
+  }
+},
+{
+  "type": "node",
+  "id": 4151568714,
+  "lat": -20.2784825,
+  "lon": 57.4028866,
+  "tags": {
+    "amenity": "pharmacy",
+    "ele": "125.917686",
+    "healthcare": "pharmacy",
+    "name": "Medactiv Cascavelle Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4151568721,
+  "lat": -20.4229911,
+  "lon": 57.3635957,
+  "tags": {
+    "amenity": "police"
+  }
+},
+{
+  "type": "node",
+  "id": 4151568722,
+  "lat": -20.5024652,
+  "lon": 57.4489206,
+  "tags": {
+    "amenity": "police"
+  }
+},
+{
+  "type": "node",
+  "id": 4151568748,
+  "lat": -20.1050951,
+  "lon": 57.5813878,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 4151568749,
+  "lat": -20.2959585,
+  "lon": 57.4069667,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 4152268990,
+  "lat": -20.1013903,
+  "lon": 57.5411026,
+  "tags": {
+    "amenity": "doctors",
+    "healthcare": "doctor"
+  }
+},
+{
+  "type": "node",
+  "id": 4152268992,
+  "lat": -20.1099194,
+  "lon": 57.5788831,
+  "tags": {
+    "amenity": "toilets",
+    "ele": "73",
+    "fee": "no",
+    "wheelchair": "designated"
+  }
+},
+{
+  "type": "node",
+  "id": 4221424289,
+  "lat": -20.0093384,
+  "lon": 57.5563611,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 4304607089,
+  "lat": -20.2553897,
+  "lon": 57.4715305,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Pharmacie Boundary"
+  }
+},
+{
+  "type": "node",
+  "id": 4304939292,
+  "lat": -20.2425512,
+  "lon": 57.4719066,
+  "tags": {
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Clinique Bon Pasteur"
+  }
+},
+{
+  "type": "node",
+  "id": 4305046313,
+  "lat": -20.2444586,
+  "lon": 57.4748092,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Notre Dame Des Victoires"
+  }
+},
+{
+  "type": "node",
+  "id": 4313070291,
+  "lat": -20.2181954,
+  "lon": 57.4977110,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 4330984275,
+  "lat": -20.4410620,
+  "lon": 57.3738662,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 4424958684,
+  "lat": -20.2856611,
+  "lon": 57.6640717,
+  "tags": {
+    "amenity": "police",
+    "name": "Montagne-Blanche Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 4432364597,
+  "lat": -20.2788406,
+  "lon": 57.3677449,
+  "tags": {
+    "addr:street": "Coastal Road",
+    "amenity": "police",
+    "name": "Flic en Flac Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 4601420291,
+  "lat": -20.0219317,
+  "lon": 57.5800737,
+  "tags": {
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "C-Care Clinic Grand Baie La Croisette",
+    "old_name": "Fortis Darne Medical Center & Diagnostics",
+    "operator": "C-Care",
+    "short_name": "C-Care Clinic",
+    "website": "https://www.c-care.mu/c-care-clinic-grand-baie-la-croisette"
+  }
+},
+{
+  "type": "node",
+  "id": 4610789689,
+  "lat": -20.2558777,
+  "lon": 57.7564385,
+  "tags": {
+    "amenity": "pharmacy",
+    "name:en": "Pyramid Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4610982700,
+  "lat": -20.3200315,
+  "lon": 57.5158948,
+  "tags": {
+    "amenity": "drinking_water",
+    "name:it": "Casa 2 trou cerf"
+  }
+},
+{
+  "type": "node",
+  "id": 4612335549,
+  "lat": -20.4112976,
+  "lon": 57.7031815,
+  "tags": {
+    "amenity": "hospital",
+    "name": "Mahebourg Hospital"
+  }
+},
+{
+  "type": "node",
+  "id": 4621711885,
+  "lat": -20.1483065,
+  "lon": 57.6844591,
+  "tags": {
+    "amenity": "hospital",
+    "name": "Primary Health Care"
+  }
+},
+{
+  "type": "node",
+  "id": 4622176512,
+  "lat": -20.1695330,
+  "lon": 57.6553335,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4623186368,
+  "lat": -20.1099492,
+  "lon": 57.6884404,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Forme",
+    "opening_hours": "09:00-17:00"
+  }
+},
+{
+  "type": "node",
+  "id": 4623226590,
+  "lat": -20.1087546,
+  "lon": 57.6924182,
+  "tags": {
+    "amenity": "pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4623226593,
+  "lat": -20.1083695,
+  "lon": 57.6928722,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Baroda Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4623226598,
+  "lat": -20.1076368,
+  "lon": 57.6921436,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Devika Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4624252891,
+  "lat": -20.2424803,
+  "lon": 57.4668653,
+  "tags": {
+    "amenity": "pharmacy",
+    "name:fr": "La Pharmacie New Stanley"
+  }
+},
+{
+  "type": "node",
+  "id": 4624252892,
+  "lat": -20.2448607,
+  "lon": 57.4663474,
+  "tags": {
+    "amenity": "police",
+    "name:en": "Police Station Stanley"
+  }
+},
+{
+  "type": "node",
+  "id": 4624252894,
+  "lat": -20.2502800,
+  "lon": 57.4678878,
+  "tags": {
+    "amenity": "pharmacy",
+    "name:fr": "Pharmacie Hugnin"
+  }
+},
+{
+  "type": "node",
+  "id": 4624285293,
+  "lat": -20.2443970,
+  "lon": 57.4746832,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Edward VII"
+  }
+},
+{
+  "type": "node",
+  "id": 4625704622,
+  "lat": -20.4925313,
+  "lon": 57.4709686,
+  "tags": {
+    "amenity": "hospital",
+    "name": "Chemin Grenier Dispensary"
+  }
+},
+{
+  "type": "node",
+  "id": 4634114391,
+  "lat": -20.3289520,
+  "lon": 57.5161580,
+  "tags": {
+    "amenity": "doctors",
+    "name:en": "Dr Varusha"
+  }
+},
+{
+  "type": "node",
+  "id": 4660094179,
+  "lat": -20.1044255,
+  "lon": 57.6986522,
+  "tags": {
+    "amenity": "police",
+    "name": "Riviere Du Rempart Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 4662941040,
+  "lat": -20.0642224,
+  "lon": 57.6815723,
+  "tags": {
+    "amenity": "police",
+    "name": "Poudre D'or police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 4662964999,
+  "lat": -20.4317501,
+  "lon": 57.6615629,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Dodo Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4662965004,
+  "lat": -20.4320837,
+  "lon": 57.6613485,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Doorgakanth Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4664917092,
+  "lat": -20.2911999,
+  "lon": 57.5081305,
+  "tags": {
+    "addr:street": "Saint Paul Road",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name:en": "Dr Kurreeman Hussein",
+    "phone": "57256728"
+  }
+},
+{
+  "type": "node",
+  "id": 4676442335,
+  "lat": -20.2434650,
+  "lon": 57.4879010,
+  "tags": {
+    "addr:city": "Ebene",
+    "addr:street": "Ebene Commercial Centre",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Ebene Pharmacy",
+    "operator": "MedActive"
+  }
+},
+{
+  "type": "node",
+  "id": 4694809668,
+  "lat": -20.0564622,
+  "lon": 57.5525685,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4780375874,
+  "lat": -20.2676873,
+  "lon": 57.4865497,
+  "tags": {
+    "amenity": "police",
+    "name": "Sodnac police station"
+  }
+},
+{
+  "type": "node",
+  "id": 4873888443,
+  "lat": -20.3173864,
+  "lon": 57.5134523,
+  "tags": {
+    "amenity": "toilets",
+    "operator": "Municipal Council of Curepipe",
+    "toilets:disposal": "flush"
+  }
+},
+{
+  "type": "node",
+  "id": 4875657927,
+  "lat": -20.1634822,
+  "lon": 57.5034294,
+  "tags": {
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name:en": "Mathieu"
+  }
+},
+{
+  "type": "node",
+  "id": 4875686694,
+  "lat": -20.1646001,
+  "lon": 57.5039777,
+  "tags": {
+    "addr:city": "Port Louis",
+    "addr:street": "Maillard street",
+    "amenity": "fire_station",
+    "check_date": "2026-07-21",
+    "name": "St louis Fire Brigate"
+  }
+},
+{
+  "type": "node",
+  "id": 4875789053,
+  "lat": -20.1597264,
+  "lon": 57.5029823,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Eiman Pharmacy",
+    "phone": "+230 2126753"
+  }
+},
+{
+  "type": "node",
+  "id": 4875789091,
+  "lat": -20.1599004,
+  "lon": 57.5031783,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Phamacy Farquar"
+  }
+},
+{
+  "type": "node",
+  "id": 4875889466,
+  "lat": -20.1633883,
+  "lon": 57.4995406,
+  "tags": {
+    "addr:city": "Port-Louis",
+    "addr:city:fr": "Port-Louis",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Carbone",
+    "name:fr": "Pharmacie Carbone",
+    "phone": "2138542"
+  }
+},
+{
+  "type": "node",
+  "id": 4877162026,
+  "lat": -20.0413786,
+  "lon": 57.5413222,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 4899463264,
+  "lat": -20.5160617,
+  "lon": 57.5191815,
+  "tags": {
+    "amenity": "police",
+    "name": "Coast Guard"
+  }
+},
+{
+  "type": "node",
+  "id": 4901462716,
+  "lat": -20.0131163,
+  "lon": 57.5856946,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4901467332,
+  "lat": -20.0122225,
+  "lon": 57.5871004,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 4976278428,
+  "lat": -20.4064428,
+  "lon": 57.7060599,
+  "tags": {
+    "addr:street": "Rue la Chaux",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Cabinet Medical",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4976284444,
+  "lat": -20.4098337,
+  "lon": 57.7092386,
+  "tags": {
+    "addr:street": "Rue la Bourdonnais",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Blue Bay Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4977549506,
+  "lat": -20.4095978,
+  "lon": 57.7081549,
+  "tags": {
+    "addr:street": "Rue de Maurice",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Al-Shafa Medical Centre",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4977549507,
+  "lat": -20.4096153,
+  "lon": 57.7080948,
+  "tags": {
+    "addr:street": "Rue de Suffren",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Al-Shafa Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4977564362,
+  "lat": -20.4076542,
+  "lon": 57.7057431,
+  "tags": {
+    "addr:street": "Rue Marianne",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie de Mahebourg",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4977946943,
+  "lat": -20.4125294,
+  "lon": 57.7054564,
+  "tags": {
+    "addr:street": "Royal Road",
+    "amenity": "pharmacy",
+    "name": "All in One Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4977946951,
+  "lat": -20.4127235,
+  "lon": 57.7053794,
+  "tags": {
+    "addr:street": "Royal Road",
+    "amenity": "clinic",
+    "name": "Green Cross",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4977976119,
+  "lat": -20.3186219,
+  "lon": 57.5294248,
+  "tags": {
+    "addr:street": "Sir Charles Lees Street",
+    "amenity": "pharmacy",
+    "name": "Pharmacie D'Arifat",
+    "name:en": "Arifat Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4978082266,
+  "lat": -20.4140781,
+  "lon": 57.7053213,
+  "tags": {
+    "addr:street": "Royal Road",
+    "amenity": "pharmacy",
+    "name": "R.A.R. Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4978159864,
+  "lat": -20.3151558,
+  "lon": 57.5249279,
+  "tags": {
+    "addr:street": "Jerningham",
+    "amenity": "pharmacy",
+    "name": "Pharmacie Jhugroo",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4978294569,
+  "lat": -20.3158259,
+  "lon": 57.5230209,
+  "tags": {
+    "addr:street": "Royal Road Curepipe",
+    "amenity": "pharmacy",
+    "name": "Pharmacie",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4978365509,
+  "lat": -20.3069614,
+  "lon": 57.5253475,
+  "tags": {
+    "addr:street": "Royal Road Curepipe",
+    "amenity": "pharmacy",
+    "name": "Active Care Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4978376624,
+  "lat": -20.3058021,
+  "lon": 57.5302261,
+  "tags": {
+    "addr:country": "MU",
+    "addr:street": "New Quartier Militaire Road",
+    "amenity": "pharmacy",
+    "name": "Zenquil Pharma",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4978376631,
+  "lat": -20.3055797,
+  "lon": 57.5303785,
+  "tags": {
+    "addr:country": "MU",
+    "addr:street": "New Quartier Militaire Road",
+    "amenity": "pharmacy",
+    "name": "Pharmacie Hermes",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4978393618,
+  "lat": -20.3131051,
+  "lon": 57.5238761,
+  "tags": {
+    "addr:street": "Royal Road Curepipe",
+    "amenity": "pharmacy",
+    "name": "Pharmacie D'Epinay",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4979802928,
+  "lat": -20.4323120,
+  "lon": 57.6605751,
+  "tags": {
+    "addr:street": "Mooljee Road",
+    "amenity": "clinic",
+    "name": "Cabinet Medicale",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4979802937,
+  "lat": -20.4319502,
+  "lon": 57.6609022,
+  "tags": {
+    "addr:street": "Mooljee Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Jeetpharm",
+    "operator": "Mr Reaz Jeetun",
+    "phone": "+2306377688",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4979841757,
+  "lat": -20.4318373,
+  "lon": 57.6629954,
+  "tags": {
+    "addr:street": "Macoona Road",
+    "amenity": "clinic",
+    "name": "Biosante Medical Laboratories",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4979966752,
+  "lat": -20.3113939,
+  "lon": 57.5137298,
+  "tags": {
+    "addr:street": "Floreal Main Road",
+    "amenity": "pharmacy",
+    "name": "Pharmacy Biladams",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4980088245,
+  "lat": -20.3127275,
+  "lon": 57.5165081,
+  "tags": {
+    "addr:street": "Georges Guibert Street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Floreal Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4980155201,
+  "lat": -20.3272933,
+  "lon": 57.5073802,
+  "tags": {
+    "addr:street": "Ligne Berthaud",
+    "amenity": "pharmacy",
+    "name": "Pharmacy Berthaud",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4980295702,
+  "lat": -20.3779238,
+  "lon": 57.5711878,
+  "tags": {
+    "addr:street": "Route Royale",
+    "amenity": "pharmacy",
+    "name": "Nouvelle France Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4980458857,
+  "lat": -20.3439801,
+  "lon": 57.5460859,
+  "tags": {
+    "addr:street": "Route Royale",
+    "amenity": "pharmacy",
+    "name": "Rose Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4980574249,
+  "lat": -20.3232064,
+  "lon": 57.5327671,
+  "tags": {
+    "addr:street": "Rue General de Caen (Centre)",
+    "amenity": "pharmacy",
+    "name": "Health Star Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4980664097,
+  "lat": -20.3240994,
+  "lon": 57.5276103,
+  "tags": {
+    "addr:street": "Royal Road Forest Side",
+    "amenity": "pharmacy",
+    "name": "Care 4u Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4980852279,
+  "lat": -20.3292378,
+  "lon": 57.5273054,
+  "tags": {
+    "addr:street": "Gustav Colette Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Ahmud Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4981754251,
+  "lat": -20.2798993,
+  "lon": 57.3687131,
+  "tags": {
+    "addr:street": "Avenue des Flamingos",
+    "amenity": "pharmacy",
+    "name": "Flic en Flac Pharmacy",
+    "opening_hours": "Mo-Sa 08:30-18:30",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4981754256,
+  "lat": -20.2805670,
+  "lon": 57.3686646,
+  "tags": {
+    "addr:street": "Avenue des Flamingos",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Dr. Leutéritz",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4981968903,
+  "lat": -20.2765160,
+  "lon": 57.3699204,
+  "tags": {
+    "addr:city": "Flic en Flac",
+    "addr:street": "Royal Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie de L'Occident",
+    "opening_hours": "24/7",
+    "phone": "+2304535858"
+  }
+},
+{
+  "type": "node",
+  "id": 4983032372,
+  "lat": -20.3127585,
+  "lon": 57.4879037,
+  "tags": {
+    "addr:street": "John Kennedy Avenue",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Noush Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4983103584,
+  "lat": -20.3205957,
+  "lon": 57.4845279,
+  "tags": {
+    "addr:street": "Vacoas La Marie Road",
+    "amenity": "clinic",
+    "name": "Green Cross Medical Laboratory",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4983213389,
+  "lat": -20.2217706,
+  "lon": 57.5024576,
+  "tags": {
+    "addr:street": "Leclezio Avenue",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie de Moka",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4983213391,
+  "lat": -20.2216524,
+  "lon": 57.5023868,
+  "tags": {
+    "addr:street": "Leclezio Ave",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Cabinet Medical",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4983392220,
+  "lat": -20.1618065,
+  "lon": 57.5071707,
+  "tags": {
+    "addr:street": "Sir Seewoosagur Ramgoolam Street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Du Centre",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4983398684,
+  "lat": -20.2211261,
+  "lon": 57.5344525,
+  "tags": {
+    "addr:street": "Bois Cheri Road",
+    "amenity": "pharmacy",
+    "name": "Pharmexpert Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4983458155,
+  "lat": -20.1549068,
+  "lon": 57.5181056,
+  "tags": {
+    "addr:street": "Port Louis - Central Flaq Road",
+    "amenity": "pharmacy",
+    "name": "Medical Care Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4983601224,
+  "lat": -20.1474855,
+  "lon": 57.5210370,
+  "tags": {
+    "addr:street": "Temple Road",
+    "amenity": "pharmacy",
+    "name": "Pharmacy Good Heart",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4983601246,
+  "lat": -20.1468172,
+  "lon": 57.5225008,
+  "tags": {
+    "addr:street": "Temple Road",
+    "amenity": "clinic",
+    "name": "Cabinet Medical",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4983649668,
+  "lat": -20.1405310,
+  "lon": 57.5250014,
+  "tags": {
+    "addr:street": "Pamplemousses Road",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Cabinet Medical",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4985260483,
+  "lat": -20.3072470,
+  "lon": 57.4852370,
+  "tags": {
+    "addr:street": "Vacoas La Marie Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie 15 cantons",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4985735301,
+  "lat": -20.2626324,
+  "lon": 57.4167954,
+  "tags": {
+    "addr:street": "Geoffroy Branch Road",
+    "amenity": "pharmacy",
+    "fixme": "name",
+    "name": "Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4985849490,
+  "lat": -20.2569221,
+  "lon": 57.4179120,
+  "tags": {
+    "addr:street": "Rivière Noire Road",
+    "amenity": "pharmacy",
+    "name": "Cabinet Medical Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990207220,
+  "lat": -20.3014356,
+  "lon": 57.4802538,
+  "tags": {
+    "addr:street": "La Caverne No. 1",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie La Caverne",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990225817,
+  "lat": -20.3017268,
+  "lon": 57.4847121,
+  "tags": {
+    "addr:street": "Candos Vacoas Road",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Omnitronics;Pharmacie Visitation",
+    "shop": "yes",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990226731,
+  "lat": -20.3017267,
+  "lon": 57.4849331,
+  "tags": {
+    "addr:street": "Candos Vacoas Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Green Cross Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990255664,
+  "lat": -20.1958603,
+  "lon": 57.4463629,
+  "tags": {
+    "addr:street": "Rivière Noire Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacy Petit Rivière",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990272035,
+  "lat": -20.2993391,
+  "lon": 57.4913788,
+  "tags": {
+    "addr:street": "Saint Paul Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Jhugroos Bros",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990304266,
+  "lat": -20.2959211,
+  "lon": 57.4930955,
+  "tags": {
+    "addr:street": "John Kennedy Avenue",
+    "amenity": "pharmacy",
+    "dispensing": "yes",
+    "drive_through": "no",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Moraby",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990471952,
+  "lat": -20.1475294,
+  "lon": 57.5233082,
+  "tags": {
+    "addr:street": "Port Louis - Central Flaq Road",
+    "amenity": "pharmacy",
+    "name": "Abercrombie Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990471967,
+  "lat": -20.1484680,
+  "lon": 57.5231036,
+  "tags": {
+    "addr:street": "Port Louis - Central Flaq Road",
+    "amenity": "pharmacy",
+    "name": "New Pharmacy Burtally Ltee",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990501717,
+  "lat": -20.1523476,
+  "lon": 57.5212597,
+  "tags": {
+    "addr:street": "Port Louis - Central Flaq Road",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Sky Labs",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990513930,
+  "lat": -20.1646956,
+  "lon": 57.5050471,
+  "tags": {
+    "addr:street": "Pope Hennessy Road",
+    "amenity": "police",
+    "name": "Pope Hennessy Police Station",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990514632,
+  "lat": -20.1526340,
+  "lon": 57.5209246,
+  "tags": {
+    "addr:street": "Port Louis - Central Flaq Road",
+    "amenity": "pharmacy",
+    "name": "St. Criox Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990685141,
+  "lat": -20.1584658,
+  "lon": 57.5049137,
+  "tags": {
+    "addr:street": "Farquar street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Port Louis Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990686430,
+  "lat": -20.1601803,
+  "lon": 57.5124117,
+  "tags": {
+    "addr:street": "Sir Edgar Laurent Street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Life Care Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990686435,
+  "lat": -20.1590451,
+  "lon": 57.5111426,
+  "tags": {
+    "addr:street": "Sir Virgil Naz Street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie la Plaine Verte",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990745585,
+  "lat": -20.1602252,
+  "lon": 57.5132711,
+  "tags": {
+    "addr:street": "Madad Ul Islam Street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Le Santé Pharmacie",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990808920,
+  "lat": -20.2864934,
+  "lon": 57.4806724,
+  "tags": {
+    "addr:street": "Candos Vacoas Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Solferino Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990816694,
+  "lat": -20.1624682,
+  "lon": 57.5064721,
+  "tags": {
+    "addr:street": "Sir Seewoosagur Ramgoolam Street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Primecare",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990935407,
+  "lat": -20.2789957,
+  "lon": 57.4780017,
+  "tags": {
+    "addr:street": "Candos Vacoas Road",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Jian Wu Tang",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990935416,
+  "lat": -20.2787273,
+  "lon": 57.4778940,
+  "tags": {
+    "addr:street": "Candos Vacoas Road1",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Clinic Candos",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990935418,
+  "lat": -20.2787836,
+  "lon": 57.4779118,
+  "tags": {
+    "addr:street": "Candos Vacoas Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Care Plus",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4990972832,
+  "lat": -20.2766175,
+  "lon": 57.4771307,
+  "tags": {
+    "addr:street": "Candos Vacoas Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Capucines",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4991102082,
+  "lat": -20.2714630,
+  "lon": 57.4751047,
+  "tags": {
+    "addr:street": "Candos Vacoas Road",
+    "amenity": "clinic",
+    "name": "Skylabs",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4991120969,
+  "lat": -20.2790164,
+  "lon": 57.4685073,
+  "tags": {
+    "addr:street": "Jawaharlall Nehru Avenue",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Bassin Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4991236109,
+  "lat": -20.1597614,
+  "lon": 57.5025784,
+  "tags": {
+    "addr:street": "La Corderie Street",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Much Better Life",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4991299095,
+  "lat": -20.1732075,
+  "lon": 57.5095111,
+  "tags": {
+    "addr:street": "Mahatma Gandhi Street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Get Well Pharma",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4991397211,
+  "lat": -20.1660570,
+  "lon": 57.4887686,
+  "tags": {
+    "amenity": "pharmacy",
+    "contact:phone": "+2302121946",
+    "facebook": "Bell Village Pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Bell Village Pharmacy",
+    "note:addr": "11, Corner Royal Road-Menagerie Street, Bell Village"
+  }
+},
+{
+  "type": "node",
+  "id": 4991397654,
+  "lat": -20.1664566,
+  "lon": 57.4888043,
+  "tags": {
+    "addr:city": "Port-Louis",
+    "addr:street": "Grand Riviere Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie D'Hotman",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4993350020,
+  "lat": -20.2721014,
+  "lon": 57.4727608,
+  "tags": {
+    "addr:street": "Palma Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Green Cross Pharmacie",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4993350128,
+  "lat": -20.2715157,
+  "lon": 57.4738799,
+  "tags": {
+    "addr:street": "Palma Road",
+    "amenity": "pharmacy",
+    "name": "Pharmacy Pharmak",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4993447219,
+  "lat": -20.2741895,
+  "lon": 57.4680298,
+  "tags": {
+    "addr:street": "Palma Road",
+    "amenity": "pharmacy",
+    "name": "Pharmasave",
+    "operator": "Suprevit",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4993466587,
+  "lat": -20.1654657,
+  "lon": 57.4948048,
+  "tags": {
+    "addr:street": "Lord Kitchener Street",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995043029,
+  "lat": -20.2638561,
+  "lon": 57.4805295,
+  "tags": {
+    "addr:street": "Saint Jean Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "St. Jean Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995069685,
+  "lat": -20.2462337,
+  "lon": 57.4681048,
+  "tags": {
+    "addr:street": "Hugnin Street",
+    "amenity": "pharmacy",
+    "name": "Suptar Vit Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995103577,
+  "lat": -20.2943442,
+  "lon": 57.4830162,
+  "tags": {
+    "addr:street": "Candos Vacoas Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Bonne-Terre Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995110309,
+  "lat": -20.2563662,
+  "lon": 57.4691407,
+  "tags": {
+    "addr:street": "Boundary Road",
+    "amenity": "pharmacy",
+    "name": "Pharmacie Boundary",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995152701,
+  "lat": -20.2641316,
+  "lon": 57.4803303,
+  "tags": {
+    "addr:street": "Saint Jean Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Ideale",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995164300,
+  "lat": -20.2635554,
+  "lon": 57.4807872,
+  "tags": {
+    "addr:street": "Saint Jean Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "St Jean Pharmacy",
+    "name:mfe": "Pharmacie les Orchidees",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995167682,
+  "lat": -20.2859964,
+  "lon": 57.5077169,
+  "tags": {
+    "addr:street": "Royal Road Phoenix",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Trochetia Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995180235,
+  "lat": -20.2617025,
+  "lon": 57.4823720,
+  "tags": {
+    "addr:street": "Saint Jean Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Glaieul",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995234827,
+  "lat": -20.2702406,
+  "lon": 57.4755638,
+  "tags": {
+    "addr:street": "Saint Jean Road",
+    "amenity": "pharmacy",
+    "name": "Pharmacie Tropicale",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995237045,
+  "lat": -20.2316204,
+  "lon": 57.4630473,
+  "tags": {
+    "addr:street": "Pope Hennessy Street",
+    "amenity": "pharmacy",
+    "name": "Pharmacy Mont Roches",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995247264,
+  "lat": -20.2443252,
+  "lon": 57.4668277,
+  "tags": {
+    "addr:street": "Hugnin Street",
+    "amenity": "pharmacy",
+    "name": "Fla Pharmacie New Stanley",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995275218,
+  "lat": -20.2634323,
+  "lon": 57.4811362,
+  "tags": {
+    "addr:street": "Saint Jean Road",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmaplus",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995298293,
+  "lat": -20.2835692,
+  "lon": 57.5051263,
+  "tags": {
+    "addr:street": "Royal Road Phoenix",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Phoenix Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995312473,
+  "lat": -20.2236051,
+  "lon": 57.4681324,
+  "tags": {
+    "addr:street": "A1",
+    "amenity": "pharmacy",
+    "name": "Pharmacie Medichem",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995356602,
+  "lat": -20.2902308,
+  "lon": 57.5126253,
+  "tags": {
+    "addr:street": "Royal Road Mesnil",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Miopharm",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995489441,
+  "lat": -20.2841158,
+  "lon": 57.5053890,
+  "tags": {
+    "addr:street": "Royal Road Phoenix",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacy S.N. Beeharry",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995491471,
+  "lat": -20.1940486,
+  "lon": 57.4698176,
+  "tags": {
+    "addr:street": "A1",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie De Coromandel",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995521461,
+  "lat": -20.2208725,
+  "lon": 57.4687812,
+  "tags": {
+    "addr:street": "A1",
+    "amenity": "pharmacy",
+    "name": "Pharmacie Biorharm",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995560247,
+  "lat": -20.2135834,
+  "lon": 57.4698948,
+  "tags": {
+    "addr:street": "A1",
+    "amenity": "pharmacy",
+    "name": "Nupharm Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995730718,
+  "lat": -20.2542306,
+  "lon": 57.4861308,
+  "tags": {
+    "addr:street": "Royal Road Belle Rose",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "St Jean Clinic",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995787160,
+  "lat": -20.2456839,
+  "lon": 57.4787281,
+  "tags": {
+    "addr:street": "Royal Road Rose Hill",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacy Pharmalead",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4995889277,
+  "lat": -20.2420042,
+  "lon": 57.4737438,
+  "tags": {
+    "addr:street": "Royal Road Rose Hill",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Standard Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4997963230,
+  "lat": -20.2368745,
+  "lon": 57.4717184,
+  "tags": {
+    "addr:street": "Royal Road Rose Hill",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Azm Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4997963233,
+  "lat": -20.2369887,
+  "lon": 57.4717523,
+  "tags": {
+    "addr:street": "Royal Road Rose Hill",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Rogan Clinic",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4997963234,
+  "lat": -20.2369482,
+  "lon": 57.4717384,
+  "tags": {
+    "addr:street": "Royal Road Rose Hill",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "healthcare:speciality": "cardiology",
+    "name": "Cabinet Cardiologie",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4998024770,
+  "lat": -20.2339456,
+  "lon": 57.4702780,
+  "tags": {
+    "addr:street": "Royal Road Rose Hill",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4998029030,
+  "lat": -20.2277832,
+  "lon": 57.4678912,
+  "tags": {
+    "addr:city": "Beau Bassin",
+    "addr:street": "Royal Road Rose Hill",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Impériale",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "node",
+  "id": 4999795291,
+  "lat": -20.1469166,
+  "lon": 57.5231229,
+  "tags": {
+    "amenity": "police",
+    "name": "Abercrombie Police Station",
+    "operator": "Mauritius Police Force"
+  }
+},
+{
+  "type": "node",
+  "id": 5033523521,
+  "lat": -20.0482343,
+  "lon": 57.5854795,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name:en": "Platinium pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 5068602788,
+  "lat": -20.1685880,
+  "lon": 57.5141233,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 5068602789,
+  "lat": -20.1611886,
+  "lon": 57.4993698,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 5106618424,
+  "lat": -20.1839327,
+  "lon": 57.7229783,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmacy Rose",
+    "name:en": "Pharmacy Rose"
+  }
+},
+{
+  "type": "node",
+  "id": 5225994871,
+  "lat": -19.9923814,
+  "lon": 57.5928718,
+  "tags": {
+    "amenity": "pharmacy",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "The Medicine Shop",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "node",
+  "id": 5244158411,
+  "lat": -20.2780403,
+  "lon": 57.4028148,
+  "tags": {
+    "amenity": "toilets",
+    "fee": "no",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5244158525,
+  "lat": -20.2794701,
+  "lon": 57.4022958,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 5250529770,
+  "lat": -20.4370201,
+  "lon": 57.3719101,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 5310082223,
+  "lat": -20.2462570,
+  "lon": 57.5970550,
+  "tags": {
+    "addr:city": "Quartier Militaire",
+    "amenity": "police",
+    "name": "Quartier Militaire Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 5310627623,
+  "lat": -20.1931790,
+  "lon": 57.7240760,
+  "tags": {
+    "addr:city": "Centre de Flacq",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name": "Flacq Echography and X-Ray Centre",
+    "name:fr": "Centre d'Échographie et de radiologie Flacq"
+  }
+},
+{
+  "type": "node",
+  "id": 5513184707,
+  "lat": -20.1921878,
+  "lon": 57.6678671,
+  "tags": {
+    "amenity": "police"
+  }
+},
+{
+  "type": "node",
+  "id": 5517885522,
+  "lat": -20.1504193,
+  "lon": 57.5722535,
+  "tags": {
+    "amenity": "police",
+    "name:en": "Long Mountain Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 5558929279,
+  "lat": -20.2854483,
+  "lon": 57.3640866,
+  "tags": {
+    "amenity": "toilets",
+    "female": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5558929280,
+  "lat": -20.2855339,
+  "lon": 57.3640746,
+  "tags": {
+    "amenity": "toilets",
+    "male": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5594495759,
+  "lat": -20.0211140,
+  "lon": 57.5788360,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "For Me",
+    "shop": "clothes"
+  }
+},
+{
+  "type": "node",
+  "id": 5623646894,
+  "lat": -19.9879599,
+  "lon": 57.6168001,
+  "tags": {
+    "addr:city": "Cap Malheureux",
+    "amenity": "pharmacy",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Cap Malheureux"
+  }
+},
+{
+  "type": "node",
+  "id": 5721330236,
+  "lat": -20.2985788,
+  "lon": 57.3638919,
+  "tags": {
+    "access": "customers",
+    "amenity": "toilets",
+    "fee": "no",
+    "female": "yes",
+    "male": "yes",
+    "toilets:disposal": "flush",
+    "toilets:position": "seated;urinal"
+  }
+},
+{
+  "type": "node",
+  "id": 5721330254,
+  "lat": -20.2984605,
+  "lon": 57.3648280,
+  "tags": {
+    "access": "customers",
+    "amenity": "toilets",
+    "fee": "no",
+    "female": "yes",
+    "male": "yes",
+    "toilets:disposal": "flush",
+    "toilets:position": "seated;urinal"
+  }
+},
+{
+  "type": "node",
+  "id": 5721330255,
+  "lat": -20.2996322,
+  "lon": 57.3639335,
+  "tags": {
+    "access": "customers",
+    "amenity": "toilets",
+    "fee": "no",
+    "female": "yes",
+    "male": "yes",
+    "toilets:disposal": "flush",
+    "toilets:position": "seated;urinal"
+  }
+},
+{
+  "type": "node",
+  "id": 5726882011,
+  "lat": -20.4315371,
+  "lon": 57.4566507,
+  "tags": {
+    "amenity": "toilets",
+    "check_date": "2025-11-19",
+    "check_date:wheelchair": "2025-11-19",
+    "fee": "no",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5741686222,
+  "lat": -20.1562648,
+  "lon": 57.5170408,
+  "tags": {
+    "addr:housenumber": "29",
+    "addr:street": "Jardin Despeaux Street",
+    "amenity": "clinic",
+    "email": "naushad97@intnet.mu",
+    "internet_access": "wlan",
+    "name:en": "AFM dental & medical center",
+    "opening_hours": "Mo-Su 07:30-17:00",
+    "operator": "Fatehmamode",
+    "phone": "57869795",
+    "website": "http://www.afmdentalclinic.com"
+  }
+},
+{
+  "type": "node",
+  "id": 5760435752,
+  "lat": -20.0853147,
+  "lon": 57.5167383,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 5846449395,
+  "lat": -20.0631829,
+  "lon": 57.5811481,
+  "tags": {
+    "amenity": "police"
+  }
+},
+{
+  "type": "node",
+  "id": 5981041612,
+  "lat": -20.2248612,
+  "lon": 57.5258670,
+  "tags": {
+    "alt_name": "Pharmacie Helvetia",
+    "amenity": "pharmacy",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Helvétia"
+  }
+},
+{
+  "type": "node",
+  "id": 5981041791,
+  "lat": -20.2248207,
+  "lon": 57.5260315,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 5981230458,
+  "lat": -20.2245672,
+  "lon": 57.5363286,
+  "tags": {
+    "amenity": "police",
+    "name": "Saint Pierre Police Station"
+  }
+},
+{
+  "type": "node",
+  "id": 5981233804,
+  "lat": -20.2244748,
+  "lon": 57.5370026,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "St Pierre Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 5981235532,
+  "lat": -20.2247366,
+  "lon": 57.5379894,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Pharmachic"
+  }
+},
+{
+  "type": "node",
+  "id": 6145660291,
+  "lat": -20.2486740,
+  "lon": 57.5604196,
+  "tags": {
+    "healthcare": "centre",
+    "healthcare:speciality": "general",
+    "name": "Dagotiere Community Health Centre"
+  }
+},
+{
+  "type": "node",
+  "id": 6154124211,
+  "lat": -20.2813930,
+  "lon": 57.3653374,
+  "tags": {
+    "amenity": "toilets",
+    "fee": "no",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 6434088687,
+  "lat": -20.2502850,
+  "lon": 57.4783290,
+  "tags": {
+    "addr:street": "Remy Ollier Avenue",
+    "amenity": "pharmacy",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmarcie Ollier"
+  }
+},
+{
+  "type": "node",
+  "id": 6479004057,
+  "lat": -20.2389709,
+  "lon": 57.7882475,
+  "tags": {
+    "amenity": "police",
+    "check_date": "2025-11-21",
+    "name": "Trou d'eau douce police station"
+  }
+},
+{
+  "type": "node",
+  "id": 6518841515,
+  "lat": -20.2180436,
+  "lon": 57.4689929,
+  "tags": {
+    "addr:street": "Grand River Road",
+    "amenity": "pharmacy",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie la confiance"
+  }
+},
+{
+  "type": "node",
+  "id": 6534827186,
+  "lat": -20.2139970,
+  "lon": 57.4717408,
+  "tags": {
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "healthcare:speciality": "physiotherapy",
+    "name": "Vincent Perdreau"
+  }
+},
+{
+  "type": "node",
+  "id": 6568466481,
+  "lat": -20.2186148,
+  "lon": 57.4729828,
+  "tags": {
+    "addr:street": "Philippe Raoult street",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "healthcare:speciality": "orthopaedics",
+    "name": "A. N. Emritte",
+    "phone": "+2304676712"
+  }
+},
+{
+  "type": "node",
+  "id": 6579472785,
+  "lat": -20.2326623,
+  "lon": 57.4717782,
+  "tags": {
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name": "Docteur Reshad Sumodhee"
+  }
+},
+{
+  "type": "node",
+  "id": 6579472786,
+  "lat": -20.2317954,
+  "lon": 57.4716014,
+  "tags": {
+    "amenity": "clinic",
+    "contact:website": "https://viplaserclinic-mauritius.com/",
+    "healthcare": "clinic",
+    "healthcare:speciality": "aesthetic_medicine",
+    "name": "VIP Laser Clinic Med Spa"
+  }
+},
+{
+  "type": "node",
+  "id": 6681138959,
+  "lat": -20.2247010,
+  "lon": 57.4704332,
+  "tags": {
+    "addr:street": "Lady Twining Street",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name": "Dr Parmessur",
+    "phone": "+23057753187"
+  }
+},
+{
+  "type": "node",
+  "id": 6950268907,
+  "lat": -20.4013162,
+  "lon": 57.6005469,
+  "tags": {
+    "amenity": "police"
+  }
+},
+{
+  "type": "node",
+  "id": 6953678367,
+  "lat": -20.4088056,
+  "lon": 57.7059929,
+  "tags": {
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name": "Cabinet Medical",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 6953678383,
+  "lat": -20.4087828,
+  "lon": 57.7060436,
+  "tags": {
+    "amenity": "pharmacy",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmacity Mahebourg",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 6953932005,
+  "lat": -20.4076473,
+  "lon": 57.7055337,
+  "tags": {
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name": "Medical Centre",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 6991354405,
+  "lat": -20.4056316,
+  "lon": 57.7089082,
+  "tags": {
+    "amenity": "toilets",
+    "check_date": "2025-11-23",
+    "check_date:wheelchair": "2025-11-23",
+    "fee": "no",
+    "female": "yes",
+    "male": "no",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 6991354406,
+  "lat": -20.4055856,
+  "lon": 57.7090277,
+  "tags": {
+    "amenity": "toilets",
+    "check_date": "2025-11-23",
+    "check_date:wheelchair": "2025-11-23",
+    "fee": "no",
+    "female": "no",
+    "male": "yes",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 7005683285,
+  "lat": -20.2288025,
+  "lon": 57.4668249,
+  "tags": {
+    "addr:postcode": "71504",
+    "addr:street": "walter besant street",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name": "Neurobalance and ENT clinic",
+    "name:en": "Dr Peerbaccus",
+    "phone": "+2304667778"
+  }
+},
+{
+  "type": "node",
+  "id": 7112313885,
+  "lat": -20.1067409,
+  "lon": 57.5779709,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 7112373002,
+  "lat": -20.0215736,
+  "lon": 57.5778605,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 7113819787,
+  "lat": -20.4338439,
+  "lon": 57.6788138,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 7133759726,
+  "lat": -20.0054156,
+  "lon": 57.6638434,
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 7254457015,
+  "lat": -20.2439206,
+  "lon": 57.4663153,
+  "tags": {
+    "addr:street": "Ratsitatane Street",
+    "amenity": "pharmacy",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "Buckingham pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 7282493186,
+  "lat": -20.4947956,
+  "lon": 57.3816166,
+  "tags": {
+    "amenity": "doctors",
+    "name:en": "Baie Du Cap, Medical Dispensary"
+  }
+},
+{
+  "type": "node",
+  "id": 7500463412,
+  "lat": -20.1615431,
+  "lon": 57.5000328,
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "level": "1",
+    "ref": "1st floor"
+  }
+},
+{
+  "type": "node",
+  "id": 8085300018,
+  "lat": -20.0629891,
+  "lon": 57.5508962,
+  "tags": {
+    "addr:street": "Royal Rd 8em mile Triolet",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name:en": "Pharmacy Nundlall"
+  }
+},
+{
+  "type": "node",
+  "id": 8091417974,
+  "lat": -20.3275402,
+  "lon": 57.3840742,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 8108490022,
+  "lat": -20.3538004,
+  "lon": 57.3656044,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 8264572417,
+  "lat": -20.2295824,
+  "lon": 57.5024572,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 9103899272,
+  "lat": -20.2636433,
+  "lon": 57.4883330,
+  "tags": {
+    "addr:street": "Trianon Avenue No. 2",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name": "Dr S. Sibartie"
+  }
+},
+{
+  "type": "node",
+  "id": 9107967218,
+  "lat": -20.2692270,
+  "lon": 57.4845564,
+  "tags": {
+    "addr:street": "Avenue des longaniers",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "healthcare:speciality": "otolaryngology",
+    "name": "Dr S. Mudoo"
+  }
+},
+{
+  "type": "node",
+  "id": 9107967219,
+  "lat": -20.2692974,
+  "lon": 57.4852189,
+  "tags": {
+    "addr:street": "Sodnac Avenue",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "healthcare:speciality": "orthodontics",
+    "name": "Dr. M. Dauhoo"
+  }
+},
+{
+  "type": "node",
+  "id": 9263546065,
+  "lat": -20.0492405,
+  "lon": 57.6634487,
+  "tags": {
+    "amenity": "pharmacy",
+    "drive_through": "no",
+    "healthcare": "pharmacy",
+    "name": "Healthland Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 9282312806,
+  "lat": -20.2786876,
+  "lon": 57.4773386,
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "healthcare:speciality": "orthopaedics",
+    "name": "Princess Margaret Orthopaedic Centre",
+    "short_name": "PMOC",
+    "start_date": "1956"
+  }
+},
+{
+  "type": "node",
+  "id": 9296871274,
+  "lat": -20.5248884,
+  "lon": 57.5302052,
+  "tags": {
+    "amenity": "toilets",
+    "opening_hours": "Mo-Su 06:00-19:00"
+  }
+},
+{
+  "type": "node",
+  "id": 9410624817,
+  "lat": -20.1615707,
+  "lon": 57.4998754,
+  "tags": {
+    "addr:city": "Port Louis",
+    "addr:postcode": "11307",
+    "addr:street": "Caudan Waterfront",
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Pharmalink"
+  }
+},
+{
+  "type": "node",
+  "id": 9564966495,
+  "lat": -20.3165722,
+  "lon": 57.5303377,
+  "tags": {
+    "addr:street": "Higginson Street",
+    "fax": "+2306762895",
+    "healthcare": "clinic",
+    "name": "CLINIC MULLER - PAJR Medical Ltd",
+    "phone": "+230 670 2911"
+  }
+},
+{
+  "type": "node",
+  "id": 9672037438,
+  "lat": -20.1662531,
+  "lon": 57.7658684,
+  "tags": {
+    "amenity": "toilets",
+    "fee": "no",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "node",
+  "id": 9674229777,
+  "lat": -20.1676589,
+  "lon": 57.7663948,
+  "tags": {
+    "amenity": "toilets",
+    "fee": "no",
+    "indoor": "yes",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 9674229779,
+  "lat": -20.1672846,
+  "lon": 57.7659004,
+  "tags": {
+    "amenity": "toilets",
+    "fee": "no",
+    "indoor": "yes",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 9675152706,
+  "lat": -20.1679161,
+  "lon": 57.7670126,
+  "tags": {
+    "amenity": "toilets",
+    "description": "Ladies"
+  }
+},
+{
+  "type": "node",
+  "id": 9675329329,
+  "lat": -20.1679765,
+  "lon": 57.7669108,
+  "tags": {
+    "amenity": "toilets",
+    "description": "Gents"
+  }
+},
+{
+  "type": "node",
+  "id": 9677549562,
+  "lat": -20.0315849,
+  "lon": 57.5482071,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 9680305287,
+  "lat": -20.0291722,
+  "lon": 57.5466935,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 9682870306,
+  "lat": -20.0322761,
+  "lon": 57.5454845,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 9682922129,
+  "lat": -20.0298855,
+  "lon": 57.5473060,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 9841171218,
+  "lat": -20.0707000,
+  "lon": 57.6176980,
+  "tags": {
+    "addr:street": "Domaine de Labourdonnais",
+    "email": "care@ddl.mu",
+    "healthcare": "centre",
+    "healthcare:speciality": "general;physiotherapy;massage_therapy;psychotherapist;general_practice",
+    "name": "Care Medical & Paramedical Centre",
+    "name:en": "Care Medical & Paramedical Centre",
+    "opening_hours": "Mo-Fr 08:00-17:00; Sa 08:00-12:00",
+    "phone": "+2302669630",
+    "website": "https://caremedical.mu/"
+  }
+},
+{
+  "type": "node",
+  "id": 10106444417,
+  "lat": -20.2948969,
+  "lon": 57.4070190,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10107550975,
+  "lat": -20.3211010,
+  "lon": 57.5258536,
+  "tags": {
+    "addr:street": "Royal Road Curepipe",
+    "amenity": "pharmacy",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmacy Kestrel"
+  }
+},
+{
+  "type": "node",
+  "id": 10148601404,
+  "lat": -20.4541726,
+  "lon": 57.6987067,
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "toilets:disposal": "flush",
+    "unisex": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 10211364731,
+  "lat": -20.2917733,
+  "lon": 57.4061671,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10211364732,
+  "lat": -20.2936804,
+  "lon": 57.4050204,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10211364733,
+  "lat": -20.3020321,
+  "lon": 57.4073793,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10211364734,
+  "lat": -20.3028503,
+  "lon": 57.4063052,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10707296909,
+  "lat": -20.2648529,
+  "lon": 57.8040711,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10709155657,
+  "lat": -20.0372945,
+  "lon": 57.5471729,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Central Pharmacy",
+    "opening_hours": "Mo-Sa 08:00-20:00; Su,PH 08:00-14:00",
+    "operator": "Bissonauth & Sons.",
+    "phone": "+230 265 5706"
+  }
+},
+{
+  "type": "node",
+  "id": 10739351718,
+  "lat": -20.0131153,
+  "lon": 57.5867149,
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "level": "0"
+  }
+},
+{
+  "type": "node",
+  "id": 10758243941,
+  "lat": -20.2434573,
+  "lon": 57.7867245,
+  "tags": {
+    "amenity": "toilets",
+    "fee": "no",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 10760821924,
+  "lat": -20.2391259,
+  "lon": 57.7921389,
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10768092263,
+  "lat": -20.4044480,
+  "lon": 57.6975124,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10839985305,
+  "lat": -20.0718862,
+  "lon": 57.6178341,
+  "tags": {
+    "access": "customers",
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10862621974,
+  "lat": -20.0647847,
+  "lon": 57.5195177,
+  "tags": {
+    "amenity": "toilets",
+    "female": "yes",
+    "male": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 10862662434,
+  "lat": -19.9864845,
+  "lon": 57.6046698,
+  "tags": {
+    "amenity": "toilets",
+    "female": "yes",
+    "male": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 10862835750,
+  "lat": -20.2099540,
+  "lon": 57.4038622,
+  "tags": {
+    "amenity": "toilets",
+    "female": "yes",
+    "male": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 10881738693,
+  "lat": -20.1637968,
+  "lon": 57.4989162,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 10892670089,
+  "lat": -20.1598698,
+  "lon": 57.5008272,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10892792838,
+  "lat": -20.1606240,
+  "lon": 57.5028057,
+  "tags": {
+    "amenity": "drinking_water"
+  }
+},
+{
+  "type": "node",
+  "id": 10901140814,
+  "lat": -20.4442805,
+  "lon": 57.7176449,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 10913798499,
+  "lat": -20.2442886,
+  "lon": 57.4760148,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 10946046615,
+  "lat": -20.2545287,
+  "lon": 57.4945108,
+  "tags": {
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Dr.Rameez Hussain Ophthalmologist"
+  }
+},
+{
+  "type": "node",
+  "id": 10974293500,
+  "lat": -20.1590699,
+  "lon": 57.5034358,
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "fee": "no",
+    "female": "yes",
+    "male": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 11061520910,
+  "lat": -20.2794924,
+  "lon": 57.3687287,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Flic-en-Flac Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 11138924989,
+  "lat": -20.3231090,
+  "lon": 57.5181996,
+  "tags": {
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Cabinet médical Dr. Bholah"
+  }
+},
+{
+  "type": "node",
+  "id": 11243417143,
+  "lat": -20.3005700,
+  "lon": 57.4889123,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Z-click pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 11359729869,
+  "lat": -20.1639567,
+  "lon": 57.5022810,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 11373276114,
+  "lat": -20.3026521,
+  "lon": 57.4851443,
+  "tags": {
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name": "Mrs  H.B. Peerally"
+  }
+},
+{
+  "type": "node",
+  "id": 11396390154,
+  "lat": -20.0069750,
+  "lon": 57.6686083,
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "check_date": "2023-03-19",
+    "fee": "no",
+    "female": "yes",
+    "male": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 11721879694,
+  "lat": -20.2791630,
+  "lon": 57.3682245,
+  "tags": {
+    "amenity": "pharmacy",
+    "name": "Love Life Pharmacy",
+    "opening_hours": "Mo-Su 09:00-20:00"
+  }
+},
+{
+  "type": "node",
+  "id": 12000208841,
+  "lat": -20.4501269,
+  "lon": 57.3730208,
+  "tags": {
+    "access": "customers",
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 12001014757,
+  "lat": -20.1452744,
+  "lon": 57.7266741,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 12003574189,
+  "lat": -20.5015641,
+  "lon": 57.5445735,
+  "tags": {
+    "access": "customers",
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 12003574190,
+  "lat": -20.5019660,
+  "lon": 57.5422239,
+  "tags": {
+    "access": "customers",
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 12047294943,
+  "lat": -20.2230329,
+  "lon": 57.5404035,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "name": "Circonstance Saint-Pierre Pharmacy"
+  }
+},
+{
+  "type": "node",
+  "id": 12069727905,
+  "lat": -20.2234331,
+  "lon": 57.5361032,
+  "tags": {
+    "addr:city": "St Pierre",
+    "addr:postcode": "81420",
+    "addr:street": "One Way Street",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "healthcare:speciality": "orthopaedics",
+    "name": "Dr V. Siraz",
+    "opening_hours": "13.30 - 18.30"
+  }
+},
+{
+  "type": "node",
+  "id": 12086674983,
+  "lat": -20.4305581,
+  "lon": 57.3751464,
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 12122911609,
+  "lat": -20.2748255,
+  "lon": 57.8070979,
+  "tags": {
+    "access": "permissive",
+    "amenity": "toilets",
+    "fee": "no",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "node",
+  "id": 12238285028,
+  "lat": -20.3620198,
+  "lon": 57.3753332,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 12330321201,
+  "lat": -20.4086471,
+  "lon": 57.4729566,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 12786393663,
+  "lat": -20.0066098,
+  "lon": 57.5783372,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 13140792169,
+  "lat": -20.2398602,
+  "lon": 57.4854561,
+  "tags": {
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "name": "Laserostop"
+  }
+},
+{
+  "type": "node",
+  "id": 13246023102,
+  "lat": -20.3458016,
+  "lon": 57.3644125,
+  "tags": {
+    "amenity": "fire_station"
+  }
+},
+{
+  "type": "node",
+  "id": 13387062222,
+  "lat": -20.4458498,
+  "lon": 57.7042923,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 13387062236,
+  "lat": -20.4456135,
+  "lon": 57.7049229,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 13412787601,
+  "lat": -20.4875279,
+  "lon": 57.3663375,
+  "tags": {
+    "amenity": "toilets",
+    "opening_hours": "May-Sep 06:00-19:00; Oct-Apr 06:00-20:00"
+  }
+},
+{
+  "type": "node",
+  "id": 13412792801,
+  "lat": -20.4875279,
+  "lon": 57.3663375,
+  "tags": {
+    "amenity": "toilets",
+    "opening_hours": "May-Sep 06:00-19:00; Oct-Apr 06:00-20:00"
+  }
+},
+{
+  "type": "node",
+  "id": 13422296001,
+  "lat": -20.1517941,
+  "lon": 57.5713108,
+  "tags": {
+    "amenity": "hospital",
+    "name": "Long Mountain Hospital"
+  }
+},
+{
+  "type": "node",
+  "id": 13468095269,
+  "lat": -20.2396549,
+  "lon": 57.4662374,
+  "tags": {
+    "addr:city": "Beau Bassin-Rose Hill",
+    "addr:street": "B.Blackburn Street",
+    "amenity": "doctors",
+    "healthcare": "doctor",
+    "healthcare:speciality": "orthopaedics",
+    "name": "Dr B. RAMTOHUL"
+  }
+},
+{
+  "type": "node",
+  "id": 13595382682,
+  "lat": -20.4051087,
+  "lon": 57.5922384,
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Nuclear Medicine"
+  }
+},
+{
+  "type": "node",
+  "id": 13849831854,
+  "lat": -20.2342773,
+  "lon": 57.5012871,
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "healthcare:speciality": "ophthalmology",
+    "name": "New Moka Eye Hospital"
+  }
+},
+{
+  "type": "node",
+  "id": 13853107038,
+  "lat": -20.2767750,
+  "lon": 57.4038405,
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Artemis Cascavelle Hospital",
+    "website": "https://artemismauritius.mu/"
+  }
+},
+{
+  "type": "node",
+  "id": 14038766201,
+  "lat": -20.4528880,
+  "lon": 57.3128956,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 14064535189,
+  "lat": -20.3005087,
+  "lon": 57.3647948,
+  "tags": {
+    "amenity": "drinking_water",
+    "name": "Drinking Well"
+  }
+},
+{
+  "type": "node",
+  "id": 14064573924,
+  "lat": -20.2993825,
+  "lon": 57.3644964,
+  "tags": {
+    "amenity": "drinking_water",
+    "name": "Drinking Well"
+  }
+},
+{
+  "type": "node",
+  "id": 14065420698,
+  "lat": -20.2985163,
+  "lon": 57.3642290,
+  "tags": {
+    "amenity": "drinking_water",
+    "name": "Drinking Well"
+  }
+},
+{
+  "type": "node",
+  "id": 14073416469,
+  "lat": -20.2419821,
+  "lon": 57.4539045,
+  "tags": {
+    "amenity": "pharmacy",
+    "healthcare": "pharmacy",
+    "phone": "+230 465 6192"
+  }
+},
+{
+  "type": "node",
+  "id": 14103559102,
+  "lat": -20.2747711,
+  "lon": 57.8070750,
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "node",
+  "id": 14111708301,
+  "lat": -20.3165648,
+  "lon": 57.5303478,
+  "tags": {
+    "addr:street": "Higginson Street",
+    "amenity": "clinic",
+    "name": "clinic muller",
+    "opening_hours": "24/7"
+  }
+},
+{
+  "type": "way",
+  "id": 125736592,
+  "center": {
+    "lat": -20.3069576,
+    "lon": 57.3671654
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 204352575,
+  "center": {
+    "lat": -20.1964221,
+    "lon": 57.7764083
+  },
+  "tags": {
+    "amenity": "police",
+    "name:en": "National Coast Guard"
+  }
+},
+{
+  "type": "way",
+  "id": 223557745,
+  "center": {
+    "lat": -20.5206211,
+    "lon": 57.5225652
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "name": "Souillac Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 223629362,
+  "center": {
+    "lat": -20.3192515,
+    "lon": 57.5226074
+  },
+  "tags": {
+    "amenity": "police",
+    "name": "Curepipe Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 224268361,
+  "center": {
+    "lat": -20.4051165,
+    "lon": 57.5928237
+  },
+  "tags": {
+    "addr:housenumber": "M2",
+    "addr:street": "Rose Belle",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Jawaharnal Nehru Hospital",
+    "phone": "+2306037000",
+    "short_name": "Nehru Hospital",
+    "source": "Bing"
+  }
+},
+{
+  "type": "way",
+  "id": 238060663,
+  "center": {
+    "lat": -20.2262490,
+    "lon": 57.4676964
+  },
+  "tags": {
+    "addr:city": "Beau Bassin",
+    "addr:street": "Royal Road Beau Bassin",
+    "amenity": "police",
+    "building": "yes",
+    "name": "Beau Bassin Police Station",
+    "operator": "Mauritius Police Force",
+    "source": "local knowledge;Bing 2012"
+  }
+},
+{
+  "type": "way",
+  "id": 270988980,
+  "center": {
+    "lat": -20.2322621,
+    "lon": 57.4957036
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Clinique Mauricienne"
+  }
+},
+{
+  "type": "way",
+  "id": 371851055,
+  "center": {
+    "lat": -20.1484778,
+    "lon": 57.6841827
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Primary School"
+  }
+},
+{
+  "type": "way",
+  "id": 372014045,
+  "center": {
+    "lat": -20.1690032,
+    "lon": 57.5020279
+  },
+  "tags": {
+    "addr:city": "Port Louis",
+    "addr:city:fr": "Port-Louis",
+    "addr:street": "Volcy Pougnet Street",
+    "addr:street:fr": "Rue Volcy Pougnet",
+    "amenity": "hospital",
+    "emergency": "yes",
+    "healthcare": "hospital",
+    "name": "Dr Abdool Gaffoor Jeetoo Hospital",
+    "name:fr": "Hôpital Docteur Abdool Gaffoor Jeetoo",
+    "operator": "Ministry of Health and Quality of Life",
+    "operator:fr": "Ministère de la Santé et de la Qualité de Vie",
+    "operator:type": "government"
+  }
+},
+{
+  "type": "way",
+  "id": 401444793,
+  "center": {
+    "lat": -20.5022800,
+    "lon": 57.3984703
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 413639896,
+  "center": {
+    "lat": -20.0592359,
+    "lon": 57.6852655
+  },
+  "tags": {
+    "addr:city": "Poudre D'Or",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Poudre d'Or Hospital"
+  }
+},
+{
+  "type": "way",
+  "id": 421671909,
+  "center": {
+    "lat": -20.3132994,
+    "lon": 57.5171416
+  },
+  "tags": {
+    "addr:city": "Floreal",
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "C-Care Darné",
+    "name:mfe": "darne",
+    "website": "https://www.cliniquedarne.com/"
+  }
+},
+{
+  "type": "way",
+  "id": 421802336,
+  "center": {
+    "lat": -20.3262257,
+    "lon": 57.5290488
+  },
+  "tags": {
+    "addr:city": "Curepipe",
+    "addr:street": "Royal Road Forest Side",
+    "amenity": "fire_station"
+  }
+},
+{
+  "type": "way",
+  "id": 444103188,
+  "center": {
+    "lat": -20.1837626,
+    "lon": 57.7243811
+  },
+  "tags": {
+    "addr:city": "Centre de Flacq",
+    "amenity": "fire_station",
+    "building": "yes",
+    "name": "Flacq Fire Station"
+  }
+},
+{
+  "type": "way",
+  "id": 445169724,
+  "center": {
+    "lat": -20.2837632,
+    "lon": 57.6617225
+  },
+  "tags": {
+    "addr:city": "Montage Blanche",
+    "addr:street": "B54-Petit Paquet Road",
+    "amenity": "hospital",
+    "name": "Health Center Montagne Blanche",
+    "phone": "437 5153"
+  }
+},
+{
+  "type": "way",
+  "id": 448607902,
+  "center": {
+    "lat": -20.3300605,
+    "lon": 57.5070965
+  },
+  "tags": {
+    "amenity": "police",
+    "name": "Casernes Police Quarters"
+  }
+},
+{
+  "type": "way",
+  "id": 472819606,
+  "center": {
+    "lat": -20.2856359,
+    "lon": 57.6640538
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 495653539,
+  "center": {
+    "lat": -20.1597314,
+    "lon": 57.5014131
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "name": "Port Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 495657120,
+  "center": {
+    "lat": -20.1625474,
+    "lon": 57.5145213
+  },
+  "tags": {
+    "addr:city": "Port Louis",
+    "addr:street": "Sir Edgar Laurent Street",
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "City Clinic",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 495764618,
+  "center": {
+    "lat": -20.3132989,
+    "lon": 57.5034184
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "house",
+    "healthcare": "clinic",
+    "name": "Florial medi clinic"
+  }
+},
+{
+  "type": "way",
+  "id": 495765010,
+  "center": {
+    "lat": -20.3262163,
+    "lon": 57.5288092
+  },
+  "tags": {
+    "addr:street": "Royal Road Forest Side",
+    "amenity": "fire_station",
+    "building": "yes",
+    "name": "Curepipe fire station"
+  }
+},
+{
+  "type": "way",
+  "id": 495848204,
+  "center": {
+    "lat": -20.0195703,
+    "lon": 57.5804643
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic"
+  }
+},
+{
+  "type": "way",
+  "id": 495848216,
+  "center": {
+    "lat": -20.0149469,
+    "lon": 57.5833723
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "check_date": "2024-06-17",
+    "name": "Grand-Baie Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 495856090,
+  "center": {
+    "lat": -20.0357397,
+    "lon": 57.5461354
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "name": "Trou Aux Biches Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 495859065,
+  "center": {
+    "lat": -20.2811393,
+    "lon": 57.4845467
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "New Cancer Centre"
+  }
+},
+{
+  "type": "way",
+  "id": 495944351,
+  "center": {
+    "lat": -20.1272568,
+    "lon": 57.5321906
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 496087657,
+  "center": {
+    "lat": -20.1563685,
+    "lon": 57.5087003
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 507777562,
+  "center": {
+    "lat": -20.2422602,
+    "lon": 57.4540681
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "check_date": "2026-07-26",
+    "name": "Camp-Levieux Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 508437619,
+  "center": {
+    "lat": -20.4073906,
+    "lon": 57.7058683
+  },
+  "tags": {
+    "addr:street": "Royal Road",
+    "amenity": "police",
+    "building": "yes",
+    "check_date": "2025-11-23",
+    "name": "Mahebourg Police Station",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 508440843,
+  "center": {
+    "lat": -20.4042040,
+    "lon": 57.7067414
+  },
+  "tags": {
+    "addr:street": "Rue De La Boulangerie",
+    "amenity": "fire_station",
+    "building": "yes",
+    "name": "Mahebourg fire station",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 508541142,
+  "center": {
+    "lat": -20.3066427,
+    "lon": 57.5259070
+  },
+  "tags": {
+    "addr:street": "Mgr Leen Street",
+    "amenity": "police",
+    "building": "yes",
+    "name": "Eau Coulee Police Station",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 508767150,
+  "center": {
+    "lat": -20.4314209,
+    "lon": 57.6580647
+  },
+  "tags": {
+    "addr:street": "Mooljee Road",
+    "amenity": "police",
+    "building": "yes",
+    "check_date": "2026-08-10",
+    "name": "Plaine Magnien Police Station",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 508782865,
+  "center": {
+    "lat": -20.3787442,
+    "lon": 57.5719632
+  },
+  "tags": {
+    "addr:street": "Route Royale",
+    "amenity": "clinic",
+    "building": "yes",
+    "name": "Unilab LTD",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 508809133,
+  "center": {
+    "lat": -20.3017826,
+    "lon": 57.4929422
+  },
+  "tags": {
+    "addr:street": "John Kennedy Avenue",
+    "amenity": "police",
+    "building": "yes",
+    "name": "Vacoas Police Station",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 508815021,
+  "center": {
+    "lat": -20.3296123,
+    "lon": 57.5260874
+  },
+  "tags": {
+    "addr:street": "Gustav Colette Road",
+    "amenity": "clinic",
+    "building": "yes",
+    "name": "Muscular Dystrophy Association",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 508882349,
+  "center": {
+    "lat": -20.2766014,
+    "lon": 57.3699241
+  },
+  "tags": {
+    "addr:city": "Flic en Flac",
+    "addr:street": "Royal Road",
+    "amenity": "clinic",
+    "building": "yes",
+    "building:levels": "2",
+    "emergency": "yes",
+    "healthcare": "clinic",
+    "name": "Clinique de L'Occident",
+    "opening_hours": "24/7",
+    "phone": "+230 453 5658"
+  }
+},
+{
+  "type": "way",
+  "id": 509003819,
+  "center": {
+    "lat": -20.1660781,
+    "lon": 57.5173702
+  },
+  "tags": {
+    "addr:street": "Boulevard Maulana Shah Ahmad Nootani Siddiqui",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy",
+    "name": "City Care Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 509022817,
+  "center": {
+    "lat": -20.2757701,
+    "lon": 57.3764965
+  },
+  "tags": {
+    "addr:city": "Flic en Flac",
+    "addr:street": "Avenue des Capitaines",
+    "amenity": "clinic",
+    "building": "residential",
+    "building:levels": "3",
+    "name": "St. Patrick Clinic",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 509025249,
+  "center": {
+    "lat": -20.3221988,
+    "lon": 57.4846278
+  },
+  "tags": {
+    "addr:street": "Vacoas La Marie Road",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Royale",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 509036921,
+  "center": {
+    "lat": -20.3457867,
+    "lon": 57.3646116
+  },
+  "tags": {
+    "addr:street": "Royal Road",
+    "amenity": "fire_station",
+    "building": "yes",
+    "name": "Tamarin Fire Station",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 509044660,
+  "center": {
+    "lat": -20.2808827,
+    "lon": 57.3679748
+  },
+  "tags": {
+    "addr:city": "Flic en Flac",
+    "addr:street": "Radar Avenue",
+    "amenity": "clinic",
+    "building": "yes",
+    "building:levels": "2",
+    "name": "Esthétique",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 509045374,
+  "center": {
+    "lat": -20.1594621,
+    "lon": 57.5098701
+  },
+  "tags": {
+    "addr:street": "Sir Seewoosagur Ramgoolam Street",
+    "addr:street:fr": "Rue Sir Seewoosagur Ramgoolam",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy",
+    "name": "Desforges Pharmacy",
+    "name:fr": "Pharmacie Desforges"
+  }
+},
+{
+  "type": "way",
+  "id": 509335984,
+  "center": {
+    "lat": -20.2574743,
+    "lon": 57.4161771
+  },
+  "tags": {
+    "addr:street": "Royal Road Bambous",
+    "addr:street:fr": "Route Royale Bambous",
+    "amenity": "police",
+    "building": "yes",
+    "building:levels": "2"
+  }
+},
+{
+  "type": "way",
+  "id": 509340467,
+  "center": {
+    "lat": -20.2572817,
+    "lon": 57.4132769
+  },
+  "tags": {
+    "addr:city": "Bambous",
+    "addr:street": "Rivière Noire Road",
+    "amenity": "clinic",
+    "building": "yes",
+    "building:levels": "1",
+    "name": "Bambous Area Health Centre",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 509644741,
+  "center": {
+    "lat": -20.4145805,
+    "lon": 57.4916204
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes",
+    "operator": "District Council of Savanne"
+  }
+},
+{
+  "type": "way",
+  "id": 509945249,
+  "center": {
+    "lat": -20.1659717,
+    "lon": 57.5174711
+  },
+  "tags": {
+    "addr:street": "Boulevard Maulana Shah Ahmad Nootani Siddiqui",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy",
+    "name": "Vallee Pitot Pharmacy",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 509971781,
+  "center": {
+    "lat": -20.1596843,
+    "lon": 57.5127653
+  },
+  "tags": {
+    "addr:street": "Madad Ul Islam Street",
+    "amenity": "police",
+    "building": "yes",
+    "name": "Plaine Verte Police Station",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 509977637,
+  "center": {
+    "lat": -20.2855767,
+    "lon": 57.4802277
+  },
+  "tags": {
+    "addr:street": "Candos Vacoas Road",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy",
+    "name": "Green Cross Pharmacie",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 510058789,
+  "center": {
+    "lat": -20.1652823,
+    "lon": 57.4939709
+  },
+  "tags": {
+    "addr:street": "Souillac Street",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "building:levels": "1",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie De L'ouest",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 510217508,
+  "center": {
+    "lat": -20.2843335,
+    "lon": 57.4645694
+  },
+  "tags": {
+    "addr:street": "Jawaharlall Nehru Avenue",
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "Bassin Community Health Centre",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 510323333,
+  "center": {
+    "lat": -20.4092792,
+    "lon": 57.4734647
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 510536614,
+  "center": {
+    "lat": -20.2253044,
+    "lon": 57.4678231
+  },
+  "tags": {
+    "addr:city": "Beau Bassin",
+    "addr:street": "Royal Road Beau Bassin",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie De Beau Bassin",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 510563259,
+  "center": {
+    "lat": -20.2174948,
+    "lon": 57.4693371
+  },
+  "tags": {
+    "addr:street": "A1",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "name": "Pharmacie Confiance",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 510821930,
+  "center": {
+    "lat": -20.2369251,
+    "lon": 57.4717737
+  },
+  "tags": {
+    "addr:street": "Royal Road Rose Hill",
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "Medical Centre",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 574313289,
+  "center": {
+    "lat": -20.1914576,
+    "lon": 57.6679567
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "yes",
+    "dispensing": "yes",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "way",
+  "id": 633713779,
+  "center": {
+    "lat": -20.2425460,
+    "lon": 57.4662434
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "Dispensaire de Buckingham"
+  }
+},
+{
+  "type": "way",
+  "id": 644404665,
+  "center": {
+    "lat": -20.1917381,
+    "lon": 57.7244949
+  },
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "building": "yes",
+    "operator": "District Council of Flacq",
+    "toilets:disposal": "flush"
+  }
+},
+{
+  "type": "way",
+  "id": 647952709,
+  "center": {
+    "lat": -20.0967639,
+    "lon": 57.5593412
+  },
+  "tags": {
+    "amenity": "hospital",
+    "designation": "Public Hospital",
+    "emergency": "yes",
+    "name": "Sir Seewoosagur Ramgoolam National Hospital"
+  }
+},
+{
+  "type": "way",
+  "id": 664438856,
+  "center": {
+    "lat": -20.1916004,
+    "lon": 57.7220764
+  },
+  "tags": {
+    "addr:city": "Centre de Flacq",
+    "addr:street": "Francois Mitterand Street",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "Aegle Clinic"
+  }
+},
+{
+  "type": "way",
+  "id": 677854653,
+  "center": {
+    "lat": -20.1817942,
+    "lon": 57.7726430
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "Sterilisation clinic"
+  }
+},
+{
+  "type": "way",
+  "id": 677855079,
+  "center": {
+    "lat": -20.1972260,
+    "lon": 57.7750326
+  },
+  "tags": {
+    "amenity": "hospital",
+    "building:levels": "1",
+    "healthcare": "hospital",
+    "healthcare:speciality": "general",
+    "name": "Belle Mare Community Health Centre",
+    "opening_hours": "Mo-Fr 08:00-16:00; Sa 08:00-12:00",
+    "parking": "surface"
+  }
+},
+{
+  "type": "way",
+  "id": 677855145,
+  "center": {
+    "lat": -20.1942203,
+    "lon": 57.7748809
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 677856173,
+  "center": {
+    "lat": -20.1837941,
+    "lon": 57.7740866
+  },
+  "tags": {
+    "amenity": "toilets",
+    "area": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 677856174,
+  "center": {
+    "lat": -20.1836823,
+    "lon": 57.7740405
+  },
+  "tags": {
+    "amenity": "toilets"
+  }
+},
+{
+  "type": "way",
+  "id": 679645149,
+  "center": {
+    "lat": -20.1945380,
+    "lon": 57.7224616
+  },
+  "tags": {
+    "addr:city": "Centre de Flacq",
+    "addr:postcode": "40606",
+    "addr:street": "Royal Road",
+    "amenity": "police",
+    "building": "yes",
+    "name": "Central Flacq Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 679653686,
+  "center": {
+    "lat": -20.2642949,
+    "lon": 57.8039541
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 686424431,
+  "center": {
+    "lat": -20.2436426,
+    "lon": 57.4783057
+  },
+  "tags": {
+    "addr:city": "Rose Hill",
+    "addr:street": "Julius Nyerere Avenue",
+    "building": "civic",
+    "healthcare": "centre",
+    "name": "Rose Hill Area Health Centre"
+  }
+},
+{
+  "type": "way",
+  "id": 710625583,
+  "center": {
+    "lat": -20.2249298,
+    "lon": 57.4692181
+  },
+  "tags": {
+    "addr:street": "Lady Twining Street",
+    "building": "yes",
+    "healthcare": "centre",
+    "name": "Lady Twinning Area Health Centre"
+  }
+},
+{
+  "type": "way",
+  "id": 737240209,
+  "center": {
+    "lat": -20.1686095,
+    "lon": 57.5066660
+  },
+  "tags": {
+    "addr:city": "Port Louis",
+    "addr:street": "Shan E Islam Street",
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "healthcare:speciality": "general;emergency;surgery;paediatrics;cardiology",
+    "name": "Chisty Shifa Clinic",
+    "payment:cash": "yes",
+    "payment:credit_cards": "yes",
+    "phone": "+230 2115157",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 761291068,
+  "center": {
+    "lat": -20.3730996,
+    "lon": 57.7131994
+  },
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "building": "yes",
+    "changing_table": "no",
+    "toilets:disposal": "flush",
+    "unisex": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 761291079,
+  "center": {
+    "lat": -20.3738177,
+    "lon": 57.7273136
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "name": "Vieux Grand Port Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 784216854,
+  "center": {
+    "lat": -20.2781931,
+    "lon": 57.4762798
+  },
+  "tags": {
+    "amenity": "hospital",
+    "emergency": "yes",
+    "healthcare": "hospital",
+    "healthcare:speciality": "cardiology;dermatology;emergency;general;gynaecology;oncology;orthopaedics;paediatrics;plastic_surgery;psychiatry;pulmonology;radiology;surgery;dentistry ;haemodyalisis",
+    "name": "Victoria Hospital",
+    "start_date": "1922"
+  }
+},
+{
+  "type": "way",
+  "id": 784220266,
+  "center": {
+    "lat": -20.2219342,
+    "lon": 57.5037267
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "healthcare:speciality": "ophthalmology",
+    "name": "Moka eye hospital"
+  }
+},
+{
+  "type": "way",
+  "id": 784223084,
+  "center": {
+    "lat": -20.0085440,
+    "lon": 57.5598746
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Clinique du Nord"
+  }
+},
+{
+  "type": "way",
+  "id": 784225078,
+  "center": {
+    "lat": -20.1306758,
+    "lon": 57.4969293
+  },
+  "tags": {
+    "amenity": "hospital",
+    "emergency": "yes",
+    "healthcare": "hospital",
+    "name": "Clinique du Nord",
+    "name:fr": "Clinique du Nord"
+  }
+},
+{
+  "type": "way",
+  "id": 784242066,
+  "center": {
+    "lat": -20.0288668,
+    "lon": 57.5976184
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "The Vale Area Health Centre"
+  }
+},
+{
+  "type": "way",
+  "id": 784244087,
+  "center": {
+    "lat": -20.0605188,
+    "lon": 57.5554675
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Triolet Medi Clinic"
+  }
+},
+{
+  "type": "way",
+  "id": 784246258,
+  "center": {
+    "lat": -20.0693202,
+    "lon": 57.5681865
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Health Centre"
+  }
+},
+{
+  "type": "way",
+  "id": 784247368,
+  "center": {
+    "lat": -20.4112472,
+    "lon": 57.7031896
+  },
+  "tags": {
+    "addr:city": "Mahebourg",
+    "addr:street": "Rue de I'Hospital",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Mahebourg Hospital"
+  }
+},
+{
+  "type": "way",
+  "id": 784247534,
+  "center": {
+    "lat": -20.1482964,
+    "lon": 57.6844295
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Primary Health Care"
+  }
+},
+{
+  "type": "way",
+  "id": 784247848,
+  "center": {
+    "lat": -20.1781319,
+    "lon": 57.6619686
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Lady Sushil Ramgoolam medi clinic"
+  }
+},
+{
+  "type": "way",
+  "id": 929122347,
+  "center": {
+    "lat": -20.4146883,
+    "lon": 57.6163186
+  },
+  "tags": {
+    "addr:street": "Branch Road",
+    "building": "yes",
+    "healthcare": "centre",
+    "name": "New Grove Dispensary",
+    "phone": "+2306277513"
+  }
+},
+{
+  "type": "way",
+  "id": 1005526920,
+  "center": {
+    "lat": -20.1043560,
+    "lon": 57.6986527
+  },
+  "tags": {
+    "addr:city": "Rivière du Rempart",
+    "amenity": "police",
+    "building": "yes",
+    "name": "Rivière du Rempart Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 1005534804,
+  "center": {
+    "lat": -20.2644108,
+    "lon": 57.4807444
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "yes",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pro Care Pharmacy"
+  }
+},
+{
+  "type": "way",
+  "id": 1006061685,
+  "center": {
+    "lat": -20.2786885,
+    "lon": 57.4775731
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "name": "PMOC Police Post"
+  }
+},
+{
+  "type": "way",
+  "id": 1006363949,
+  "center": {
+    "lat": -20.1725996,
+    "lon": 57.4460404
+  },
+  "tags": {
+    "addr:city": "Pointe aux Sables",
+    "addr:housenumber": "B31",
+    "addr:street": "Pointe aux Sables Road",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "building:levels": "1",
+    "healthcare": "pharmacy",
+    "name": "Pointe aux Sables Medical Dispensary"
+  }
+},
+{
+  "type": "way",
+  "id": 1006710065,
+  "center": {
+    "lat": -20.2697584,
+    "lon": 57.4754319
+  },
+  "tags": {
+    "amenity": "doctors",
+    "building": "yes",
+    "healthcare": "doctor",
+    "name": "Dr.Raj Roy"
+  }
+},
+{
+  "type": "way",
+  "id": 1006710093,
+  "center": {
+    "lat": -20.2693570,
+    "lon": 57.4741056
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "yes",
+    "dispensing": "yes",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "way",
+  "id": 1006964709,
+  "center": {
+    "lat": -20.2669497,
+    "lon": 57.4777737
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "yes",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie de Quatre Bornes"
+  }
+},
+{
+  "type": "way",
+  "id": 1008822079,
+  "center": {
+    "lat": -20.4916547,
+    "lon": 57.4679423
+  },
+  "tags": {
+    "addr:city": "Chemin Grenier",
+    "addr:street": "B10 Royal Road Chemin Grenier",
+    "amenity": "police",
+    "building": "yes",
+    "name": "Chemin Grenier Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 1008828271,
+  "center": {
+    "lat": -20.2704236,
+    "lon": 57.4763126
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1008828272,
+  "center": {
+    "lat": -20.2701908,
+    "lon": 57.4764500
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1008828273,
+  "center": {
+    "lat": -20.2702666,
+    "lon": 57.4761237
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1008828274,
+  "center": {
+    "lat": -20.2703518,
+    "lon": 57.4759459
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1010778780,
+  "center": {
+    "lat": -20.4230203,
+    "lon": 57.6303580
+  },
+  "tags": {
+    "addr:city": "Mare d'Albert",
+    "addr:street": "Railway Road",
+    "building": "yes",
+    "healthcare": "centre",
+    "name": "Mare d'Albert Dispensary"
+  }
+},
+{
+  "type": "way",
+  "id": 1010778781,
+  "center": {
+    "lat": -20.4490528,
+    "lon": 57.6492528
+  },
+  "tags": {
+    "addr:city": "Trois Boutiques",
+    "addr:street": "La Barraque Road",
+    "building": "yes",
+    "healthcare": "centre",
+    "name": "Trois Boutiques Area Health center",
+    "phone": "+2306373206"
+  }
+},
+{
+  "type": "way",
+  "id": 1019633008,
+  "center": {
+    "lat": -20.0437849,
+    "lon": 57.5881888
+  },
+  "tags": {
+    "addr:city": "Fond du Sac",
+    "addr:postcode": "20601",
+    "addr:street": "Forbach Road",
+    "building": "yes",
+    "healthcare": "clinic",
+    "healthcare:speciality": "general",
+    "name": "Shri Ram Community Health Centre",
+    "operator": "Government",
+    "phone": "266 6016"
+  }
+},
+{
+  "type": "way",
+  "id": 1033859389,
+  "center": {
+    "lat": -20.1661772,
+    "lon": 57.4815704
+  },
+  "tags": {
+    "addr:city": "Port-Louis",
+    "addr:city:fr": "Port-Louis",
+    "addr:street": "Menagerie Road",
+    "addr:street:fr": "Route de la Ménagerie",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "healthcare:speciality": "general;dentistry;biology;emergency;surgery",
+    "name": "Sihha Medical Centre",
+    "name:fr": "Centre médical Sihha",
+    "operator": "Sihha Medical Centre",
+    "operator:fr": "Centre médical Sihha",
+    "operator:type": "private"
+  }
+},
+{
+  "type": "way",
+  "id": 1088721083,
+  "center": {
+    "lat": -20.1783100,
+    "lon": 57.4379810
+  },
+  "tags": {
+    "addr:city": "Port Louis",
+    "addr:street": "Crecerelles Ave",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "building:levels": "2",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie La Pointe",
+    "phone": "+230 234 2323"
+  }
+},
+{
+  "type": "way",
+  "id": 1109542415,
+  "center": {
+    "lat": -20.4242201,
+    "lon": 57.4292504
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes",
+    "fee": "no",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1110001396,
+  "center": {
+    "lat": -20.2629827,
+    "lon": 57.4097710
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "market"
+  }
+},
+{
+  "type": "way",
+  "id": 1161965999,
+  "center": {
+    "lat": -20.2853370,
+    "lon": 57.5240480
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy",
+    "name": "PHARMACY CAMP FOUQUEREUX"
+  }
+},
+{
+  "type": "way",
+  "id": 1162751516,
+  "center": {
+    "lat": -20.2930542,
+    "lon": 57.5179204
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "commercial",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "way",
+  "id": 1164204738,
+  "center": {
+    "lat": -20.5212657,
+    "lon": 57.5104518
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes",
+    "fee": "no",
+    "female": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1164204739,
+  "center": {
+    "lat": -20.5213803,
+    "lon": 57.5105110
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes",
+    "fee": "no",
+    "male": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1164206188,
+  "center": {
+    "lat": -20.3267186,
+    "lon": 57.3788567
+  },
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "building": "yes",
+    "fee": "no",
+    "female": "yes",
+    "male": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1167100848,
+  "center": {
+    "lat": -20.2911060,
+    "lon": 57.5148795
+  },
+  "tags": {
+    "addr:street": "Parisot Road",
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmacie Mesnil",
+    "source": "Kaart Ground Survey 2017"
+  }
+},
+{
+  "type": "way",
+  "id": 1167471731,
+  "center": {
+    "lat": -20.0236912,
+    "lon": 57.5758560
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "healthcare:speciality": "general;cardiology;chiropractic;dermatology;diabetology;endocrinology;otolaryngology;surgery;trauma",
+    "name": "C-Care"
+  }
+},
+{
+  "type": "way",
+  "id": 1167665319,
+  "center": {
+    "lat": -20.0076799,
+    "lon": 57.6423020
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "way",
+  "id": 1167730094,
+  "center": {
+    "lat": -20.3085538,
+    "lon": 57.5124130
+  },
+  "tags": {
+    "amenity": "hospital",
+    "name": "Mediclinique Floreal"
+  }
+},
+{
+  "type": "way",
+  "id": 1168779526,
+  "center": {
+    "lat": -20.1669622,
+    "lon": 57.5158068
+  },
+  "tags": {
+    "addr:street": "Boulevard Victoria",
+    "amenity": "police",
+    "building": "yes",
+    "name": "Valle Pitot Police Station"
+  }
+},
+{
+  "type": "way",
+  "id": 1173674266,
+  "center": {
+    "lat": -20.1265342,
+    "lon": 57.5424176
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "yes",
+    "dispensing": "yes",
+    "healthcare": "pharmacy",
+    "name": "Florida"
+  }
+},
+{
+  "type": "way",
+  "id": 1174703249,
+  "center": {
+    "lat": -20.2767038,
+    "lon": 57.3952835
+  },
+  "tags": {
+    "amenity": "doctors",
+    "building": "yes",
+    "healthcare": "doctor",
+    "name": "SPARC Medical Centre"
+  }
+},
+{
+  "type": "way",
+  "id": 1179758469,
+  "center": {
+    "lat": -20.3108176,
+    "lon": 57.5241777
+  },
+  "tags": {
+    "addr:city": "Curepipe",
+    "addr:street": "Royal Road Curepipe",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "healthcare:speciality": "radiology;gynaecology;emergency",
+    "name": "ARTEMIS HOSPITAL",
+    "phone": "+230 651-5050",
+    "website": "https://artemismauritius.com/"
+  }
+},
+{
+  "type": "way",
+  "id": 1179979977,
+  "center": {
+    "lat": -20.2301346,
+    "lon": 57.4716656
+  },
+  "tags": {
+    "addr:city": "Beau Bassin",
+    "addr:street": "Gaetan Raynal Street",
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "Surgery gynaecology",
+    "operator": "Dr Beebeejaun",
+    "operator:type": "private"
+  }
+},
+{
+  "type": "way",
+  "id": 1180021382,
+  "center": {
+    "lat": -20.1596405,
+    "lon": 57.5096068
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "commercial",
+    "healthcare": "pharmacy",
+    "name": "Renaissance"
+  }
+},
+{
+  "type": "way",
+  "id": 1180936371,
+  "center": {
+    "lat": -20.1568589,
+    "lon": 57.5061487
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "name": "Trou Fanfaron"
+  }
+},
+{
+  "type": "way",
+  "id": 1191387197,
+  "center": {
+    "lat": -20.2828771,
+    "lon": 57.3736427
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "VIP Lazer Clinic"
+  }
+},
+{
+  "type": "way",
+  "id": 1199469506,
+  "center": {
+    "lat": -20.3322570,
+    "lon": 57.3849113
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "layer": "1",
+    "name": "Life Medical Center"
+  }
+},
+{
+  "type": "way",
+  "id": 1200032819,
+  "center": {
+    "lat": -20.0039453,
+    "lon": 57.6188276
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "Vet Clinic",
+    "name:fr": "Clinique Veterinaire du Nord"
+  }
+},
+{
+  "type": "way",
+  "id": 1200155426,
+  "center": {
+    "lat": -20.3203002,
+    "lon": 57.5150546
+  },
+  "tags": {
+    "addr:city": "curpipe",
+    "addr:housenumber": "8",
+    "addr:postcode": "74208",
+    "addr:street": "Pope Hennessy Street",
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "healthcare:speciality": "fertility",
+    "name": "Zeeva Fertility",
+    "website": "https://www.zeeva.in/fertility-clinic-in-mauritius/"
+  }
+},
+{
+  "type": "way",
+  "id": 1213510747,
+  "center": {
+    "lat": -20.1692167,
+    "lon": 57.5045732
+  },
+  "tags": {
+    "amenity": "doctors",
+    "building": "yes",
+    "healthcare": "doctor",
+    "healthcare:speciality": "general",
+    "name": "Dr. S.N.Nazir"
+  }
+},
+{
+  "type": "way",
+  "id": 1213550985,
+  "center": {
+    "lat": -20.2985385,
+    "lon": 57.4937343
+  },
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "building": "yes",
+    "fee": "no",
+    "female": "yes",
+    "height": "4",
+    "male": "yes",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 1213566565,
+  "center": {
+    "lat": -20.2997217,
+    "lon": 57.4958585
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Dr Nndagopen Narayanen"
+  }
+},
+{
+  "type": "way",
+  "id": 1213571790,
+  "center": {
+    "lat": -20.3006908,
+    "lon": 57.4868502
+  },
+  "tags": {
+    "amenity": "doctors",
+    "building": "yes",
+    "healthcare": "doctor",
+    "name": "Dr.(Mrs).P Gowreesunkur"
+  }
+},
+{
+  "type": "way",
+  "id": 1213574197,
+  "center": {
+    "lat": -20.3005747,
+    "lon": 57.4889178
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy"
+  }
+},
+{
+  "type": "way",
+  "id": 1214403419,
+  "center": {
+    "lat": -20.3016089,
+    "lon": 57.4885350
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "healthcare:speciality": "dentistry",
+    "name": "JMR | Clinique Dentaire. (Dr. Jaumeer)"
+  }
+},
+{
+  "type": "way",
+  "id": 1214458326,
+  "center": {
+    "lat": -20.2983043,
+    "lon": 57.4960030
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Clinique du Sommeil et du Stresse"
+  }
+},
+{
+  "type": "way",
+  "id": 1214458327,
+  "center": {
+    "lat": -20.2981425,
+    "lon": 57.4957499
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Clinique du sommeil et stresse"
+  }
+},
+{
+  "type": "way",
+  "id": 1215226105,
+  "center": {
+    "lat": -20.2927050,
+    "lon": 57.4934013
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic"
+  }
+},
+{
+  "type": "way",
+  "id": 1215229151,
+  "center": {
+    "lat": -20.2923719,
+    "lon": 57.5052137
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "house",
+    "healthcare": "pharmacy",
+    "name": "St Paul pharmacy"
+  }
+},
+{
+  "type": "way",
+  "id": 1215234309,
+  "center": {
+    "lat": -20.2942906,
+    "lon": 57.4958401
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1215253180,
+  "center": {
+    "lat": -20.3001350,
+    "lon": 57.4896738
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Sri Sathya Sai Baba Centre of Vacoas"
+  }
+},
+{
+  "type": "way",
+  "id": 1215254003,
+  "center": {
+    "lat": -20.2936354,
+    "lon": 57.4882711
+  },
+  "tags": {
+    "amenity": "doctors",
+    "building": "house",
+    "healthcare": "doctor",
+    "healthcare:speciality": "paediatrics",
+    "name": "Dr.Satiss Gowry"
+  }
+},
+{
+  "type": "way",
+  "id": 1216912128,
+  "center": {
+    "lat": -20.1503885,
+    "lon": 57.5722380
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1222490695,
+  "center": {
+    "lat": -20.3111022,
+    "lon": 57.5128938
+  },
+  "tags": {
+    "addr:city": "Vacoas-Phoenix",
+    "addr:street": "Floreal Road",
+    "amenity": "doctors",
+    "building": "yes",
+    "healthcare": "doctor",
+    "healthcare:speciality": "orthopaedics",
+    "name": "Dr Santosh Kumar Chukowry Orthopaedics Surgeon"
+  }
+},
+{
+  "type": "way",
+  "id": 1222586191,
+  "center": {
+    "lat": -20.2903652,
+    "lon": 57.5091927
+  },
+  "tags": {
+    "amenity": "doctors",
+    "building": "yes",
+    "healthcare": "doctor",
+    "name": "Dr Dharry Boodhun"
+  }
+},
+{
+  "type": "way",
+  "id": 1222927163,
+  "center": {
+    "lat": -20.2873552,
+    "lon": 57.5091729
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Dr Abbas Medical Centre"
+  }
+},
+{
+  "type": "way",
+  "id": 1222947130,
+  "center": {
+    "lat": -20.2900965,
+    "lon": 57.5105578
+  },
+  "tags": {
+    "amenity": "pharmacy",
+    "building": "yes",
+    "healthcare": "pharmacy",
+    "name": "Pharmacy Central"
+  }
+},
+{
+  "type": "way",
+  "id": 1222947182,
+  "center": {
+    "lat": -20.2909741,
+    "lon": 57.5101168
+  },
+  "tags": {
+    "amenity": "doctors",
+    "building": "house",
+    "healthcare": "doctor",
+    "name": "Dheesarajshing Jawaheer"
+  }
+},
+{
+  "type": "way",
+  "id": 1225421859,
+  "center": {
+    "lat": -20.2866490,
+    "lon": 57.5082771
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "name": "Phoenix Police station"
+  }
+},
+{
+  "type": "way",
+  "id": 1227950661,
+  "center": {
+    "lat": -20.2971728,
+    "lon": 57.4942143
+  },
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "building": "yes",
+    "fee": "no",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 1308481491,
+  "center": {
+    "lat": -20.1599639,
+    "lon": 57.7472740
+  },
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "building": "yes",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 1308843789,
+  "center": {
+    "lat": -20.4435272,
+    "lon": 57.7174624
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1320383708,
+  "center": {
+    "lat": -20.2341277,
+    "lon": 57.5012387
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "healthcare:speciality": "ophthalmology",
+    "name": "NEW MOKA EYE HOSPITAL",
+    "operator": "Goverment of Mauritius",
+    "operator:type": "public"
+  }
+},
+{
+  "type": "way",
+  "id": 1329113984,
+  "center": {
+    "lat": -20.2438897,
+    "lon": 57.4770032
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "name": "Rose Hill police station"
+  }
+},
+{
+  "type": "way",
+  "id": 1329113985,
+  "center": {
+    "lat": -20.2435867,
+    "lon": 57.4770361
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1329434533,
+  "center": {
+    "lat": -20.2427907,
+    "lon": 57.4756639
+  },
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "building": "yes",
+    "toilets:disposal": "flush",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "way",
+  "id": 1329434534,
+  "center": {
+    "lat": -20.2427587,
+    "lon": 57.4757497
+  },
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "building": "yes",
+    "toilets:disposal": "flush",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "way",
+  "id": 1329441638,
+  "center": {
+    "lat": -20.2435882,
+    "lon": 57.4773090
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1329441639,
+  "center": {
+    "lat": -20.2434079,
+    "lon": 57.4774757
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1329441640,
+  "center": {
+    "lat": -20.2431930,
+    "lon": 57.4777267
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1329441641,
+  "center": {
+    "lat": -20.2433281,
+    "lon": 57.4778983
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1329441642,
+  "center": {
+    "lat": -20.2434021,
+    "lon": 57.4779809
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1329879393,
+  "center": {
+    "lat": -20.2433041,
+    "lon": 57.4774353
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1331315165,
+  "center": {
+    "lat": -20.2425557,
+    "lon": 57.4718752
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "service",
+    "healthcare": "clinic"
+  }
+},
+{
+  "type": "way",
+  "id": 1346665230,
+  "center": {
+    "lat": -20.1697208,
+    "lon": 57.4680866
+  },
+  "tags": {
+    "amenity": "doctors",
+    "building": "yes",
+    "healthcare": "doctor",
+    "healthcare:speciality": "dental_oral_maxillo_facial_surgery",
+    "mobile": "57874271",
+    "name": "Dr Ashwin Domun"
+  }
+},
+{
+  "type": "way",
+  "id": 1356391390,
+  "center": {
+    "lat": -20.3478376,
+    "lon": 57.3647495
+  },
+  "tags": {
+    "air_conditioning": "yes",
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "healthcare:speciality": "general",
+    "name": "C-Care",
+    "name:mfe": "C-Care tamarin"
+  }
+},
+{
+  "type": "way",
+  "id": 1360829132,
+  "center": {
+    "lat": -20.0965736,
+    "lon": 57.5620289
+  },
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "ssrn hospital"
+  }
+},
+{
+  "type": "way",
+  "id": 1363062490,
+  "center": {
+    "lat": -20.4393376,
+    "lon": 57.4010578
+  },
+  "tags": {
+    "amenity": "toilets",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1428922122,
+  "center": {
+    "lat": -20.3368451,
+    "lon": 57.5651795
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1431700021,
+  "center": {
+    "lat": -20.1651867,
+    "lon": 57.4960668
+  },
+  "tags": {
+    "amenity": "fire_station"
+  }
+},
+{
+  "type": "way",
+  "id": 1494601289,
+  "center": {
+    "lat": -20.4496481,
+    "lon": 57.7035252
+  },
+  "tags": {
+    "amenity": "police",
+    "building": "yes",
+    "name": "Police Diving Unit"
+  }
+},
+{
+  "type": "way",
+  "id": 1560807870,
+  "center": {
+    "lat": -20.1752122,
+    "lon": 57.4346989
+  },
+  "tags": {
+    "access": "yes",
+    "amenity": "toilets",
+    "building": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 1571617626,
+  "center": {
+    "lat": -20.2453553,
+    "lon": 57.6011478
+  },
+  "tags": {
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "Quartier Militaire Medi Clinic"
+  }
+}
+
+  ]
+}
