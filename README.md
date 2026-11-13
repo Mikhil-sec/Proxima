@@ -17,10 +17,9 @@ Proxima lets people raise and route emergencies, find lost children and get guid
 
      *** CHECK BEFORE SUBMITTING (was a blocker until 18:10 Fri) ***
      The signing/sealing claims are now TRUE in the build with simulation OFF: TinkTrustEngine (Ed25519 + HPKE,
-     Keystore-backed) is wired in TrustModule, and 21 security tests pass on the JVM. Still NOT verified on a
-     phone. Before submitting: run `./gradlew :trust:connectedDebugAndroidTest` on a device, and do one
-     two-phone found-notice with simulation OFF. If neither happens, keep the claims but say "tested in unit
-     tests" rather than implying a device demo.
+     Keystore-backed) is wired in TrustModule. The 21-test security contract passes on the JVM AND on a Galaxy
+     S24 Ultra under the real Android Keystore (18:36 Fri, `:trust:connectedDebugAndroidTest`). Remaining before
+     submitting: one two-phone found-notice with simulation OFF (end-to-end over the mesh, asked on #19).
 -->
 
 ## Problem & user
