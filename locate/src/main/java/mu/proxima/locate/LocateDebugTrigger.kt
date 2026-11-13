@@ -41,6 +41,8 @@ internal class LocateDebugTrigger(
     private val engine: LocateEngine,
     private val mesh: MeshEngine,
     private val scope: CoroutineScope,
+    /** Engine-specific extras for the STATUS line (compass accuracy); empty for engines without one. */
+    private val extraStatus: () -> String = { "" },
 ) {
     private var receiver: BroadcastReceiver? = null
     private var tracking: Job? = null
@@ -118,7 +120,7 @@ internal class LocateDebugTrigger(
             TAG,
             "locate status self=${me?.let { "%.6f,%.6f ±%s m".format(Locale.US, it.lat, it.lon, it.accuracyM?.let { a -> "%.0f".format(Locale.US, a) } ?: "?") } ?: "none"}" +
                 " heading=${engine.headingDeg.value?.let { "%.0f°".format(Locale.US, it) } ?: "none"} uwbAvailable=${engine.uwbAvailable}" +
-                " tracking=${tracking?.isActive == true}",
+                " tracking=${tracking?.isActive == true} ${extraStatus()}".trimEnd(),
         )
         val peers = mesh.peers.value
         if (peers.isEmpty()) Log.i(TAG, "locate status peers=none (is the mesh started on both phones?)")
