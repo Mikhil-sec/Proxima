@@ -119,6 +119,7 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
      after #19 lands, re-test the allow-list with stable ids.
   4. 09:00 Sat: run the video pre-flight; 09:30 film per "Backup demo video plan" above.
   5. Write the MESH README section for TRUST (#23) by 10:30 Sat. Reuse "How my part works" + acoustic.
+- **Follow-up (from #24):** after a peer app restart, its old per-launch node id stays `direct=true` on the other phone (new id shows as indirect). Check that `onDisconnected` fires and clears the old endpoint; stable ids (#19) remove most of it.
 - **Ask UI (not yet filed):** add a dev-sheet toggle for `MeshDemoControls.acoustic` if we want the acoustic fallback on stage.
 - **Device testing:** `bash mesh/tools/mesh_device_test.sh health|setup|ids|allow <serial> <ids|*>|ping <serial>|acoustic <serial> on|off|chirp <serial>|logs [n]|cleanup`.
   Installs side by side as `mu.proxima.app.meshtest` (needs `-Pmeshtest` from the machine-local init script), only
@@ -149,6 +150,7 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:00 Fri | Backup demo video plan written (cast, pre-flight, 6-shot list, filming rules, edit) |
 | 18:05 Fri | Acoustic FskModem + 16-byte AcousticSos, 13 JVM tests on synthetic audio (noise, echo, drift, CRC) |
 | 18:08 Fri | Acoustic wired into NearbyMeshEngine (off by default), AcousticReceiver + mapping tests, adb acoustic/chirp; 33/33, app builds. No phones attached for the device check |
+| 18:20 Fri | #24 closed: LOCATE verified UWB CONTROL handshake over the real mesh on S23+ → S26+ (fix 0.5 s, arrow OK). Follow-up: after a peer app restart, its old per-launch id stays `direct=true` until Nearby reports the disconnect |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
