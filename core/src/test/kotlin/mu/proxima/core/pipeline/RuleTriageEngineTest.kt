@@ -80,6 +80,29 @@ class RuleTriageEngineTest {
         assertEquals(MEDIUM, r.severity)
     }
 
+    // #16: wrong quick button must not downgrade a clearly critical description
+    @Test fun criticalWordsOverrideWrongButton_issue16() {
+        val r = classify("a man collapsed near the food stalls, he's not breathing", hint = LOST_PERSON)
+        assertEquals(MEDICAL, r.type)
+        assertEquals("CARDIAC_ARREST", r.subtype)
+        assertEquals(CRITICAL, r.severity)
+        assertEquals("food stalls", r.landmark)
+    }
+
+    @Test fun nonCriticalWordsKeepTheButton() {
+        // "bleeding" is HIGH, not CRITICAL → the pressed HAZARD button still decides the type
+        val r = classify("branch fell, someone is bleeding", hint = HAZARD)
+        assertEquals(HAZARD, r.type)
+        assertEquals("FALLEN_BRANCH", r.subtype)
+    }
+
+    @Test fun criticalOfSameTypeAsButtonIsKept() {
+        val r = classify("there is fire and smoke", hint = HAZARD)
+        assertEquals(HAZARD, r.type)
+        assertEquals("FIRE", r.subtype)
+        assertEquals(CRITICAL, r.severity)
+    }
+
     @Test fun noMatch_defaultsToMedicalWithLowConfidence() {
         val r = classify("something strange over there")
         assertEquals(MEDICAL, r.type)

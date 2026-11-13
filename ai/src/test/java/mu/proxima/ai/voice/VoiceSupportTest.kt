@@ -54,6 +54,22 @@ class VoiceSupportTest {
         assertTrue(parts.all { it.length <= 20 })
     }
 
+    @Test fun levelThrottledToAbout12Hz_issue9() {
+        assertTrue(VoiceSupport.shouldEmitLevel(nowMs = 10_000, lastEmitMs = 0))
+        assertFalse(VoiceSupport.shouldEmitLevel(nowMs = 1_050, lastEmitMs = 1_000))
+        assertTrue(VoiceSupport.shouldEmitLevel(nowMs = 1_083, lastEmitMs = 1_000))
+        // 1 s of callbacks every 10 ms → ~12 emitted
+        var last = 0L; var n = 0
+        for (t in 1_000L..1_999L step 10) if (VoiceSupport.shouldEmitLevel(t, last)) { last = t; n++ }
+        assertTrue("got $n", n in 11..13)
+    }
+
+    @Test fun nothingHeardErrorsAreDetected() {
+        assertTrue(VoiceSupport.isNothingHeardError(SpeechRecognizer.ERROR_NO_MATCH))
+        assertTrue(VoiceSupport.isNothingHeardError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT))
+        assertFalse(VoiceSupport.isNothingHeardError(SpeechRecognizer.ERROR_AUDIO))
+    }
+
     @Test fun chunkHardSplitsWhenNoSpaces() {
         val parts = VoiceSupport.chunk("x".repeat(25), 10)
         assertEquals(listOf(10, 10, 5), parts.map { it.length })

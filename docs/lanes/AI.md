@@ -48,7 +48,9 @@ Steps come from TRUST's cited protocol cards.
   recognizer (FakeVoiceIo only on emulators without one). Adds RECORD_AUDIO + `<queries>` in `ai/src/main/AndroidManifest.xml`.
   Device test: allow mic in the app, then `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez voice true [--es lang en-MU|fr-MU|mfe]`.
   Check: on-device recognizer used? which language picked? Partial/Final arrive? speak works offline (airplane mode)?
-- Then: Tier 2 offload + `TriageServer` (P1).
+- Bus requests done on lane/ai (not yet on main): #16 (critical words beat a wrong quick button, rules + LLM path),
+  #9 (Level ~12 Hz, stopListening → Final with what was heard, ≤2 s). #10 approved (👍), UI owns that PR.
+- Then: Tier 2 offload + `TriageServer` (P1) — coordinate payload/flow with MESH (#3) first.
 - Files touched: `ai/build.gradle.kts`, `ai/src/main/.../AiModule.kt`, `ai/src/main/.../triage/*`, `ai/src/debug/*`, `ai/src/test/*`,
   `core/src/test/.../RuleTriageEngineTest.kt`, `gradle/libs.versions.toml` (+mlkit-genai-prompt),
   `ai/src/main/AndroidManifest.xml`, `ai/src/main/.../voice/*`, `ai/src/test/.../voice/*`.
@@ -61,6 +63,7 @@ Steps come from TRUST's cited protocol cards.
 | 15:18 Fri | LLM probe built and run: Gemini Nano DOWNLOADABLE on S26+, AICore prod build present. |
 | 15:37 Fri | LlmTriageEngine + GeminiNanoBackend + TriagePrompt wired into AiModule (Tier 1); 17 ai tests + 10 RuleTriageEngine tests green. |
 | 15:53 Fri | AndroidVoiceIo (offline-first STT + TTS) wired into AiModule; probe gains `--ez voice true`; 25 ai tests green. |
+| 15:56 Fri | Bus: #16 + #9 implemented with tests (42 green), #10 approved. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -71,4 +74,6 @@ Steps come from TRUST's cited protocol cards.
 | 15:33 Fri | Zero-shot prompt with explicit schema + strict validator (not few-shot); invalid type/severity → rules | Shorter prompt = lower latency on device; validator makes bad output harmless | Few-shot examples (revisit if on-device accuracy is poor) |
 | 15:53 Fri | Voice: on-device SpeechRecognizer first, language chain en-MU→en-GB→en-US; Kreol (mfe)→fr-FR | No network at the venue; no speech model exists for Mauritian locales; Kreol is French-based so French STT is the closest | Online recognizer (fails offline); English-only |
 | 15:53 Fri | Real VoiceIo even in SIM mode (fake only on emulators without a recognizer) | Voice must be exercised on real phones before the demo; sim flag is about mesh/locate data, not the mic | Fake voice whenever sim=true |
+| 15:56 Fri | #16: quick-button type kept unless the words match a CRITICAL rule of another type; LLM path: model CRITICAL of another type beats the button, and rules CRITICAL overrides an under-rating model | Panicking users tap the wrong button; hop budget depends on severity; under-triage is the dangerous error | Always trusting the button (old behaviour); words always winning (would ignore deliberate button choice for non-critical cases) |
+| 15:56 Fri | #9: hold-to-talk release always ends with Final(best text heard) within 2 s; levels throttled to ~12 Hz | A released SOS button must never lose what the user said; UI ring animates at ~12 Hz | Waiting indefinitely for the recognizer; emitting raw onRmsChanged rate |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |

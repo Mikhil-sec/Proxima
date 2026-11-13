@@ -65,6 +65,15 @@ class TriagePromptTest {
         assertEquals("PERSON", r.subtype) // MEDICAL subtype is not valid for LOST_PERSON
     }
 
+    @Test fun criticalModelTypeBeatsWrongButton_issue16() {
+        val r = TriagePrompt.parse(
+            """{"type":"MEDICAL","severity":"CRITICAL","subtype":"CARDIAC_ARREST","summary":"Man not breathing"}""",
+            report("a man collapsed, he's not breathing", hint = IncidentType.LOST_PERSON),
+        )!!
+        assertEquals(IncidentType.MEDICAL, r.type)
+        assertEquals("CARDIAC_ARREST", r.subtype)
+    }
+
     @Test fun clampsAndCleansFields() {
         val long = "a".repeat(300)
         val r = TriagePrompt.parse(

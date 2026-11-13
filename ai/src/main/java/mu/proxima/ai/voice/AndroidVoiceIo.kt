@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.speech.RecognitionListener
 import android.speech.RecognitionSupport
 import android.speech.RecognitionSupportCallback
@@ -19,6 +20,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
@@ -52,6 +54,7 @@ class AndroidVoiceIo(
     // ---------------------------------------------------------------- speech-to-text
 
     @Volatile private var activeRecognizer: SpeechRecognizer? = null
+    @Volatile private var activeStop: (() -> Unit)? = null
 
     override fun listen(languageTag: String): Flow<VoiceEvent> = callbackFlow {
         if (app.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -65,32 +68,52 @@ class AndroidVoiceIo(
 
         val candidates = VoiceSupport.languageCandidates(languageTag)
         var recognizer: SpeechRecognizer? = null
+        var lastPartial: String? = null   // best text so far, delivered as Final on hold-to-talk release (#9)
+        var stopRequested = false
+        var finished = false
+        var lastLevelAt = 0L
+
+        fun finish(event: VoiceEvent) {
+            if (finished) return
+            finished = true
+            trySend(event)
+            close()
+        }
+        /** Final with what was heard, or [errorCode]'s message if nothing was. */
+        fun finishWithHeard(errorCode: Int) =
+            finish(lastPartial?.let { VoiceEvent.Final(it) } ?: VoiceEvent.Error(VoiceSupport.errorReason(errorCode)))
 
         fun start(onDevice: Boolean, language: String, sr: SpeechRecognizer) {
+            if (finished) { sr.destroy(); return } // released during the language check: don't start a dangling mic
             recognizer?.takeIf { it !== sr }?.destroy()
             recognizer = sr
             activeRecognizer = sr
             log("voice: listening onDevice=$onDevice lang=$language")
             sr.setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) { trySend(VoiceEvent.Listening) }
-                override fun onRmsChanged(rmsdB: Float) { trySend(VoiceEvent.Level(VoiceSupport.normaliseRms(rmsdB))) }
+                override fun onRmsChanged(rmsdB: Float) {
+                    val now = SystemClock.elapsedRealtime()
+                    if (VoiceSupport.shouldEmitLevel(now, lastLevelAt)) { // ~12 Hz for the SOS ring (#9)
+                        lastLevelAt = now
+                        trySend(VoiceEvent.Level(VoiceSupport.normaliseRms(rmsdB)))
+                    }
+                }
                 override fun onPartialResults(partialResults: Bundle?) {
-                    partialResults.firstText()?.let { trySend(VoiceEvent.Partial(it)) }
+                    partialResults.firstText()?.let { lastPartial = it; trySend(VoiceEvent.Partial(it)) }
                 }
                 override fun onResults(results: Bundle?) {
                     val text = results.firstText()
-                    trySend(if (text != null) VoiceEvent.Final(text) else VoiceEvent.Error(VoiceSupport.errorReason(SpeechRecognizer.ERROR_NO_MATCH)))
-                    close()
+                    if (text != null) finish(VoiceEvent.Final(text)) else finishWithHeard(SpeechRecognizer.ERROR_NO_MATCH)
                 }
                 override fun onError(error: Int) {
-                    if (onDevice && VoiceSupport.isLanguageError(error)) {
+                    if (onDevice && !stopRequested && VoiceSupport.isLanguageError(error)) {
                         log("voice: on-device language error $error → standard recognizer")
                         start(onDevice = false, language = language, sr = SpeechRecognizer.createSpeechRecognizer(app))
                         return
                     }
-                    log("voice: error $error")
-                    trySend(VoiceEvent.Error(VoiceSupport.errorReason(error)))
-                    close()
+                    log("voice: error $error (stopRequested=$stopRequested, heard=${lastPartial != null})")
+                    if (stopRequested || VoiceSupport.isNothingHeardError(error)) finishWithHeard(error)
+                    else finish(VoiceEvent.Error(VoiceSupport.errorReason(error)))
                 }
                 override fun onBeginningOfSpeech() = Unit
                 override fun onBufferReceived(buffer: ByteArray?) = Unit
@@ -99,6 +122,16 @@ class AndroidVoiceIo(
             })
             sr.startListening(recognizerIntent(language))
         }
+
+        // Hold-to-talk release: stop capture, let the recognizer finish, but never wait more than 2 s.
+        val stopThis: () -> Unit = {
+            if (!stopRequested && !finished) {
+                stopRequested = true
+                recognizer?.stopListening()
+                launch { delay(2_000); finishWithHeard(SpeechRecognizer.ERROR_NO_MATCH) }
+            }
+        }
+        activeStop = stopThis
 
         launch {
             val onDeviceOk = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
@@ -121,13 +154,14 @@ class AndroidVoiceIo(
         }
 
         awaitClose {
+            if (activeStop === stopThis) activeStop = null
             recognizer?.let { if (activeRecognizer === it) activeRecognizer = null; it.destroy() }
         }
     }.flowOn(Dispatchers.Main) // SpeechRecognizer must be created and used on the main thread
 
+    /** Hold-to-talk release: the open listen() flow ends with Final(what was heard) within ~2 s. */
     override fun stopListening() {
-        // Stops capture; the recognizer still delivers Final (or Error) for what was heard.
-        main.post { activeRecognizer?.stopListening() }
+        main.post { activeStop?.invoke() }
     }
 
     private fun recognizerIntent(language: String) = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {

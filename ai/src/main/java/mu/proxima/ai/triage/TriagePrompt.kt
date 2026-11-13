@@ -59,8 +59,10 @@ object TriagePrompt {
 
         val llmType = obj.str("type")?.let { enumOrNull<IncidentType>(it) } ?: return null
         var severity = obj.str("severity")?.let { enumOrNull<Severity>(it) } ?: return null
-        // A pressed category button wins, same as RuleTriageEngine.
-        val type = report.typeHint ?: llmType
+        // A pressed category button wins, same as RuleTriageEngine, unless the model rates a different
+        // type CRITICAL (#16: panicking users tap the wrong button; the words win for life-threatening cases).
+        val hint = report.typeHint
+        val type = if (hint != null && !(severity == Severity.CRITICAL && llmType != hint)) hint else llmType
 
         val subtype = normaliseSubtype(type, obj.str("subtype"))
         if (type == IncidentType.LOST_PERSON && subtype == "CHILD") severity = Severity.CRITICAL

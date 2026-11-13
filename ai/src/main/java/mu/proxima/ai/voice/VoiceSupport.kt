@@ -38,6 +38,14 @@ object VoiceSupport {
     /** onRmsChanged gives roughly -2..10 dB; map to 0..1 for the waveform. */
     fun normaliseRms(rmsDb: Float): Float = ((rmsDb + 2f) / 12f).coerceIn(0f, 1f)
 
+    /** UI wants ~12 Hz levels (#9); onRmsChanged can fire much faster. */
+    const val LEVEL_INTERVAL_MS = 83L
+    fun shouldEmitLevel(nowMs: Long, lastEmitMs: Long): Boolean = nowMs - lastEmitMs >= LEVEL_INTERVAL_MS
+
+    /** Errors meaning "nothing (more) was understood": partial text heard so far still counts as the result. */
+    fun isNothingHeardError(code: Int): Boolean =
+        code == SpeechRecognizer.ERROR_NO_MATCH || code == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
+
     fun isLanguageError(code: Int): Boolean =
         code == SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED || code == SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE
 

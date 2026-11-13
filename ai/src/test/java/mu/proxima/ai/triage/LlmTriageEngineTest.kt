@@ -104,6 +104,20 @@ class LlmTriageEngineTest {
         assertEquals(Severity.CRITICAL, e2.triage(report("he is bleeding a lot")).severity)
     }
 
+    @Test fun wrongButtonAndUnderRatingModel_rulesCriticalWins_issue16() = runTest {
+        // User tapped LOST_PERSON; model obeys the button and says LOST_PERSON/MEDIUM; words say cardiac arrest.
+        val backend = FakeBackend(output = { """{"type":"LOST_PERSON","severity":"MEDIUM","subtype":"PERSON","summary":"Man collapsed near food stalls"}""" })
+        val engine = LlmTriageEngine(backend, backgroundScope)
+        runCurrent()
+        val r = engine.triage(
+            RawReport(text = "a man collapsed near the food stalls, he's not breathing", createdAtMs = 0, typeHint = IncidentType.LOST_PERSON)
+        )
+        assertEquals(IncidentType.MEDICAL, r.type)
+        assertEquals("CARDIAC_ARREST", r.subtype)
+        assertEquals(Severity.CRITICAL, r.severity)
+        assertEquals("Man collapsed near food stalls", r.summary)
+    }
+
     @Test fun differentTypeFromRules_noSeverityBump() = runTest {
         // Rules read "sick" as MEDICAL/GENERAL; the LLM says HAZARD. Types differ → rules can't bump severity.
         val backend = FakeBackend(output = { """{"type":"HAZARD","severity":"LOW","subtype":null,"summary":"Loose fence panel"}""" })

@@ -16,6 +16,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import mu.proxima.core.engine.TriageEngine
 import mu.proxima.core.model.RawReport
+import mu.proxima.core.model.Severity
 import mu.proxima.core.model.TriageCapability
 import mu.proxima.core.model.TriageResult
 import mu.proxima.core.pipeline.RuleTriageEngine
@@ -86,6 +87,20 @@ class LlmTriageEngine(
     }
 
     private fun merge(llm: TriageResult, rules: TriageResult): TriageResult {
+        // Keyword rules found something CRITICAL of another type that the model under-rated
+        // ("not breathing" read as LOST_PERSON after a wrong button tap): rules win type + severity (#16).
+        if (rules.confidence >= 0.6f && rules.severity == Severity.CRITICAL &&
+            llm.severity != Severity.CRITICAL && rules.type != llm.type
+        ) {
+            return llm.copy(
+                type = rules.type,
+                subtype = rules.subtype,
+                severity = Severity.CRITICAL,
+                landmark = llm.landmark ?: rules.landmark,
+                peopleCount = llm.peopleCount ?: rules.peopleCount,
+                confidence = 0.9f,
+            )
+        }
         val rulesMatched = rules.confidence >= 0.6f && rules.type == llm.type
         val severity = if (rulesMatched && rules.severity > llm.severity) rules.severity else llm.severity
         return llm.copy(
