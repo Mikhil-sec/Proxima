@@ -149,14 +149,17 @@ the dangerous error); and the protocol card is always chosen locally from the ci
 first choice, but Android AICore would not provide it on any team phone (download cancelled on the Galaxy S26+,
 unavailable on the S24 Ultra), so on Fri 18:48 we switched to Gemma 4 E2B.
 
-**Measured on a Galaxy S24 Ultra (GPU, airplane-mode capable, Fri 13 Nov):** Gemma 4 E2B loads in 8.4 s at app
+**Measured on a Galaxy S24 Ultra (GPU, model on the phone, no network calls, Fri 13 Nov):** Gemma 4 E2B loads in 8.4 s at app
 start, answers in ~1.5 s per report (max 3.2 s, inside the 6 s budget), uses ~2.1 GB of app memory, and returned
-valid JSON for 44/44 test reports. Accuracy is measured on fixed emergency reports in English, French and Kreol,
-scored through the shipped parser and safety net ([`ai/eval/`](ai/eval/README.md)). On 12 reports written *before*
-any tuning, the shipped path under-triaged **5 of 12** (rules alone: 6). The model picks the right kind of emergency
-but under-rates severity, so we added a severity floor per subtype (unconscious, crush and fire are always
-critical; a lost child always is): on the same replies that leaves **1 of 44** under-triaged. Because the floor was
-designed after seeing those failures, a fresh test set written by a teammate is the honest final check.
+valid JSON for 44/44 test reports. Accuracy is measured on fixed emergency reports, scored through the shipped
+parser and safety net ([`ai/eval/`](ai/eval/README.md)). **English + French, 37 reports:** the shipped path
+(Gemma + keyword safety net) under-triages **1**, against **9** for keywords alone. That includes a fix made after
+the first runs: the model picks the right kind of emergency but under-rates severity, so severity can no longer
+fall below what the rules set for that subtype (unconscious, crush and fire are always critical; so is a lost
+child). On 10 reports written before any fix, the first run under-triaged **5**; the fix was designed from those
+failures, so a fresh test set written by a teammate is the honest final check. **Kreol** is best-effort and not
+tuned (no speech recognizer exists for it); it is scored separately, and there the model alone is weak and the
+keyword safety net carries it.
 <!-- AI: replace the last sentence with the fresh-set result (ai/eval/REPORT.md) once it is run. -->
 
 Six Gradle modules, one per developer (`core`, `app`, `mesh`, `ai`, `locate`, `trust`), wired by manual DI
