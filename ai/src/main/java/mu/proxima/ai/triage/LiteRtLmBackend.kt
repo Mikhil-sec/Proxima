@@ -9,6 +9,7 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.SamplerConfig
 import java.io.File
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +39,8 @@ class LiteRtLmBackend internal constructor(
 
     /** The runtime behind the backend; a seam so JVM tests don't need the native library. */
     interface LoadedModel {
-        fun generate(system: String, user: String): String
+        /** Must stop promptly when the calling coroutine is cancelled (timeout), or it blocks the next caller. */
+        suspend fun generate(system: String, user: String): String
         fun close()
     }
 
@@ -77,17 +79,27 @@ class LiteRtLmBackend internal constructor(
 /** The real LiteRT-LM engine. Android only (native code); not exercised by JVM tests. */
 private class LiteRtLmModel(private val engine: Engine) : LiteRtLmBackend.LoadedModel {
 
-    override fun generate(system: String, user: String): String {
+    override suspend fun generate(system: String, user: String): String {
         val config = ConversationConfig(
             systemInstruction = Contents.of(system),
             // classification: same answer every time
             samplerConfig = SamplerConfig(topK = 1, topP = 1.0, temperature = 0.0),
         )
         // Fresh conversation per call so earlier reports never leak into the context.
-        return engine.createConversation(config).use { conversation ->
-            val reply = conversation.sendMessage(user)
-            reply.contents.contents.filterIsInstance<Content.Text>().joinToString("") { it.text }
-                .ifBlank { error("empty response") }
+        val conversation = engine.createConversation(config)
+        try {
+            // Streaming, not the blocking sendMessage: when triage's 6 s timeout cancels us, collection
+            // stops and we cancel the native generation, so the shared engine is free for the next SOS.
+            val text = StringBuilder()
+            conversation.sendMessageAsync(user).collect { chunk ->
+                chunk.contents.contents.filterIsInstance<Content.Text>().forEach { text.append(it.text) }
+            }
+            return text.toString().ifBlank { error("empty response") }
+        } catch (e: CancellationException) {
+            runCatching { conversation.cancelProcess() }
+            throw e
+        } finally {
+            conversation.close()
         }
     }
 

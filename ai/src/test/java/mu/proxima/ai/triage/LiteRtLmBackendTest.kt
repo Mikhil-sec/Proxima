@@ -11,6 +11,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -27,10 +28,13 @@ class LiteRtLmBackendTest {
     private class FakeModel(val tag: String, val workMs: Long = 0) : LiteRtLmBackend.LoadedModel {
         val running = AtomicInteger(0)
         var maxParallel = 0
-        override fun generate(system: String, user: String): String {
+        override suspend fun generate(system: String, user: String): String {
             maxParallel = maxOf(maxParallel, running.incrementAndGet())
-            Thread.sleep(workMs)
-            running.decrementAndGet()
+            try {
+                delay(if (user == "hang") 60_000 else workMs) // "hang" = a model stuck past the timeout
+            } finally {
+                running.decrementAndGet()
+            }
             return "$tag:$user"
         }
         override fun close() {}
@@ -80,6 +84,20 @@ class LiteRtLmBackendTest {
         val b = backend { model }
         (1..4).map { i -> async { b.generate("s", "u$i") } }.awaitAll()
         assertEquals(1, model.maxParallel)
+    }
+
+    @Test fun timedOutCall_releasesEngine_forNextSos() = runBlocking {
+        File(dir, "gemma.litertlm").writeBytes(ByteArray(1))
+        val model = FakeModel("g")
+        val b = backend { model }
+        b.generate("s", "warm-up")
+        // LlmTriageEngine gives up after its timeout and cancels the call...
+        assertEquals(null, withTimeoutOrNull(200) { b.generate("s", "hang") })
+        // ...and the next report must not queue behind the abandoned one.
+        val t0 = System.nanoTime()
+        assertEquals("g:next", withTimeout(1_000) { b.generate("s", "next") })
+        assertTrue((System.nanoTime() - t0) / 1_000_000 < 1_000)
+        assertEquals(0, model.running.get())
     }
 
     private class Stub(override val name: String, val ready: () -> Boolean) : LlmBackend {
