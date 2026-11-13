@@ -18,7 +18,7 @@ Implement `LocateEngine` and return it from `LocateModule.create()` when `!simul
 - [ ] UWB mode: exchange session params over the mesh (`PacketKind.CONTROL`, `channel="uwb"`, built with `PacketFactory`).
       When both phones have UWB and are in range, switch `RadarFix.source` to UWB.
 - [ ] RSSI fallback: no GPS fix → use `mesh.peers` RSSI of the target node for warmer/colder (`proximity` only, no bearing).
-- [ ] Help-point bearing for the guided-response card (`GeoMath.bearingDeg` vs heading). Coordinate with UI.
+- [x] Help-point bearing for the guided-response card: `LocateTargets.helpPoint()` + `track()`. UI wiring requested.
 **P2**
 - [ ] Venue outline (OSM paths around Ganga Talao + the demo venue) for the Command Center map: needs an `interface-change` issue.
 - [ ] Anonymous crowd-density grid from beacons (`GeoMath.cellKey`).
@@ -29,33 +29,60 @@ GPS is poor indoors (the demo room), so UWB or RSSI must carry the stage demo. U
 If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary` in the locate manifest.
 
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
+1. `LocateModule.create()` returns `AndroidLocateEngine` when simulation is off (the fake otherwise).
+2. Position = fused GPS every 1 s; heading = rotation-vector sensor, corrected to true north, smoothed; works flat or upright.
+3. `track(target)` emits a `RadarFix` every 100 ms from the best source: UWB → GPS → mesh RSSI (warmer/colder) → last GPS.
+4. UWB: the guardian's phone sends a signed CONTROL "uwb" REQUEST over the mesh; the finder's phone auto-answers; both range at ~0.3 m.
+5. Direction arrow from UWB needs angle-of-arrival (S23+ yes, S24U no) and >0.3 m; otherwise distance-only.
 
 ## NEXT_SESSION_HANDOFF
-- Onboarded (S23+, @yorvan2401). App installs and runs in SIM mode.
-- **UWB device check DONE 16:07 Fri (S24U controller ↔ S23+ controlee):** distance works on both
-  (2 m → 2.11–2.15, 5 m → 4.95–5.11, ~4 Hz, 0 dropouts in 5 min). **Azimuth: S23+ yes, S24U NO**
-  (`isAzimuthalAngleSupported=false`). S23+ facing peer: −8°…+5°; responds to turning (+48° one way, smaller
-  swing the other — re-check rotation on the real radar). At <0.3 m azimuth is noise (±90°): ignore it there.
-  → Demo: guardian phone = S23+ (shows the arrow); S24U gets UWB distance only.
-  Re-run: `./gradlew installDebug` on both, UWB ON, airplane OFF → `bash locate/tools/uwb_check.sh`.
-- Files: `locate/src/debug/.../UwbCheckActivity.kt`, `locate/src/debug/AndroidManifest.xml`,
-  `locate/src/main/AndroidManifest.xml` (UWB perm + overrideLibrary), `locate/tools/uwb_check.sh`, `locate/build.gradle.kts`.
-- `AndroidLocateEngine` written + wired in `LocateModule` (used when simulation=false). Fused GPS 1 s,
-  rotation-vector heading (works flat or upright) + true-north declination + smoothing, `track()` = GPS → RSSI
-  → stale GPS. `RadarMath` pure maths has 6 passing JVM tests. **Not yet tested on a phone** (S23+ is with MESH).
-  `uwbAvailable=false` until UWB is wired into `track()`.
-- On-phone test when S23+ is back: needs a sim=false build (ask UI how to toggle) → check heading vs a real compass
-  outdoors, `adb logcat -s Proxima:*` shows "declination" and "fused location started".
-- **UWB mode wired into `track()` (16:15, builds, 11 JVM tests green, NOT yet run on phones).** `UwbRanger`:
-  tracker = controller sends CONTROL/"uwb" `UwbControl` REQUEST (sessionId, addr, channel, preamble, random STS key)
-  → target's always-on responder (started in `start()`) answers ACCEPT and ranges as controlee → tracker ranges.
-  Retries every 3 s, STOP on cancel. `track()` chain is now UWB (<1.5 s) → GPS → RSSI → stale GPS.
-  `uwbAvailable` = hasUwb && API 31+.
-- **Needs for a phone test:** simulation OFF + MESH's real Nearby engine delivering CONTROL packets (fake mesh
-  can't link two real phones). 2 UWB phones (S23+ as guardian). Check: arrow direction — if mirrored, flip
-  `RadarMath.UWB_AZIMUTH_SIGN` to −1.
-- Next: help-point bearing helper for the guided-response card (coordinate with UI). Venue data must include
-  assembly points (TRUST: OSM has none).
+_Updated 17:56 Fri. Branch `lane/locate` = `main` + nothing pending (PR #26 merged 17:50)._
+
+**State: what works**
+- Onboarded: S23+, @yorvan2401, `gh` logged in (keyring), Android Studio + SDK at default paths, JBR for JAVA_HOME.
+- **UWB device check PASSED 16:07** (S24U controller ↔ S23+ controlee): distance on both (2 m → 2.11–2.15,
+  5 m → 4.95–5.11, ~4 Hz, 0 dropouts). **Azimuth: S23+ yes, S24U NO.** At <0.3 m azimuth = noise.
+  → Demo guardian phone = S23+. Re-run: `bash locate/tools/uwb_check.sh` (both phones on USB, UWB ON, airplane OFF).
+- `AndroidLocateEngine` (in `main`, used when simulation=false): fused GPS 1 s, rotation-vector heading
+  (flat or upright) + declination (true north) + smoothing. `track()` = UWB (<1.5 s) → GPS (<30 s) → RSSI → stale GPS.
+- `UwbRanger`: UWB session over the mesh, signed CONTROL packets channel "uwb" (REQUEST/ACCEPT/STOP);
+  tracker = controller; target auto-answers via responder started in `start()`. Retries 3 s, STOP on cancel.
+- Tests: `RadarMathTest` (6) + `UwbControlTest` (5) green. Full `./gradlew assembleDebug test` green at 17:50.
+
+**State: NOT yet verified**
+- Engine + UWB radar have **never run on a phone** with simulation OFF. Azimuth sign unverified
+  (if the arrow is mirrored, set `RadarMath.UWB_AZIMUTH_SIGN = -1`).
+- #24 (ask MESH to deliver CONTROL "uwb"): reading `NearbyMeshEngine`, it already emits every packet kind on
+  `inbound` + relays + fills `Peer.hasUwb` from beacons → probably already satisfied. Confirm on device, then
+  comment + let MESH close it.
+
+**Exact next step**
+1. (no phones) Add a **debug-only adb trigger** in `locate/src/debug/`: a BroadcastReceiver, e.g.
+   `adb shell am broadcast -a mu.proxima.locate.TRACK --es node <nodeId>` → calls `graph.locate.track(...)`
+   and logs every `RadarFix` as `locate fix src=… d=… rel=… prox=…`. Problem to solve: the receiver needs the
+   app's LocateEngine instance. `app/` is UI-owned, so either a static hook in `LocateModule` (debug) or ask UI.
+   MESH did similar: see `mesh/src/main/java/mu/proxima/mesh/MeshDemoControls.kt` + `mesh/tools/mesh_device_test.sh`.
+2. (📱 2 UWB phones, S23+ = guardian) Turn simulation OFF on both: it's SharedPreferences `proxima` /
+   `simulation` (default true), read in `app/.../ProximaApp.kt` → set via `adb shell run-as mu.proxima.app` or
+   ask UI for a toggle. Get node ids from `adb logcat -s Proxima:*` ("mesh start node=…"). Trigger TRACK on
+   S23+ → expect `src=UWB` fixes with distance + arrow. Outdoors: compare heading with a real compass.
+3. Then: help-point direction helper for guided response (TRUST `HelpPointRepository.nearest` + our heading;
+   agree format with UI) → anonymous density grid (`GeoMath.cellKey`, beacons) → venue/assembly points
+   (needs interface-change) → pitch slides with UI by 10:30 Sat.
+
+**Open items on the bus**
+- #14 (lost&found without wristband): no LOCATE impact; Yorvan to 👍 on GitHub (blocked for Claude).
+- #24 LOCATE→MESH (see above). Diya's S24 Ultra was used for the UWB check and still has our debug build.
+
+**Files touched (all in `main`)**: `locate/build.gradle.kts`, `locate/src/main/AndroidManifest.xml`,
+`locate/src/main/java/mu/proxima/locate/{AndroidLocateEngine,UwbRanger,UwbControl,RadarMath,LocateModule}.kt`,
+`locate/src/test/.../{RadarMathTest,UwbControlTest}.kt`, `locate/src/debug/...UwbCheckActivity.kt` + manifest,
+`locate/tools/uwb_check.sh`, `docs/TEAM_ROLES.md`, this file.
+
+**Machine notes**: phone driver = Samsung USB Driver (installed). adb = `$LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe`
+(not on PATH). `gh` = `/c/Program Files/GitHub CLI/gh.exe` (not on PATH in Claude's shell). Reading `build/` is denied:
+judge tests by Gradle's BUILD SUCCESSFUL. Installing our build on a teammate's phone replaces theirs (signature
+mismatch → uninstall first, tell them to reinstall).
 
 ## Progress log
 | Time | What |
@@ -65,6 +92,15 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 | 15:54 Fri | AndroidLocateEngine (GPS + true-north heading + RSSI fallback) builds, RadarMath tests pass |
 | 16:07 Fri | UWB device check passed: distance ±0.1–0.3 m on S23+ & S24U; azimuth only on S23+ |
 | 16:15 Fri | UWB radar mode (mesh CONTROL handshake + UwbRanger) in `track()`; builds, 11 tests green |
+| 16:30 Fri | Opened #24 (LOCATE→MESH: deliver CONTROL "uwb"); PR #26 opened |
+| 17:50 Fri | Merged latest main (MESH real engine, TRUST, AI), resolved TEAM_ROLES conflict, full build+tests green, **PR #26 merged** |
+| 17:56 Fri | Saving protocol: handoff + how-my-part-works written |
+| 18:20 Fri | Debug adb radar trigger (TRACK/STOP/STATUS) + `locate/tools/radar_test.sh`; build + tests green, merged latest main |
+| 18:10 Fri | **UWB radar proven on phones, simulation OFF** (S23+ guardian → S26+ target over the real mesh): TRACK → first `src=UWB` fix in 0.5 s, aoa=true, ~3 Hz, d 0.21–0.31 m side by side; arrow hidden <0.3 m as designed. CONTROL "uwb" delivered by NearbyMeshEngine (#24 satisfied) |
+| 18:16 Fri | UWB arrow check (S23+ flat, S26+ at ~1.7 m): ahead → rel ≈ +5…+20°, 45° right → ≈ +30…+40°, 45° left → ≈ 340…350° (−10…−20°). **Sign correct, not mirrored** (`UWB_AZIMUTH_SIGN` stays +1). Angles compressed/biased ~+8° and raw azimuth jitters (single ±40° spikes, a few exact 270° values) → needs smoothing + outlier rejection before the UI arrow |
+| 18:25 Fri | #24 confirmed on phones + commented; merged main (MESH dbb943e: no store-and-forward for CONTROL, fine with our 3 s retry). Test builds removed from S23+ and Chanum's S26+ |
+| 18:40 Fri | `UwbAzimuthFilter` (edge/contact rejection → median-5 → EMA → 1.5 s hold) wired into `track()`; 5 tests replay the real 18:14 recording (max arrow step 138° raw → <25°); locate tests green |
+| 18:50 Fri | Help-point direction: `LocateTargets.helpPoint(HelpPoint)` → reuse `track()` (GPS + compass, live relative bearing); UWB now starts only once the target is a mesh peer with `hasUwb` (no REQUEST flood for help points / non-UWB phones). Build + tests green |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -79,3 +115,10 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 | 16:10 Fri | UWB radar: use azimuth only when distance > 0.3 m and AoA is supported, else distance-only | Azimuth is ±90° noise at contact range and absent on S24U | Always show the arrow |
 | 16:15 Fri | UWB session setup over the mesh (signed CONTROL "uwb" REQUEST/ACCEPT/STOP), tracker = controller, target auto-answers | No pairing screen for a panicking parent; reuses the one pipeline/wire format | Separate BLE GATT exchange; manual pairing UI |
 | 16:15 Fri | Per-session random static-STS key sent in the signed (not sealed) CONTROL payload | TrackTarget has no recipient key to seal to; key is single-use and carries no location/personal data | Fixed key (replayable); sealing (needs contract change) |
+| 17:55 Fri | Device-test the radar via a debug-only adb trigger instead of waiting for the UI radar screen | Lets M1 "engine real" be proven today; same pattern MESH used | Waiting for UI's radar screen |
+| 18:15 Fri | Trigger is a receiver registered by `AndroidLocateEngine.start()`, runtime-gated on FLAG_DEBUGGABLE | Has the live engine instance with no static hook and no edit to UI-owned `app/`; identical to MESH's PING | Static engine hook in `LocateModule` + manifest receiver in `src/debug`; asking UI to expose the graph |
+| 18:08 Fri | Device tests install a side-by-side `mu.proxima.app.locatetest` (Gradle `-I locate/tools/locatetest.init.gradle`) | Teammates' builds are signed with other debug keys: installing over them fails, and uninstalling wipes their data | Uninstalling teammates' app; editing UI-owned `app/build.gradle.kts` |
+| 18:17 Fri | Keep `UWB_AZIMUTH_SIGN = +1` | Measured: target to the right gives positive azimuth on S23+ | Flipping to −1 |
+| 18:40 Fri | Clean UWB azimuth with median-of-5 + EMA, drop |az| ≥ 85° and < 0.3 m, hide arrow after 1.5 s without a good angle | Recorded data had single ±40° spikes and exact −90° "don't know" values; median kills spikes without the lag a heavy EMA would add; a stale arrow is worse than none | Raw azimuth (flickers); EMA only (spikes still drag the arrow); Kalman filter (overkill for the deadline) |
+| 18:50 Fri | Help-point direction = a static `TrackTarget` on the existing radar, no new API | One radar for child, finder and help point ("one feature, many uses"); no `core/` interface change; UI gets distance + live turn arrow + proximity for free | New `LocateEngine.directionTo(point)` (contract change); UI computing bearing − heading itself (duplicates heading logic) |
+| 18:50 Fri | Start UWB ranging only when the target is a mesh peer advertising `hasUwb` | Otherwise every track() of a help point or non-UWB phone sends a CONTROL REQUEST over the mesh every 3 s forever | Always try UWB (mesh spam); a node-id prefix check only (misses non-UWB phones) |

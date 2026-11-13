@@ -1,0 +1,11 @@
+// LOCATE device tests: build a side-by-side copy of the app as `mu.proxima.app.locatetest`, so installing it on a
+// teammate's phone never replaces (or forces uninstalling) their own Proxima build. Used by locate/tools/radar_test.sh:
+//   ./gradlew -I locate/tools/locatetest.init.gradle :app:assembleDebug
+// Touches nothing in app/: the suffix is applied only for this Gradle invocation.
+gradle.allprojects { p ->
+    if (p.path == ':app') {
+        p.plugins.withId('com.android.application') {
+            p.android.defaultConfig.applicationIdSuffix = '.locatetest'
+        }
+    }
+}
