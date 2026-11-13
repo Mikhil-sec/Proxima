@@ -6,6 +6,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -49,12 +52,44 @@ class AndroidVoiceIo(
     private val app = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
 
+    // ---------------------------------------------------------------- audio focus
+    // Spoken guidance must be heard over music/videos, and the mic must not transcribe them. While the guide
+    // speaks or listens we hold transient focus (other audio pauses); it is released 3 s after we go quiet.
+    private val audio = app.getSystemService(AudioManager::class.java)
+    private val guidanceAttrs = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .build()
+    private val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+        .setAudioAttributes(guidanceAttrs)
+        .setOnAudioFocusChangeListener({ }, main)
+        .build()
+    private var focusUsers = 0      // main thread only
+    private var focusHeld = false   // main thread only
+    private val abandonFocus = Runnable {
+        if (focusUsers == 0 && focusHeld) { audio?.abandonAudioFocusRequest(focusRequest); focusHeld = false }
+    }
+    private fun acquireFocus() = main.post {
+        focusUsers++
+        main.removeCallbacks(abandonFocus)
+        if (!focusHeld && audio != null) {
+            focusHeld = audio.requestAudioFocus(focusRequest) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+            if (!focusHeld) log("voice: audio focus denied (call in progress?)")
+        }
+    }
+    private fun releaseFocusSoon() = main.post {
+        focusUsers = (focusUsers - 1).coerceAtLeast(0)
+        if (focusUsers == 0) main.postDelayed(abandonFocus, 3_000)
+    }
+
     override val requiredPermissions: List<String> = listOf(Manifest.permission.RECORD_AUDIO)
 
     // ---------------------------------------------------------------- speech-to-text
 
     @Volatile private var activeRecognizer: SpeechRecognizer? = null
     @Volatile private var activeStop: (() -> Unit)? = null
+    /** Ask for the offline speech pack at most once per app run. */
+    @Volatile private var downloadRequested = false
 
     override fun listen(languageTag: String): Flow<VoiceEvent> = callbackFlow {
         if (app.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -66,6 +101,7 @@ class AndroidVoiceIo(
             close(); awaitClose { }; return@callbackFlow
         }
 
+        acquireFocus()
         val candidates = VoiceSupport.languageCandidates(languageTag)
         var recognizer: SpeechRecognizer? = null
         var lastPartial: String? = null   // best text so far, delivered as Final on hold-to-talk release (#9)
@@ -106,10 +142,14 @@ class AndroidVoiceIo(
                     if (text != null) finish(VoiceEvent.Final(text)) else finishWithHeard(SpeechRecognizer.ERROR_NO_MATCH)
                 }
                 override fun onError(error: Int) {
-                    if (onDevice && !stopRequested && VoiceSupport.isLanguageError(error)) {
-                        log("voice: on-device language error $error → standard recognizer")
-                        start(onDevice = false, language = language, sr = SpeechRecognizer.createSpeechRecognizer(app))
-                        return
+                    if (!stopRequested && VoiceSupport.isLanguageError(error)) {
+                        // Walk the candidate list on the standard recognizer: en-MU → en-GB → en-US (Kreol: fr-FR → …).
+                        val nextIdx = if (onDevice) 0 else candidates.indexOf(language) + 1
+                        if (nextIdx in candidates.indices) {
+                            log("voice: language error $error for $language (onDevice=$onDevice) → standard ${candidates[nextIdx]}")
+                            start(onDevice = false, language = candidates[nextIdx], sr = SpeechRecognizer.createSpeechRecognizer(app))
+                            return
+                        }
                     }
                     log("voice: error $error (stopRequested=$stopRequested, heard=${lastPartial != null})")
                     if (stopRequested || VoiceSupport.isNothingHeardError(error)) finishWithHeard(error)
@@ -138,22 +178,31 @@ class AndroidVoiceIo(
                 SpeechRecognizer.isOnDeviceRecognitionAvailable(app)
             if (onDeviceOk) {
                 val sr = SpeechRecognizer.createOnDeviceSpeechRecognizer(app)
-                val installed = try {
-                    installedOnDeviceLanguages(sr, candidates.first())
+                val support = try {
+                    onDeviceSupport(sr, candidates.first())
                 } catch (e: CancellationException) {
                     sr.destroy() // listener cancelled during the check: don't leak the recognizer
                     throw e
                 }
                 // Unknown (API < 33 or check failed) → just try the first candidate; onError retries if needed.
-                val lang = if (installed == null) candidates.first() else VoiceSupport.pickInstalled(candidates, installed)
+                val lang = if (support == null) candidates.first() else VoiceSupport.pickInstalled(candidates, support.first)
                 if (lang != null) { start(onDevice = true, language = lang, sr = sr); return@launch }
-                log("voice: no on-device language among $candidates (installed=$installed)")
+                log("voice: no on-device language among $candidates (installed=${support?.first}, supported=${support?.second?.size})")
+                // Offline pack missing but available: ask Android to fetch it once (needed for airplane mode at the venue).
+                val downloadable = support?.second?.let { VoiceSupport.pickInstalled(candidates, it) }
+                if (downloadable != null && !downloadRequested && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    downloadRequested = true
+                    runCatching { sr.triggerModelDownload(recognizerIntent(downloadable)) }
+                        .onSuccess { log("voice: requested offline speech pack $downloadable") }
+                        .onFailure { log("voice: offline pack request failed: ${it.message}") }
+                }
                 sr.destroy()
             }
             start(onDevice = false, language = candidates.first(), sr = SpeechRecognizer.createSpeechRecognizer(app))
         }
 
         awaitClose {
+            releaseFocusSoon()
             if (activeStop === stopThis) activeStop = null
             recognizer?.let { if (activeRecognizer === it) activeRecognizer = null; it.destroy() }
         }
@@ -174,14 +223,14 @@ class AndroidVoiceIo(
         putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2_500L)
     }
 
-    /** Installed on-device languages (API 33+), or null when unknown. */
-    private suspend fun installedOnDeviceLanguages(sr: SpeechRecognizer, probeLanguage: String): List<String>? {
+    /** (installed, supported) on-device languages (API 33+), or null when unknown. */
+    private suspend fun onDeviceSupport(sr: SpeechRecognizer, probeLanguage: String): Pair<List<String>, List<String>>? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return null
         return withTimeoutOrNull(1_500) {
             suspendCancellableCoroutine { cont ->
                 sr.checkRecognitionSupport(recognizerIntent(probeLanguage), app.mainExecutor, object : RecognitionSupportCallback {
                     override fun onSupportResult(support: RecognitionSupport) {
-                        if (cont.isActive) cont.resume(support.installedOnDeviceLanguages)
+                        if (cont.isActive) cont.resume(support.installedOnDeviceLanguages to support.supportedOnDeviceLanguages)
                     }
                     override fun onError(error: Int) {
                         if (cont.isActive) cont.resume(null)
@@ -207,6 +256,7 @@ class AndroidVoiceIo(
             ttsReady.complete(status == TextToSpeech.SUCCESS)
             log("voice: tts init ${if (status == TextToSpeech.SUCCESS) "ok" else "FAILED ($status)"}")
         }.also { t ->
+            t.setAudioAttributes(guidanceAttrs) // speaker, guidance volume, plays over/through other media
             t.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String) = Unit
                 override fun onDone(utteranceId: String) { pending.remove(utteranceId)?.complete(Unit) }
@@ -226,6 +276,15 @@ class AndroidVoiceIo(
         if (generation.get() != myGen) return
 
         setBestLanguage(engine, languageTag)
+        acquireFocus()
+        try {
+            speakChunks(engine, text, myGen)
+        } finally {
+            releaseFocusSoon()
+        }
+    }
+
+    private suspend fun speakChunks(engine: TextToSpeech, text: String, myGen: Int) {
         val chunks = VoiceSupport.chunk(text, TextToSpeech.getMaxSpeechInputLength())
         for ((i, chunk) in chunks.withIndex()) {
             if (generation.get() != myGen) return
