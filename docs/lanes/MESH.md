@@ -40,6 +40,50 @@ Nearby has per-device connection limits, so the cluster may not be a full mesh: 
 4. Phones keep live alerts for 30 min (Room database) and send them to anyone who walks into range later, most severe first: a crowd moving around becomes the delivery network.
 5. A foreground service keeps relaying with the screen off. For the stage demo, `MeshDemoControls` limits who links to whom, so judges can watch A → B → tablet in one room.
 
+## Backup demo video plan (MESH films 09:30 Sat, everyone acts)
+**Goal:** ~2 min, outdoors (GPS works; Nearby range is visible), **simulation OFF**, every phone in airplane mode with BT + Wi-Fi + Location ON.
+Same story as the stage demo, but lost & found follows #14 (lost-person alert, "I'm with them"; no wristband).
+**Slot:** 09:00 pre-flight · 09:30–10:15 film · 10:15–10:45 edit · link to TRUST for the README (#23) by 11:00.
+
+**Cast & devices** (camera = Chanum's S26+, NOT in the mesh)
+| Who | Device | Role |
+|---|---|---|
+| Seeya (AI) | S24U | SOS caller; then the **finder** (UWB distance only) |
+| (A56 holder) | A56 (Tier 2) | 2nd report of the same event → AI offload |
+| Yorvan (LOCATE) | S23+ | **Guardian** (only phone with the UWB arrow, #5) |
+| Mikhil (UI) | Tab S6 Lite | Command Center: topology, merged incidents, heatmap |
+| Diya (TRUST) | Honor X8b | Relay, **in a pocket, screen off**, halfway between the SOS phone and the tablet |
+| Chanum (MESH) | S26+ | Films + directs; voice-over afterwards |
+
+**Pre-flight (09:00, 10 min).** Run my shared-phone safety routine first (battery > 50 %, temperature < 40 °C).
+- The sim=OFF release build is on every phone, and no "SIM" badge is visible.
+- Airplane mode ON, then BT, Wi-Fi and Location turned back ON.
+- Screen timeout 10 min; media volume max (TTS); DND off.
+- Allow-list chain S24U → Honor → Tab, set in the dev sheet (#8), so the hop is visible.
+- Old incidents cleared.
+- Every phone shows its peers before rolling.
+
+**Shot list (target 2:00)**
+| # | Time | Shot | On screen / action | Voice-over (short) |
+|---|---|---|---|---|
+| 1 | 0:00–0:10 | Wide: 5 people spread ~40 m apart on open ground | Close-up: airplane-mode icon on 2 phones | "Grand Bassin, Maha Shivaratri. Tens of thousands of people, no network." |
+| 2 | 0:10–0:40 | S24U close-up | Hold SOS: "a man collapsed near the food stalls, he's not breathing" → CRITICAL card, `by: on-device AI`; CPR step read aloud; nearest health centre + distance | "One button. On-device AI turns panic into a 200-byte alert and a vetted CPR card." |
+| 3 | 0:40–0:55 | Tablet screen | Topology animates S24U → Honor → Tab; the Honor is shown coming out of a pocket, screen off | "It hops phone to phone, even through a phone asleep in a pocket." |
+| 4 | 0:55–1:05 | A56 then tablet | Same event reported on the A56 → "2 reports", merged; `triagedBy` shows the offload | "A budget phone borrows a neighbour's AI. The tablet merges duplicates." |
+| 5 | 1:05–1:45 | Guardian S23+, then finder S24U ~30 m away | Guardian: "Lost child", description only → finder sees the alert, taps "I'm with them" → guardian gets the sealed alert + radar; walks over; under ~10 m the radar switches to UWB arrow + distance | "No names, no photos. The child's location is sealed so only the guardian can read it." |
+| 6 | 1:45–2:00 | Tablet | Heatmap (anonymous 25 m cells) + incident list → closing line | "No servers, no data plan. Proxima: powered to protect." |
+
+**Rules while filming.** These are product rules too, and judges check them.
+- No bystanders' faces. Only teammates who agreed to be filmed.
+- An adult teammate plays the "child" in the description.
+- Real data only. If a feature isn't working at 09:30, leave it out rather than fake it. Never film SIM mode without its badge.
+- Use each phone's built-in screen recorder (media audio on) for screen shots. The camera films the hands and the wide shots, and the two get spliced in the edit (clearer than filming screens).
+- Take 2 takes of each shot. Shot 5 first, while batteries and GPS are freshest (it's the riskiest one).
+- Afterwards: `cleanup` on any phone that got a test build; restore BT/Wi-Fi state.
+
+**Edit.** Clipchamp (built into Windows 11): 1080p landscape, subtitles for the voice-over, ≤ 2:10.
+Upload unlisted and post the link on #1 and #23.
+
 ## NEXT_SESSION_HANDOFF
 _Saved 17:40 Fri. Everything below is on `main` (PR #27 + #32, CI green) and on `lane/mesh`._
 - **Works (verified on real phones, simulation off, no internet):** `NearbyMeshEngine` on Nearby P2P_CLUSTER:
@@ -101,3 +145,5 @@ _Saved 17:40 Fri. Everything below is on `main` (PR #27 + #32, CI green) and on 
 | 16:40 Fri | One connection attempt in flight at a time (15 s timeout), fewest-attempts first; forget endpoints after 8 failed attempts; drop stale endpoint ids of a re-found node | Honor X8b log: parallel requestConnection → 8007/8012 errors + radio busy; relay latency 7–10 s → 0.1 s after fix | Parallel attempts with backoff only (still collide); never forgetting ghosts |
 | 17:15 Fri | Beacons carry only the centre of the 25 m `GeoMath.cellKey` cell (accuracy = 25 m), set via `MeshBeaconInfo` in `:mesh` which the app wires from LOCATE/AI | Privacy rule: density = anonymous grid cells, raw GPS never leaves the phone; same cells as the heatmap; no `core/` change | Raw GeoPoint (tracks people); rounding at the Command Center (raw position already broadcast); mesh reading GPS itself (duplicates LOCATE) |
 | 15:25 Fri | Debug-only adb PING sends CONTROL/`ping`, not an INCIDENT | Tests multi-hop with no UI and no fake incidents in the pipeline (real-data rule) | Fake INCIDENT packets |
+| 18:10 Fri | CONTROL packets are relayed live but never stored for store-and-forward (`MeshRelay.isStorable`) | #24: a UWB REQUEST replayed 20 min later to a phone walking into range would start a stale session; LOCATE already retries every 3 s | Store everything (stale handshakes); a separate CONTROL transport (second message system, breaks "one pipeline") |
+| 18:20 Fri | Backup video: camera phone outside the mesh, phone screen recordings spliced with handheld shots, riskiest shot (lost & found + UWB) filmed first | Clean screens, no camera phone altering topology, batteries/GPS freshest for the hardest shot | Filming screens with a camera (glare, unreadable); story order (risk running out of time on the key shot) |
