@@ -12,9 +12,7 @@ import mu.proxima.core.engine.TriageEngine
 import mu.proxima.core.engine.TrustEngine
 import mu.proxima.core.engine.VoiceIo
 import mu.proxima.core.fake.FakeVoiceIo
-import mu.proxima.ai.crowd.CrowdRiskEngine
 import mu.proxima.ai.crowd.CrowdRiskMonitor
-import mu.proxima.ai.guide.GuideEngine
 import mu.proxima.ai.guide.GuideIntentClassifier
 import mu.proxima.ai.guide.HandsFreeGuide
 import mu.proxima.ai.offload.TieredTriageEngine
@@ -29,6 +27,8 @@ import mu.proxima.core.model.DeviceCapabilities
 import mu.proxima.core.model.DeviceTier
 import mu.proxima.core.pipeline.IncidentPipeline
 import mu.proxima.core.pipeline.PacketFactory
+import mu.proxima.core.engine.GuideEngine
+import mu.proxima.core.engine.CrowdRiskEngine
 
 /**
  * AI lane entry point. The app calls ONLY this. Keep signatures stable.
