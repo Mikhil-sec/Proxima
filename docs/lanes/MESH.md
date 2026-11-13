@@ -120,7 +120,7 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
   3. When phones are free: verify beacon location (#28) on 2–3 phones; 2-phone UWB radar with LOCATE (#24);
      after #19 lands, re-test the allow-list with stable ids.
   4. 09:00 Sat: run the video pre-flight; 09:30 film per "Backup demo video plan" above.
-  5. Write the MESH README section for TRUST (#23) by 10:30 Sat. Reuse "How my part works" + acoustic.
+  5. README MESH section is DONE (PR #47). Update its numbers if M2 or the video shows anything new (e.g. a longer chain, outdoor range).
 - **Follow-up (from #24):** after a peer app restart, its old per-launch node id stays `direct=true` on the other phone (new id shows as indirect). Check that `onDisconnected` fires and clears the old endpoint; stable ids (#19) remove most of it.
 - **Ask UI (not yet filed):** add a dev-sheet toggle for `MeshDemoControls.acoustic` if we want the acoustic fallback on stage.
 - **Device testing:** `bash mesh/tools/mesh_device_test.sh health|setup|ids|allow <serial> <ids|*>|ping <serial>|acoustic <serial> on|off|chirp <serial>|logs [n]|cleanup`.
@@ -154,6 +154,7 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:08 Fri | Acoustic wired into NearbyMeshEngine (off by default), AcousticReceiver + mapping tests, adb acoustic/chirp; 33/33, app builds. No phones attached for the device check |
 | 18:20 Fri | #24 closed: LOCATE verified UWB CONTROL handshake over the real mesh on S23+ → S26+ (fix 0.5 s, arrow OK). Follow-up: after a peer app restart, its old per-launch id stays `direct=true` until Nearby reports the disconnect |
 | 18:51 Fri | Phone check S26+ ↔ S23+: restart fix OK (reconnect 7 s); acoustic decodes with MIC source; 4/5 kHz too loud for the venue → 18.0/18.7 kHz near-ultrasound: S26+→S23+ 2/2, S23+→S26+ 0/2 (weak speaker). Phones cleaned up |
+| 19:10 Fri | PR #44 merged (restart fix + ultrasonic acoustic). README MESH section + AI-disclosure row merged (PR #47), #23 answered |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -179,3 +180,4 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:06 Fri | Acoustic is OFF by default and only active when there is no Nearby link; foreground-only mic; no microphone FGS | Never compete with voice SOS for the mic (Android 10+ gives it to SpeechRecognizer anyway) or talk over the read-aloud steps; an always-on background mic is a privacy red flag | Always listening; microphone foreground service |
 | 18:46 Fri | Acoustic mic source = UNPROCESSED else MIC (+ NS/AGC/AEC off), not VOICE_RECOGNITION | On the S23+ VOICE_RECOGNITION heard the tones loud but never decoded; MIC decoded both ways | VOICE_RECOGNITION (fails on S23+) |
 | 18:50 Fri | Acoustic tones moved to near-ultrasound 18.0/18.7 kHz | Chanum: 4–5 kHz was piercing and disturbed other hackathon teams; ultrasound is inaudible to most adults. 19.5 kHz was too high for the S23+ speaker → S26+ mic path | 4/5 kHz (works both ways, too loud); 1/1.5 kHz (pleasant, did not decode once); 18.5/19.5 kHz (one-way only) |
+| 19:13 Fri | After an app restart the mesh replays its stored INCIDENT/SEALED packets (≤ 30 min) once into this phone's own pipeline | Found while validating #51: the pipeline keeps incidents in memory, and the mesh drops a re-forwarded copy of the guardian's own LOST report as already seen, so after a restart the finder's notice was refused. Fixed in `:mesh`, no core change | Forget seen ids on restart (would re-relay everything); persist incidents in core (core change near freeze) |
