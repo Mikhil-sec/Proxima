@@ -18,6 +18,8 @@ import mu.proxima.core.engine.ProtocolRepository
 import mu.proxima.core.engine.VoiceIo
 import mu.proxima.core.model.ProtocolCard
 import mu.proxima.core.model.VoiceEvent
+import mu.proxima.core.model.GuideState
+import mu.proxima.core.engine.GuideEngine
 
 /**
  * Hands-free guided first aid: speak one vetted step → listen → act on the command → repeat.
