@@ -21,5 +21,12 @@ dependencies {
     // implementation(libs.litertlm.android)
     // implementation(libs.mediapipe.tasks.genai)
 
+    // Provisional runtime: Gemini Nano via ML Kit Prompt API (see docs/lanes/AI.md decision log).
+    // LlmTriageEngine only talks to the LlmBackend interface, so a Gemma backend can replace it.
+    implementation(libs.mlkit.genai.prompt)
+    // Device spike only (src/debug/ LlmProbeActivity) for the Gemma comparison. Debug builds only.
+    debugImplementation(libs.litertlm.android)
+
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
