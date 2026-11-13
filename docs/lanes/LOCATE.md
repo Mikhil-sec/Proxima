@@ -21,7 +21,7 @@ Implement `LocateEngine` and return it from `LocateModule.create()` when `!simul
 - [x] Help-point bearing for the guided-response card: `LocateTargets.helpPoint()` + `track()`. UI wiring requested.
 **P2**
 - [ ] Venue outline (OSM paths around Ganga Talao + the demo venue) for the Command Center map: needs an `interface-change` issue.
-- [ ] Anonymous crowd-density grid from beacons (`GeoMath.cellKey`).
+- [~] ~~Anonymous crowd-density grid~~: already built by AI (`CrowdRiskEngine`, #30); not duplicated.
 - [ ] Pitch slides (≤6) with UI, ready 10:30 Sat.
 
 ## Gotchas
@@ -31,9 +31,9 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 1. `LocateModule.create()` returns `AndroidLocateEngine` when simulation is off (the fake otherwise).
 2. Position = fused GPS every 1 s; heading = rotation-vector sensor, corrected to true north, smoothed; works flat or upright.
-3. `track(target)` emits a `RadarFix` every 100 ms from the best source: UWB → GPS → mesh RSSI (warmer/colder) → last GPS.
+3. `track(target)` emits a `RadarFix` every 100 ms from the best source: UWB → GPS → mesh RSSI → last GPS. (Real Nearby gives no RSSI, so on phones it's UWB → GPS.) Help points: `track(LocateTargets.helpPoint(p))`.
 4. UWB: the guardian's phone sends a signed CONTROL "uwb" REQUEST over the mesh; the finder's phone auto-answers; both range at ~0.3 m.
-5. Direction arrow from UWB needs angle-of-arrival (S23+ yes, S24U no) and >0.3 m; otherwise distance-only.
+5. Direction arrow from UWB needs angle-of-arrival (S23+ yes, S24U no) and >0.3 m; it is median+EMA smoothed; otherwise distance-only.
 
 ## NEXT_SESSION_HANDOFF
 _Updated 17:56 Fri. Branch `lane/locate` = `main` + nothing pending (PR #26 merged 17:50)._
@@ -101,6 +101,7 @@ mismatch → uninstall first, tell them to reinstall).
 | 18:25 Fri | #24 confirmed on phones + commented; merged main (MESH dbb943e: no store-and-forward for CONTROL, fine with our 3 s retry). Test builds removed from S23+ and Chanum's S26+ |
 | 18:40 Fri | `UwbAzimuthFilter` (edge/contact rejection → median-5 → EMA → 1.5 s hold) wired into `track()`; 5 tests replay the real 18:14 recording (max arrow step 138° raw → <25°); locate tests green |
 | 18:50 Fri | Help-point direction: `LocateTargets.helpPoint(HelpPoint)` → reuse `track()` (GPS + compass, live relative bearing); UWB now starts only once the target is a mesh peer with `hasUwb` (no REQUEST flood for help points / non-UWB phones). Build + tests green |
+| 19:05 Fri | PR #39 merged (CI green). Asked UI in #40 (help-point arrow + wire `MeshBeaconInfo.location`). README radar section + AI-disclosure row written (#23) |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -122,3 +123,5 @@ mismatch → uninstall first, tell them to reinstall).
 | 18:40 Fri | Clean UWB azimuth with median-of-5 + EMA, drop |az| ≥ 85° and < 0.3 m, hide arrow after 1.5 s without a good angle | Recorded data had single ±40° spikes and exact −90° "don't know" values; median kills spikes without the lag a heavy EMA would add; a stale arrow is worse than none | Raw azimuth (flickers); EMA only (spikes still drag the arrow); Kalman filter (overkill for the deadline) |
 | 18:50 Fri | Help-point direction = a static `TrackTarget` on the existing radar, no new API | One radar for child, finder and help point ("one feature, many uses"); no `core/` interface change; UI gets distance + live turn arrow + proximity for free | New `LocateEngine.directionTo(point)` (contract change); UI computing bearing − heading itself (duplicates heading logic) |
 | 18:50 Fri | Start UWB ranging only when the target is a mesh peer advertising `hasUwb` | Otherwise every track() of a help point or non-UWB phone sends a CONTROL REQUEST over the mesh every 3 s forever | Always try UWB (mesh spam); a node-id prefix check only (misses non-UWB phones) |
+| 19:00 Fri | Drop the LOCATE density grid | AI's `CrowdRiskEngine` (#30) already buckets `mesh.peers[].location` into the same 25 m cells for the Command Center; two would be a parallel system | Building `DensityGrid` in locate |
+| 19:00 Fri | README states RSSI fallback is simulation-only | Real `NearbyMeshEngine` never fills `Peer.rssiDbm` (Nearby Connections exposes no RSSI); judges reward honest limits | Claiming warmer/colder on all phones |

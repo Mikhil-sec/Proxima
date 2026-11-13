@@ -54,6 +54,16 @@ Everything is one `Incident` on one pipeline — lost person, sighting, found, m
 5. **Command Center** (tablet at a first-aid or police post): live incident heatmap from **anonymous grid
    cells only**, mesh topology, and merged report counts ("Fire — 15 reports").
 
+**The radar, honestly: what works on which phone** (measured 13 Nov, simulation off, real mesh)
+| Source | Phones | What we measured |
+|---|---|---|
+| **UWB** (centimetre ranging) | Samsung S23+, S24 Ultra, S26+ (UWB flagships) | Distance ±0.1 m at 2 m, ±0.3 m at 5 m. Over the real mesh (S23+ → S26+) the first fix arrives 0.5 s after "find", then ~3 per second, no pairing screen. **Direction arrow only on the S23+**: the S24 Ultra reports no angle-of-arrival, and the S23+'s angle is approximate (a target 45° to the side reads ~30–40°), so we smooth it and hide the arrow below 0.3 m. |
+| **GPS + compass** | Every phone | Position every 1 s; compass corrected to true north (Mauritius declination ≈ −18°). Single-phone check: a target 100 m north read 100.5 m at bearing 0°. Poor indoors, so the stage demo uses UWB. |
+| **Signal strength** ("warmer / colder") | — | **Not available on real phones**: Google Nearby Connections does not expose RSSI, so this fallback only runs in simulation. Without UWB or GPS the radar shows "searching". |
+
+The same radar also points to the nearest help point in guided response (GPS + compass; a help point is just a
+target that never moves).
+
 <!-- UI: architecture diagram here. Source: docs/ARCHITECTURE.md -->
 
 ## Data sources
@@ -122,7 +132,8 @@ AGP 9.5.1 · Kotlin 2.4.21 · Gradle 9.9.1 · minSdk 26 · compileSdk 37.
 |---|---|
 | Claude Code (Anthropic) | Project scaffolding, shared interfaces, docs; each lane lists further use below |
 | Claude Code — TRUST lane | Wrote the OSM tag-mapping and ranking code, the protocol-selection logic and all 22 unit tests; drove the Overpass fetch. The IFRC protocol steps were **transcribed by hand from the published PDF**, deliberately not generated — and no medical step was written by a model. |
-<!-- UI / MESH / AI / LOCATE: add your row -->
+| Claude Code — LOCATE lane | Wrote the radar engine (GPS, compass heading, UWB session over the mesh), the arrow filter and all LOCATE unit tests, plus the adb device-test tools. Every claim in the radar table above comes from logs on real phones, not from the model; the member placed the phones and judged the arrow direction. |
+<!-- UI / MESH / AI: add your row -->
 
 ## Key decisions
 
