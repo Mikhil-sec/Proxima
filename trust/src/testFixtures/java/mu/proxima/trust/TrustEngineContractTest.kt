@@ -64,14 +64,36 @@ abstract class TrustEngineContractTest {
         assertNotEquals("the two halves must be different keys", halves.first, halves.second)
     }
 
-    /** The whole point of #19: the identity survives a restart. */
+    /** True if every [newEngine] is a new session with a new identity (#38); false if identity is stable (#19). */
+    protected abstract val rotatesPerSession: Boolean
+
     @Test
-    fun identity_is_stable_across_engine_instances() {
+    fun identity_across_a_restart_follows_the_rotation_policy() {
         val first = newEngine().identity
         val second = newEngine().identity
 
-        assertEquals(first.publicKey, second.publicKey)
-        assertEquals(first.nodeId, second.nodeId)
+        if (rotatesPerSession) {
+            // Unlinkable: neither half of the key, nor the id, carries over to the next session.
+            val (sig1, enc1) = NodeIds.split(first.publicKey)!!
+            val (sig2, enc2) = NodeIds.split(second.publicKey)!!
+            assertNotEquals(sig1, sig2)
+            assertNotEquals(enc1, enc2)
+            assertNotEquals(first.nodeId, second.nodeId)
+        } else {
+            assertEquals(first.publicKey, second.publicKey)
+            assertEquals(first.nodeId, second.nodeId)
+        }
+    }
+
+    /** A guardian's app restarting mid-search must not lose the finder's notices, whatever the rotation policy. */
+    @Test
+    fun a_notice_sealed_to_me_before_a_restart_still_opens_after_it() {
+        val before = newEngine()
+        val sealed = newOtherDevice().seal("child at -20.4181,57.4914".toByteArray(), before.identity.publicKey)
+
+        val after = newEngine()
+
+        assertEquals("child at -20.4181,57.4914", after.open(sealed)?.decodeToString())
     }
 
     @Test

@@ -21,6 +21,9 @@ class TinkTrustEngineKeystoreTest : TrustEngineContractTest() {
 
     private val context: Context get() = ApplicationProvider.getApplicationContext()
 
+    /** The Keystore run exercises per-session identity: the policy with the most storage work (prune, retain). */
+    override val rotatesPerSession = true
+
     override fun newEngine(): TrustEngine = TinkTrustEngine(context)
 
     override fun newOtherDevice(): TrustEngine = TinkTrustEngine(
