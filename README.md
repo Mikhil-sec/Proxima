@@ -17,10 +17,9 @@ Proxima lets people raise and route emergencies, find lost children and get guid
 
      *** CHECK BEFORE SUBMITTING (was a blocker until 18:10 Fri) ***
      The signing/sealing claims are now TRUE in the build with simulation OFF: TinkTrustEngine (Ed25519 + HPKE,
-     Keystore-backed) is wired in TrustModule, and 21 security tests pass on the JVM. Still NOT verified on a
-     phone. Before submitting: run `./gradlew :trust:connectedDebugAndroidTest` on a device, and do one
-     two-phone found-notice with simulation OFF. If neither happens, keep the claims but say "tested in unit
-     tests" rather than implying a device demo.
+     Keystore-backed) is wired in TrustModule. The 21-test security contract passes on the JVM AND on a Galaxy
+     S24 Ultra under the real Android Keystore (18:36 Fri, `:trust:connectedDebugAndroidTest`). Remaining before
+     submitting: one two-phone found-notice with simulation OFF (end-to-end over the mesh, asked on #19).
 -->
 
 ## Problem & user
@@ -139,6 +138,8 @@ AGP 9.5.1 · Kotlin 2.4.21 · Gradle 9.9.1 · minSdk 26 · compileSdk 37.
 | 14:43 | Commit the **raw** Overpass response and map it in tested Kotlin | Licence, fetch date and coordinates stay verifiable against OSM |
 | 15:35 | **Drop the QR wristband**; the finder answers the guardian's alert instead | No wristband hardware or printing, and the flow works without it — same privacy, one less dependency |
 | 15:45 | Ship protocol cards with gaps rather than invent the missing four | A wrong protocol is more dangerous than an absent one |
+| 16:50 | **Reject a blockchain** for the trust layer; keep Ed25519 signatures + HPKE sealing | A ledger is public (a child's location on it inverts our privacy rule) and needs consensus, i.e. connectivity, the one thing a crowd does not have |
+| 18:05 | A node id is **derived from its key** and `verify()` rejects any packet whose id does not match | A valid signature alone lets an attacker claim someone else's id; binding the two makes ids unforgeable. The same 21-test security spec passes on the JVM and on two real phones |
 
 Full logs: `docs/DECISIONS.md` and `docs/lanes/*.md`.
 
