@@ -123,3 +123,11 @@ fun clockLabel(atMs: Long): String = clockFormat.format(Date(atMs))
 
 /** Last 4 characters of an ephemeral node id. Never a person identifier. */
 fun shortNode(nodeId: String): String = nodeId.takeLast(4).uppercase()
+
+/** Surge control status (scale-up card): plain words, nothing shown as a problem unless something waits. */
+fun surgeLabel(load: mu.proxima.mesh.RelayLoad): String = buildList {
+    if (load.queued > 0) add("${load.queued} relays waiting, most urgent first")
+    if (load.collapsed > 0) add("${load.collapsed} repeat hazard reports counted, not re-sent")
+    if (load.shed > 0) add("${load.shed} low-priority packets dropped")
+}.ifEmpty { listOf("Surge control on, nothing waiting") }.joinToString(". ", postfix = ".")
+

@@ -70,6 +70,8 @@ import kotlinx.coroutines.launch
 import mu.proxima.app.ProximaGraph
 import mu.proxima.app.ui.components.MeshStatus
 import mu.proxima.app.ui.components.label
+import mu.proxima.app.ui.surgeLabel
+import mu.proxima.mesh.MeshLoad
 import mu.proxima.app.ui.components.SimLabel
 import mu.proxima.app.ui.components.StateLabel
 import mu.proxima.app.ui.components.VerifiedMark
@@ -589,6 +591,7 @@ private fun SitePlan(
             style = MaterialTheme.typography.bodyMedium.figures(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        SurgeLine()
         Text(
             "Shading: phones per 25 m square, from their beacons; no one is tracked. Square: phone that runs AI and " +
                 "relays. Circle: phone. Green ring with a name: medic or steward post, verified by the organiser. Hatching: where reports came from.",
@@ -596,6 +599,20 @@ private fun SitePlan(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * Surprise card "Scale up": what this post's own relay is doing under load. A surge shows up here as hazard
+ * copies held back and relays waiting; with normal traffic it just says so.
+ */
+@Composable
+private fun SurgeLine() {
+    val load by MeshLoad.state.collectAsStateWithLifecycle()
+    Text(
+        "Relay: ${surgeLabel(load)}",
+        style = MaterialTheme.typography.bodyMedium.figures(),
+        color = if (load.queued > 0 || load.shed > 0) MaterialTheme.semantic.caution else MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable
