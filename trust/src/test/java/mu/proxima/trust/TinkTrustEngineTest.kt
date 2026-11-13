@@ -122,7 +122,7 @@ class TinkKeyRotationTest {
 }
 
 /** One simulated phone: its persisted storage and clock outlive any single engine instance. */
-internal class SimulatedPhone(private val rotation: KeyRotation) {
+internal class SimulatedPhone(private val rotation: KeyRotation, private val organiserKey: KeysetHandle? = null) {
     private val keysets = mutableMapOf<String, ByteArray>()
     private var tags = emptyList<WristbandTag>()
     var nowMs = 1_763_000_000_000L
@@ -157,5 +157,6 @@ internal class SimulatedPhone(private val rotation: KeyRotation) {
         },
         rotation = rotation,
         clock = { nowMs },
+        organiserKey = organiserKey,
     )
 }

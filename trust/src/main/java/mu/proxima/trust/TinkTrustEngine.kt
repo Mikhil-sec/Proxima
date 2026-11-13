@@ -14,6 +14,7 @@ import com.google.crypto.tink.signature.SignatureConfig
 import mu.proxima.core.engine.TrustEngine
 import mu.proxima.core.model.MeshPacket
 import mu.proxima.core.model.NodeIdentity
+import mu.proxima.core.model.RolePass
 import mu.proxima.core.model.WristbandTag
 import java.security.SecureRandom
 import java.util.Base64
@@ -55,13 +56,18 @@ class TinkTrustEngine(
     private val wristbands: WristbandStore,
     rotation: KeyRotation = KeyRotation.PER_SESSION,
     private val clock: () -> Long = System::currentTimeMillis,
+    /** The event organiser's PUBLIC keyset; null = this build cannot verify roles, so it never shows any. */
+    organiserKey: KeysetHandle? = null,
 ) : TrustEngine {
 
     /** The app's constructor: keysets encrypted under an Android Keystore master key, tags in private prefs. */
-    constructor(context: Context, rotation: KeyRotation = KeyRotation.PER_SESSION) :
-        this(AndroidKeystoreKeysetStore(context), SharedPrefsWristbandStore(context), rotation)
+    constructor(context: Context, rotation: KeyRotation = KeyRotation.PER_SESSION) : this(
+        AndroidKeystoreKeysetStore(context), SharedPrefsWristbandStore(context), rotation,
+        organiserKey = RolePasses.loadOrganiserKey(context),
+    )
 
     private val random = SecureRandom()
+    private val organiser: PublicKeyVerify? = organiserKey?.let(RolePasses::verifier)
 
     /** This session's keys, and (PER_SESSION only) the previous sessions' keys still inside the retention window. */
     private val current: SessionKeys
@@ -158,6 +164,18 @@ class TinkTrustEngine(
 
     /** Same as [ownsKey] for node ids, so "is this lost report mine?" survives a restart. */
     override fun ownsNodeId(nodeId: String): Boolean = nodeId == current.nodeId || retired.any { it.nodeId == nodeId }
+
+    /**
+     * A role is shown only if all four hold: the pass is unexpired, [packet] comes from the pass holder's key, the
+     * packet's own signature verifies (so the claim is fresh, not a replayed pass), and the organiser signed the pass.
+     */
+    override fun verifyRoleClaim(pass: RolePass, packet: MeshPacket, nowMs: Long): Boolean {
+        val organiser = organiser ?: return false
+        if (nowMs >= pass.expiresAtMs) return false
+        if (packet.originKey != pass.holderKey) return false
+        if (!verify(packet)) return false
+        return RolePasses.signatureValid(organiser, pass)
+    }
 
     override fun createWristband(): WristbandTag {
         val tag = WristbandTag(tagId = hex(TAG_BYTES), guardianKey = identity.publicKey, createdAtMs = clock())
