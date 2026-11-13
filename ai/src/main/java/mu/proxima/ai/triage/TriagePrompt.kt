@@ -11,6 +11,7 @@ import mu.proxima.core.model.RawReport
 import mu.proxima.core.model.Severity
 import mu.proxima.core.model.TriageResult
 import mu.proxima.core.model.TriageSource
+import mu.proxima.core.pipeline.RuleTriageEngine
 
 /**
  * Prompt + strict output validation for LLM triage.
@@ -44,7 +45,7 @@ object TriagePrompt {
     """.trimIndent()
 
     fun user(report: RawReport): String {
-        val hint = report.typeHint?.let { "\nThe reporter pressed the $it button." } ?: ""
+        val hint = report.typeHint?.let { "\nThe reporter pressed the $it button, but panicking people press the wrong one: classify from the words." } ?: ""
         return "Report: \"${report.text.trim()}\"$hint\nJSON:"
     }
 
@@ -57,13 +58,16 @@ object TriagePrompt {
      */
     fun parse(raw: String, report: RawReport): TriageResult? {
         val obj = extractJsonObject(raw) ?: return null
-        val type = obj.str("type")?.let { enumOrNull<IncidentType>(it) } ?: return null
+        val rawType = obj.str("type") ?: return null
+        // Small models sometimes put the subtype in the type field ("type":"CROWD_CRUSH"): recover it.
+        val (type, typeAsSubtype) = enumOrNull<IncidentType>(rawType)?.let { it to null }
+            ?: subtypeAsType(rawType) ?: return null
         val severity = obj.str("severity")?.let { enumOrNull<Severity>(it) } ?: return null
         return sanitize(
             TriageResult(
                 type = type,
                 severity = severity,
-                subtype = obj.str("subtype"),
+                subtype = typeAsSubtype ?: obj.str("subtype"),
                 summary = obj.str("summary").orEmpty(),
                 landmark = obj.str("landmark"),
                 peopleCount = obj.int("peopleCount"),
@@ -83,10 +87,15 @@ object TriagePrompt {
         // A pressed category button wins, same as RuleTriageEngine, unless the model rates a different
         // type CRITICAL (#16: panicking users tap the wrong button; the words win for life-threatening cases).
         val hint = report.typeHint
-        val type = if (hint != null && !(result.severity == Severity.CRITICAL && result.type != hint)) hint else result.type
+        val modelSubtype = subtypeFor(result.type, result.subtype, report)
+        // Floor: the model picks the subtype well but under-rates severity (v2 eval), so severity never drops
+        // below what the rules define for that subtype. A lost child is always CRITICAL.
+        val modelSeverity = maxOf(result.severity, floorFor(result.type, modelSubtype))
+        // Critical reports (incl. a lost child) override a wrong button.
+        val type = if (hint != null && !(modelSeverity == Severity.CRITICAL && result.type != hint)) hint else result.type
 
-        val subtype = normaliseSubtype(type, result.subtype)
-        val severity = if (type == IncidentType.LOST_PERSON && subtype == "CHILD") Severity.CRITICAL else result.severity
+        val subtype = if (type == result.type) modelSubtype else subtypeFor(type, null, report)
+        val severity = if (type == result.type) modelSeverity else maxOf(result.severity, floorFor(type, subtype))
 
         val summary = result.summary.replace(WHITESPACE, " ").trim().takeIf { it.isNotEmpty() }
             ?: report.text.trim().replace(WHITESPACE, " ")
@@ -105,10 +114,47 @@ object TriagePrompt {
 
     private fun normaliseSubtype(type: IncidentType, raw: String?): String? {
         val s = raw?.trim()?.uppercase()?.replace(' ', '_')
+        // Exact code first, then a code embedded in a longer label ("MEDICAL_SEIZURE" → SEIZURE).
+        fun pick(codes: Set<String>) = s?.let { v -> codes.firstOrNull { it == v } ?: codes.firstOrNull { it in v } }
         return when (type) {
-            IncidentType.MEDICAL -> s?.takeIf { it in MEDICAL_SUBTYPES } ?: "GENERAL"
-            IncidentType.HAZARD -> s?.takeIf { it in HAZARD_SUBTYPES }
-            in PERSON_TYPES -> s?.takeIf { it in PERSON_SUBTYPES } ?: "PERSON"
+            IncidentType.MEDICAL -> pick(MEDICAL_SUBTYPES) ?: "GENERAL"
+            IncidentType.HAZARD -> pick(HAZARD_SUBTYPES)
+            in PERSON_TYPES -> when {
+                s == null -> "PERSON"
+                "CHILD" in s || "KID" in s -> "CHILD" // "LOST_PERSON_CHILD"
+                "ELDER" in s -> "ELDERLY"
+                else -> "PERSON"
+            }
+            else -> null
+        }
+    }
+
+    private val rulesWords = RuleTriageEngine()
+
+    /** Model subtype, normalised; a person report whose words say child/elderly gets that even if the model said PERSON. */
+    private fun subtypeFor(type: IncidentType, raw: String?, report: RawReport): String? {
+        val s = normaliseSubtype(type, raw)
+        return if (type in PERSON_TYPES && s == "PERSON") rulesWords.personSubtype(report.text) else s
+    }
+
+    /** Minimum severity per subtype, matching RuleTriageEngine's rules (keep in sync). */
+    private val SEVERITY_FLOOR = mapOf(
+        "CARDIAC_ARREST" to Severity.CRITICAL, "UNCONSCIOUS" to Severity.CRITICAL,
+        "CROWD_CRUSH" to Severity.CRITICAL, "FIRE" to Severity.CRITICAL,
+        "SEIZURE" to Severity.HIGH, "BLEEDING" to Severity.HIGH, "CHEST_PAIN" to Severity.HIGH, "ELECTRICAL" to Severity.HIGH,
+    )
+
+    private fun floorFor(type: IncidentType, subtype: String?): Severity = when {
+        type == IncidentType.LOST_PERSON && subtype == "CHILD" -> Severity.CRITICAL
+        type == IncidentType.MEDICAL || type == IncidentType.HAZARD -> SEVERITY_FLOOR[subtype] ?: Severity.LOW
+        else -> Severity.LOW
+    }
+
+    private fun subtypeAsType(raw: String): Pair<IncidentType, String>? {
+        val s = raw.trim().uppercase().replace(' ', '_')
+        return when (s) {
+            in HAZARD_SUBTYPES -> IncidentType.HAZARD to s
+            in MEDICAL_SUBTYPES -> IncidentType.MEDICAL to s
             else -> null
         }
     }

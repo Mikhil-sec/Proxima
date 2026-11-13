@@ -1,0 +1,44 @@
+{"id":"en01","lang":"en","text":"He collapsed and he's not breathing, near the main stage","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["CARDIAC_ARREST"]}
+{"id":"en02","lang":"en","text":"A man is bleeding a lot from his head by the food stalls","types":["MEDICAL"],"severities":["HIGH","CRITICAL"],"subtypes":["BLEEDING"]}
+{"id":"en03","lang":"en","text":"Woman having a seizure next to the temple steps","types":["MEDICAL"],"severities":["HIGH","CRITICAL"],"subtypes":["SEIZURE"]}
+{"id":"en04","lang":"en","text":"I can't find my daughter, she is 6, wearing a red dress","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"en05","lang":"en","text":"There's smoke coming from the generator behind the stage","types":["HAZARD"],"severities":["HIGH","CRITICAL"],"subtypes":["FIRE","ELECTRICAL"]}
+{"id":"en06","lang":"en","text":"my son wandered off near the lake, he's four","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"en07","lang":"en","text":"an old man is lying on the ground, his lips are going blue and he isn't responding","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["CARDIAC_ARREST","UNCONSCIOUS"]}
+{"id":"en08","lang":"en","text":"people are getting squeezed against the barrier, a girl is screaming she can't move","types":["HAZARD"],"severities":["CRITICAL"],"subtypes":["CROWD_CRUSH"]}
+{"id":"en09","lang":"en","text":"a lady feels faint, she's been standing in the sun for hours with no water","types":["MEDICAL"],"severities":["MEDIUM","HIGH"],"subtypes":["HEAT_EXHAUSTION"]}
+{"id":"en10","lang":"en","text":"a boy is sitting alone by the toilets crying, no parents around","types":["SIGHTING","FOUND"],"severities":["MEDIUM","HIGH","CRITICAL"],"subtypes":["CHILD"]}
+{"id":"en11","lang":"en","text":"I have a little girl with me who lost her mum, we're at the info tent","types":["FOUND"],"severities":["MEDIUM","HIGH","CRITICAL"],"subtypes":["CHILD"]}
+{"id":"en12","lang":"en","text":"a power cable is hanging down and sparking over the path","types":["HAZARD"],"severities":["HIGH","CRITICAL"],"subtypes":["ELECTRICAL"]}
+{"id":"en13","lang":"en","text":"my grandfather has gone missing, he has dementia","types":["LOST_PERSON"],"severities":["HIGH","CRITICAL"],"subtypes":["ELDERLY"]}
+{"id":"en14","lang":"en","text":"guy fell off the wall, his arm is bent the wrong way","types":["MEDICAL"],"severities":["MEDIUM","HIGH"],"subtypes":["FRACTURE"]}
+{"id":"en15","lang":"en","text":"man clutching his chest and sweating, says his left arm hurts","types":["MEDICAL"],"severities":["HIGH","CRITICAL"],"subtypes":["CHEST_PAIN","CARDIAC_ARREST"]}
+{"id":"en16","lang":"en","text":"the fire near gate 2 is out now, firefighters say it's safe","types":["ALL_CLEAR"],"severities":["LOW","MEDIUM"],"subtypes":[]}
+{"id":"en17","lang":"en","text":"water is coming up fast on the lower path by the lake","types":["HAZARD"],"severities":["MEDIUM","HIGH","CRITICAL"],"subtypes":["FLOOD"]}
+{"id":"fr01","lang":"fr","text":"Il ne respire plus, il est tombé près de l'entrée","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["CARDIAC_ARREST"]}
+{"id":"fr02","lang":"fr","text":"Ma fille a disparu, elle a 5 ans","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"fr03","lang":"fr","text":"Il y a une bousculade près de la scène, les gens tombent","types":["HAZARD"],"severities":["CRITICAL"],"subtypes":["CROWD_CRUSH"]}
+{"id":"fr04","lang":"fr","text":"Une femme saigne beaucoup de la jambe","types":["MEDICAL"],"severities":["HIGH","CRITICAL"],"subtypes":["BLEEDING"]}
+{"id":"fr05","lang":"fr","text":"Un homme fait une crise d'épilepsie","types":["MEDICAL"],"severities":["HIGH","CRITICAL"],"subtypes":["SEIZURE"]}
+{"id":"mfe01","lang":"mfe","text":"Mo pa trouv mo zanfan, li ena 7 an","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"mfe02","lang":"mfe","text":"Ena dife kot parking la","types":["HAZARD"],"severities":["HIGH","CRITICAL"],"subtypes":["FIRE"]}
+{"id":"mfe03","lang":"mfe","text":"Enn misie finn tom feb, li pa pe reponn","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["UNCONSCIOUS","CARDIAC_ARREST"]}
+{"id":"mfe04","lang":"mfe","text":"Dimounn pe pous pous, nou pa kapav respire","types":["HAZARD"],"severities":["CRITICAL"],"subtypes":["CROWD_CRUSH"]}
+{"id":"mfe05","lang":"mfe","text":"Mo finn trouv enn tifi tousel, li pe ploure","types":["FOUND","SIGHTING"],"severities":["MEDIUM","HIGH","CRITICAL"],"subtypes":["CHILD"]}
+{"id":"btn01","lang":"en","hint":"LOST_PERSON","text":"he's not breathing!","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["CARDIAC_ARREST"]}
+{"id":"btn02","lang":"en","hint":"MEDICAL","text":"my kid is missing, he's only three","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"btn03","lang":"en","hint":"HAZARD","text":"smoke everywhere near the kitchen tent","types":["HAZARD"],"severities":["HIGH","CRITICAL"],"subtypes":["FIRE"]}
+{"id":"amb01","lang":"en","text":"false alarm, the child we reported has been found by her dad","types":["ALL_CLEAR","FOUND"],"severities":["LOW","MEDIUM","HIGH"],"subtypes":[]}
+{"id":"amb02","lang":"en","text":"someone fainted from the heat but is awake and talking now","types":["MEDICAL"],"severities":["MEDIUM","HIGH"],"subtypes":["HEAT_EXHAUSTION","UNCONSCIOUS"]}
+{"id":"ho01","lang":"en","text":"please help, my little boy is gone, I turned around and he wasn't there","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"ho02","lang":"en","text":"can't find my granddaughter anywhere, she's 8","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"ho03","lang":"en","text":"the crowd at the front is surging and people are falling over each other","types":["HAZARD"],"severities":["CRITICAL"],"subtypes":["CROWD_CRUSH"]}
+{"id":"ho04","lang":"en","text":"one of the food stalls has caught fire","types":["HAZARD"],"severities":["HIGH","CRITICAL"],"subtypes":["FIRE"]}
+{"id":"ho05","lang":"fr","text":"Mon fils est perdu, il porte un t-shirt bleu","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"ho06","lang":"fr","text":"Quelqu'un est inconscient près des toilettes","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["UNCONSCIOUS","CARDIAC_ARREST"]}
+{"id":"ho07","lang":"mfe","text":"Enn madam pe gagn kriz, li pe tranble partou","types":["MEDICAL"],"severities":["HIGH","CRITICAL"],"subtypes":["SEIZURE"]}
+{"id":"ho08","lang":"mfe","text":"Mo tifi inn perdi dan lafoul","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"ho09","lang":"en","hint":"MEDICAL","text":"my daughter has disappeared in the crowd","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"ho10","lang":"en","hint":"HAZARD","text":"a man is lying there not breathing","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["CARDIAC_ARREST"]}
+{"id":"ho11","lang":"en","text":"a teenager cut his hand badly on broken glass, lots of blood","types":["MEDICAL"],"severities":["HIGH","CRITICAL"],"subtypes":["BLEEDING"]}
+{"id":"ho12","lang":"en","text":"an elderly lady seems lost and confused, sitting alone at the bus stop","types":["SIGHTING","FOUND","LOST_PERSON"],"severities":["MEDIUM","HIGH"],"subtypes":["ELDERLY"]}

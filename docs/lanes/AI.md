@@ -26,8 +26,8 @@ Implement `TriageEngine` + `VoiceIo` and return them from `AiModule`. The `TRIAG
 - [~] Kreol keywords (10 `RuleTriageEngineTest` cases pin current EN/FR/Kreol behaviour; native-speaker check still TODO): a Mauritian teammate verifies and extends the list in `RuleTriageEngine`. Add unit tests (`./gradlew :core:test`).
 **Pivot (#30, 17:40 Fri)**
 - [x] B hands-free guided first aid: device-tested on S24U.
-- [~] D crowd-crush early warning: code + tests; needs UI wiring + multi-phone test.
-- [ ] On-device LLM: Gemma 4 E2B (Nano unusable on team phones).
+- [~] D crowd-crush early warning: code + tests, UI wired by Mikhil (#46), contract in core (#49); needs multi-phone test.
+- [~] On-device LLM: Gemma 4 E2B (Nano unusable on team phones). `LiteRtLmBackend` + 7 JVM tests done 18:48; model downloaded; device test pending a phone.
 **P2**
 - [ ] Kreol/French voice input; hazard photo classification (multimodal model) if time allows.
 - [ ] **10:00 Sat: compile all decision logs into a shortlist** for the README.
@@ -73,6 +73,32 @@ _Saved 18:40 Fri by Seeya's session. Branch `lane/ai`, pushed, clean. Last AI me
 
 **Files touched today:** `ai/build.gradle.kts`, `ai/src/main/AndroidManifest.xml`, `ai/src/main/.../{AiModule.kt, triage/*, offload/*, voice/*, guide/*, crowd/*}`, `ai/src/debug/*`, `ai/src/test/*`, `core/.../pipeline/RuleTriageEngine.kt` (+ test), `gradle/libs.versions.toml` (+mlkit-genai-prompt), `docs/TEAM_ROLES.md`, `docs/lanes/AI.md`.
 
+## Decision shortlist draft (for README `## Key decisions`, team picks at 10:00 Sat)
+_Drafted 19:45 Fri from docs/DECISIONS.md, all five lane logs and TRUST's README draft. 10 proposed + 5 on the bench.
+TRUST's draft stopped at 18:05; the main change is adding the evening decisions. All times Fri 13 Nov._
+
+| Time | Decision | Why | Source |
+|---|---|---|---|
+| ~13:05 | Hero user = a parent at Maha Shivaratri (Ganga Talao), not "everyone at events" | A specific Mauritian user with real, measurable network congestion | DECISIONS |
+| ~13:10 | Cut the duress PIN, decoy calculator, cyber-warfare branding and LLM chatbot | Too many features, none finished; they did not serve the user | DECISIONS |
+| ~13:15 | One `Incident` pipeline for lost / sighting / found / medical / hazard / all-clear | One bus to build, test and explain instead of five subsystems | DECISIONS |
+| ~13:25 | The AI **selects** a cited protocol card and never writes medical advice; keyword rules always back it up | No hallucinated instruction can be read aloud, and SOS never depends on a model loading | DECISIONS |
+| 15:35 | **Drop the QR wristband**: the finder answers the guardian's alert, location sealed to the guardian | Same privacy with no hardware or printing; one less thing to fail | DECISIONS / UI |
+| 15:45 → 18:00 | Ship with **no card** for crowd crush, electrical, branch, flood rather than invent one | IFRC has no crush protocol; a confident wrong card is worse than none | TRUST |
+| 16:05 | Tell the whole team (and put it in the README) that simulation-OFF did not yet mean real crypto, instead of fixing it quietly | A privacy claim must be true in the build we submit | TRUST |
+| 16:50 | **Reject a blockchain**; keep Ed25519 signatures + HPKE sealing | A public ledger would expose a child's location and needs connectivity, the one thing a crowd doesn't have | TRUST |
+| 18:04 | AI pivot: stop chasing Kreol accuracy; build **hands-free CPR guidance** and **crowd-crush early warning** | Kreol can't be made accurate without a model or native reviewer; CPR and crush are where lives are lost at Ganga Talao | AI |
+| 18:48 → 19:37 | Gemini Nano unavailable on all our phones → **Gemma 4 E2B on LiteRT-LM**; measured on fixed reports, then added a **severity floor** because the model under-rated severity | Measured, not assumed: S24 Ultra 1.5 s/report; English + French under-triage 9 (rules) → 1 (shipped), with the tuning caveat stated | AI |
+
+**Bench (swap in if the team prefers):**
+| Time | Decision | Why | Source |
+|---|---|---|---|
+| 13:35 | Six Gradle modules, one owner each, fakes behind factories | Five developers in parallel with zero merge conflicts | DECISIONS |
+| 15:32 | Keyword rules can **raise** the model's severity but never lower it | Under-triage is the dangerous error | AI |
+| 17:15 | Beacons carry only the centre of a 25 m cell; crowd density is anonymous | Density without tracking anyone | MESH |
+| 18:50 | Acoustic SOS tones moved to near-ultrasound after the audible version disturbed other teams | Fallback when radio fails, without being a nuisance | MESH |
+| 18:39 | README states the RSSI radar fallback is simulation-only | Nearby Connections exposes no RSSI; honest over impressive | LOCATE |
+
 ## Progress log
 | Time | What |
 |---|---|
@@ -86,6 +112,11 @@ _Saved 18:40 Fri by Seeya's session. Branch `lane/ai`, pushed, clean. Last AI me
 | 18:25 Fri | B device-tested on S24U (all 5 commands). Found+fixed on device: language fallback stuck on en-MU, no offline speech pack (now requested), TTS silent under music (audio focus), "he stop breathing" ended the guide. Nano UNAVAILABLE on S24U too. |
 | 18:33 Fri | D crowd-crush early warning built (CrowdRiskModel + CrowdRiskMonitor, 15 tests, 72 ai tests green). |
 | 18:40 Fri | Saving protocol: handoff rewritten; #35 answered (fix on lane/ai). |
+| 18:46 Fri | PR #41 merged to main (offload, B, D, voice fix); #35 + #1 notified. Gemma 4 E2B model downloaded (2,588,147,712 bytes, size matches HF). |
+| 18:48 Fri | `LiteRtLmBackend` (Gemma via LiteRT-LM, shared engine) + `FirstReadyBackend` (Gemma → Nano) wired in AiModule; GPU native libs declared; 7 new JVM tests green. |
+| 18:55 Fri | Fix: timed-out Gemma call no longer blocks the next SOS (streaming + cancelProcess, +1 test). Pinged Mikhil on #30. |
+| 19:00 Fri | Triage accuracy eval (`ai/eval/`, 32 cases, rules vs model vs shipped). Laptop run blocked by Windows Application Control (WinError 4551) → added on-phone eval mode to the probe. |
+| 19:10 Fri | #30 approved by all lanes → PR #49 merged: guide + crowd contract in `core/`, deprecated aliases in `ai/`. README tech stack + AI disclosure row written (#23), no LLM results claimed yet. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -109,4 +140,11 @@ _Saved 18:40 Fri by Seeya's session. Branch `lane/ai`, pushed, clean. Last AI me
 | 18:25 Fri | Gemini Nano not usable on team phones (S26+ SLSI: download cancelled; S24U: UNAVAILABLE) | AICore eligibility is outside our control | Waiting on AICore updates |
 | 18:33 Fri | D: density alone never exceeds WATCH; WARNING requires a human crowd report; only the Command Center raises alerts | Phone counts are app users only (lower bound) and a packed stage front is normal; one raiser avoids alert storms; merger dedups the rest | Pure density thresholds; every phone raising alerts |
 | 18:33 Fri | D excludes its own alerts by incident id (not just by text) | An LLM re-triaging the alert can rewrite its summary → self-escalation loop | Prefix-only exclusion |
+| 18:44 Fri | Merge lane/ai → main now (PR #41), before Gemma work | #35 (Honor voice) was blocked on it; B/D/offload need integration time before the 08:00 freeze; a Gemma change shouldn't hold back tested work | Waiting to merge everything together with Gemma |
+| 18:48 Fri | **On-device LLM = Gemma 4 E2B via LiteRT-LM** (`gemma-4-E2B-it.litertlm`, Apache 2.0, sideloaded), Gemini Nano kept as second choice via `FirstReadyBackend` | Nano unusable on all team phones; Gemma is not gated, runs on any Android GPU/CPU, Google reports 0.3 s TTFT / ~52 tok/s GPU on S26 Ultra | Qwen3-1.7B (fallback if Gemma fails on device); rules + offload only; the `-gpu.litertlm` file (it is the Web build) |
+| 18:48 Fri | One LLM engine per process, loaded once in the background at startup, shared by triage + guide behind a mutex; `isReady` false while loading | 2.6 GB can't be loaded twice; load takes up to ~10 s and must never block an SOS (rules answer meanwhile) | Lazy load on first SOS (first report would hit the timeout); one engine per feature |
+| 18:55 Fri | Gemma generation streams and is cancelled on timeout (`sendMessageAsync` + `cancelProcess`) | Blocking `sendMessage` kept the shared engine busy after the 6 s timeout, so the next SOS or guide command would queue behind it | Blocking call + separate engine per feature (2× RAM) |
+| 19:00 Fri | Accuracy eval scores the **shipped** path (real prompt, parser, sanitize, rules safety net, 6 s budget) with labels fixed before any run | Judges and we need a number that reflects what the app does, not the raw model; fixing labels first prevents tuning to results | Scoring raw model output; eyeballing a few examples |
+| 19:00 Fri | Do not bypass Windows Application Control to run the eval on the laptop; run it on the phone instead | Security policy on the machine; the phone run also gives real latency/RAM | Disabling Smart App Control (irreversible without reset) |
+| 19:05 Fri | Contract move to `core/` keeps deprecated typealiases at the old `ai/` names | UI had already merged code importing the `ai/` names (#46); aliases avoid breaking `app/` (UI-owned) near the freeze | Moving and breaking imports in the same hour |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |

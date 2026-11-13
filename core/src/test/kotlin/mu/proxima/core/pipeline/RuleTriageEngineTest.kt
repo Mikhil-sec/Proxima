@@ -120,4 +120,33 @@ class RuleTriageEngineTest {
         assertEquals(140, r.summary.length)
         assert(r.summary.startsWith("lots of smoke"))
     }
+
+    // ---- fixes from the v1 on-phone eval (ai/eval/REPORT_v1_baseline.md) ----
+
+    @Test fun lostChild_familyWords() {
+        assertTriage("I can't find my daughter, she is 6", LOST_PERSON, "CHILD", CRITICAL)
+        assertTriage("my son wandered off near the lake", LOST_PERSON, "CHILD", CRITICAL)
+    }
+
+    @Test fun lostChild_beatsWrongButton() {
+        val r = classify("my kid is missing, he's only three", hint = MEDICAL)
+        assertEquals(LOST_PERSON, r.type)
+        assertEquals("CHILD", r.subtype)
+        assertEquals(CRITICAL, r.severity)
+    }
+
+    @Test fun foundChildWhoLostParent_staysFound() {
+        assertEquals(FOUND, classify("found a child, she lost her mum").type)
+    }
+
+    @Test fun frenchSontIsNotAChild() {
+        assertEquals("PERSON", classify("ils sont perdi").subtype)
+    }
+
+    @Test fun v1KeywordGaps() {
+        assertTriage("Il ne respire plus", MEDICAL, "CARDIAC_ARREST", CRITICAL)
+        assertTriage("Un homme fait une crise d'épilepsie", MEDICAL, "SEIZURE", HIGH)
+        assertTriage("people are getting squeezed against the barrier", HAZARD, "CROWD_CRUSH", CRITICAL)
+        assertTriage("Dimounn pe pous pous", HAZARD, "CROWD_CRUSH", CRITICAL)
+    }
 }

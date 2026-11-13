@@ -122,6 +122,8 @@ encryption in the pitch yet. Protocol cards: 9 IFRC cards on main; crowd crush /
 ## Progress log
 | Time | What |
 |---|---|
+| 19:15 Fri | Tab S6 Lite (landscape) on main build: Command Center queue + plan readable; crowd-risk areas + reasons draw; #20 no-card line confirmed; hands-free guide UI works (buttons; no speech pack yet); rotation keeps state. To fix: boot screen says "phone" and stretches full width on tablet |
+| 19:05 Fri | Merged PR #15 (lost & found contract), PR #46 (lane/ui to main), PR #48 (trackFinder fix from LOCATE); #30 wired (guide + crowd risk); posted #53 team sync (19:45 cutoff, one build, M2 sim OFF) |
 | 18:05 Fri | Command Center crowd density from beacons (25 m cells, shade + count); fixed cell projection drift (hatching was offset). Built; tablet review pending (Tab S6 Lite not on the cable) |
 | 17:58 Fri | #8 done: dev sheet "Demo chain" - switch + tap-to-allow phones (MeshDemoControls.allowedNeighbours); verified untick/re-tick on the Honor |
 | 17:55 Fri | Honor light/dark audit: fixed back stack lost on dark-mode/keyboard config change (configChanges), safe green on buttons, missing SIM badges, keyboard hiding "Check alert", "1 hops", stray ListItem boxes, radar labels unreadable in light, truncated home row, dead chip. designCheck 0, lint clean |

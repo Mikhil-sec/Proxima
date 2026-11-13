@@ -156,6 +156,7 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:51 Fri | Phone check S26+ ↔ S23+: restart fix OK (reconnect 7 s); acoustic decodes with MIC source; 4/5 kHz too loud for the venue → 18.0/18.7 kHz near-ultrasound: S26+→S23+ 2/2, S23+→S26+ 0/2 (weak speaker). Phones cleaned up |
 | 19:10 Fri | PR #44 merged (restart fix + ultrasonic acoustic). README MESH section + AI-disclosure row merged (PR #47), #23 answered |
 | 19:15 Fri | Validated #51 on its branch (whole project green), found + fixed the restart/LOST-report gap (PR #54 merged), 👍 #51 with "no mid-session rotation before freeze", told TRUST on #19 that MESH is ready for the found-notice test |
+| 19:30 Fri | Found (no phones) and fixed store flooding by 10 s finder position updates: newest SEALED per (finder, guardian) only (PR #59; merged before CI by a script slip, CI on PR and on main both passed afterwards). 36/36 tests |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |

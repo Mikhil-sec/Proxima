@@ -12,20 +12,20 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    // Triage accuracy eval (ai/eval/README.md): off unless -PproximaEval=export|score is passed.
+    testOptions.unitTests.all {
+        it.systemProperty("proxima.eval", providers.gradleProperty("proximaEval").getOrElse(""))
+    }
 }
 
 dependencies {
     api(project(":core"))
     implementation(libs.kotlinx.coroutines.android)
-    // After the device spike, add exactly ONE on-device LLM runtime:
-    // implementation(libs.litertlm.android)
-    // implementation(libs.mediapipe.tasks.genai)
-
-    // Provisional runtime: Gemini Nano via ML Kit Prompt API (see docs/lanes/AI.md decision log).
-    // LlmTriageEngine only talks to the LlmBackend interface, so a Gemma backend can replace it.
+    // On-device LLM (see docs/lanes/AI.md decision log). LlmTriageEngine only talks to LlmBackend.
+    // Primary: Gemma 4 E2B via LiteRT-LM, model file sideloaded (never in the APK).
+    implementation(libs.litertlm.android)
+    // Secondary: Gemini Nano via ML Kit Prompt API, used only where AICore offers it.
     implementation(libs.mlkit.genai.prompt)
-    // Device spike only (src/debug/ LlmProbeActivity) for the Gemma comparison. Debug builds only.
-    debugImplementation(libs.litertlm.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
