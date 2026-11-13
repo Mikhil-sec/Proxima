@@ -36,53 +36,42 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 5. Direction arrow from UWB needs angle-of-arrival (S23+ yes, S24U no) and >0.3 m; it is median+EMA smoothed; otherwise distance-only.
 
 ## NEXT_SESSION_HANDOFF
-_Updated 17:56 Fri. Branch `lane/locate` = `main` + nothing pending (PR #26 merged 17:50)._
+_Updated 18:53 Fri. `lane/locate` = `main` (PR #39 merged 18:34) + README/lane-doc commits not yet in main._
 
-**State: what works**
-- Onboarded: S23+, @yorvan2401, `gh` logged in (keyring), Android Studio + SDK at default paths, JBR for JAVA_HOME.
-- **UWB device check PASSED 16:07** (S24U controller ↔ S23+ controlee): distance on both (2 m → 2.11–2.15,
-  5 m → 4.95–5.11, ~4 Hz, 0 dropouts). **Azimuth: S23+ yes, S24U NO.** At <0.3 m azimuth = noise.
-  → Demo guardian phone = S23+. Re-run: `bash locate/tools/uwb_check.sh` (both phones on USB, UWB ON, airplane OFF).
-- `AndroidLocateEngine` (in `main`, used when simulation=false): fused GPS 1 s, rotation-vector heading
-  (flat or upright) + declination (true north) + smoothing. `track()` = UWB (<1.5 s) → GPS (<30 s) → RSSI → stale GPS.
-- `UwbRanger`: UWB session over the mesh, signed CONTROL packets channel "uwb" (REQUEST/ACCEPT/STOP);
-  tracker = controller; target auto-answers via responder started in `start()`. Retries 3 s, STOP on cancel.
-- Tests: `RadarMathTest` (6) + `UwbControlTest` (5) green. Full `./gradlew assembleDebug test` green at 17:50.
+**State: what works (verified on phones, simulation OFF)**
+- **UWB radar end-to-end** S23+ (guardian) → S26+ (target) over the real NearbyMeshEngine: TRACK → first `src=UWB` fix 0.5 s,
+  ~3 Hz, aoa=true, **arrow not mirrored** (`UWB_AZIMUTH_SIGN = +1` confirmed). #24 confirmed + commented (MESH may close; we opened it).
+- GPS path on one phone: fixed target 100 m N → `d=100.5 brg=0`, live relative bearing; declination −18.3°.
+- Debug tooling: `LocateDebugTrigger` (adb `mu.proxima.locate.TRACK --es node … [--es lat/lon] / STOP / STATUS`, debug builds only) +
+  `bash locate/tools/radar_test.sh setup|status|track G T [gps]|fixes|stop|simon|cleanup`. Installs side-by-side
+  `mu.proxima.app.locatetest` (via `-I locate/tools/locatetest.init.gradle`), never replaces teammates' apps.
+- In main: `UwbAzimuthFilter` (edge/contact drop → median-5 → EMA → 1.5 s hold; tests replay the real recording),
+  `LocateTargets.helpPoint()` (help-point direction via `track()`), UWB only starts when target is a mesh peer with `hasUwb`.
+- README: LOCATE radar table under *How it works* + AI-disclosure row (on lane branch → next PR). Commented #23.
 
-**State: NOT yet verified**
-- Engine + UWB radar have **never run on a phone** with simulation OFF. Azimuth sign unverified
-  (if the arrow is mirrored, set `RadarMath.UWB_AZIMUTH_SIGN = -1`).
-- #24 (ask MESH to deliver CONTROL "uwb"): reading `NearbyMeshEngine`, it already emits every packet kind on
-  `inbound` + relays + fills `Peer.hasUwb` from beacons → probably already satisfied. Confirm on device, then
-  comment + let MESH close it.
+**State: NOT verified / known gaps**
+- Smoothed arrow (filter) + help-point direction + hasUwb gating **not yet re-run on phones** (built after the phone session).
+- Outdoor 2-phone GPS radar + heading vs a real compass: never done.
+- RSSI fallback is **simulation-only** (real Nearby gives no `rssiDbm`); documented in README, decided not to work around.
+- `app/` doesn't set `MeshBeaconInfo.location` → AI's crowd heatmap empty with sim OFF (asked UI in #40).
 
 **Exact next step**
-1. (no phones) Add a **debug-only adb trigger** in `locate/src/debug/`: a BroadcastReceiver, e.g.
-   `adb shell am broadcast -a mu.proxima.locate.TRACK --es node <nodeId>` → calls `graph.locate.track(...)`
-   and logs every `RadarFix` as `locate fix src=… d=… rel=… prox=…`. Problem to solve: the receiver needs the
-   app's LocateEngine instance. `app/` is UI-owned, so either a static hook in `LocateModule` (debug) or ask UI.
-   MESH did similar: see `mesh/src/main/java/mu/proxima/mesh/MeshDemoControls.kt` + `mesh/tools/mesh_device_test.sh`.
-2. (📱 2 UWB phones, S23+ = guardian) Turn simulation OFF on both: it's SharedPreferences `proxima` /
-   `simulation` (default true), read in `app/.../ProximaApp.kt` → set via `adb shell run-as mu.proxima.app` or
-   ask UI for a toggle. Get node ids from `adb logcat -s Proxima:*` ("mesh start node=…"). Trigger TRACK on
-   S23+ → expect `src=UWB` fixes with distance + arrow. Outdoors: compare heading with a real compass.
-3. Then: help-point direction helper for guided response (TRUST `HelpPointRepository.nearest` + our heading;
-   agree format with UI) → anonymous density grid (`GeoMath.cellKey`, beacons) → venue/assembly points
-   (needs interface-change) → pitch slides with UI by 10:30 Sat.
+1. Open PR `lane/locate` → main (README + lane doc), merge after CI.
+2. (📱 2 phones, ~10 min OUTDOORS) `radar_test.sh setup` → `track <S23+> <other> gps` → compare distance/bearing; check
+   `status` heading against a real compass app. Re-check UWB arrow smoothness indoors. Then `cleanup`.
+3. Watch #40 (UI wiring of help-point arrow + beacon location) and #14/#15 (`trackFinder` fix); help UI if asked.
+4. Remaining: venue/assembly points (needs interface-change), pitch slides with UI by 10:30 Sat, "How my part works" final pass.
 
-**Open items on the bus**
-- #14 (lost&found without wristband): no LOCATE impact; Yorvan to 👍 on GitHub (blocked for Claude).
-- #24 LOCATE→MESH (see above). Diya's S24 Ultra was used for the UWB check and still has our debug build.
+**Open items on the bus**: #40 (LOCATE→UI, open), #14/#15 (voted 👍 18:52 with trackFinder ask), #23 (done), #24 (verified; can close).
 
-**Files touched (all in `main`)**: `locate/build.gradle.kts`, `locate/src/main/AndroidManifest.xml`,
-`locate/src/main/java/mu/proxima/locate/{AndroidLocateEngine,UwbRanger,UwbControl,RadarMath,LocateModule}.kt`,
-`locate/src/test/.../{RadarMathTest,UwbControlTest}.kt`, `locate/src/debug/...UwbCheckActivity.kt` + manifest,
-`locate/tools/uwb_check.sh`, `docs/TEAM_ROLES.md`, this file.
+**Files touched this session**: `locate/src/main/java/mu/proxima/locate/{LocateDebugTrigger,UwbAzimuthFilter,LocateTargets,AndroidLocateEngine}.kt`,
+`locate/src/test/.../{LocateDebugTriggerTest,UwbAzimuthFilterTest,LocateTargetsTest}.kt`, `locate/tools/{radar_test.sh,locatetest.init.gradle}`,
+`README.md` (LOCATE parts only), this file.
 
-**Machine notes**: phone driver = Samsung USB Driver (installed). adb = `$LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe`
-(not on PATH). `gh` = `/c/Program Files/GitHub CLI/gh.exe` (not on PATH in Claude's shell). Reading `build/` is denied:
-judge tests by Gradle's BUILD SUCCESSFUL. Installing our build on a teammate's phone replaces theirs (signature
-mismatch → uninstall first, tell them to reinstall).
+**Machine/phone notes**: adb = `$LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe`, gh = `/c/Program Files/GitHub CLI/gh.exe` (neither on PATH).
+Samsung Device Care suspends idle debug apps ("paused" screen) → `adb shell pm unsuspend --user 0 <pkg>` (setup does it).
+Teammate phones replugged often default to **USB "charging only"** → adb sees nothing; switch to file transfer.
+Chanum's S26+ (SM-S947B, API 37) has UWB + AoA support flag; comma-decimal locale. Node ids change on every reinstall.
 
 ## Progress log
 | Time | What |
@@ -95,13 +84,14 @@ mismatch → uninstall first, tell them to reinstall).
 | 16:30 Fri | Opened #24 (LOCATE→MESH: deliver CONTROL "uwb"); PR #26 opened |
 | 17:50 Fri | Merged latest main (MESH real engine, TRUST, AI), resolved TEAM_ROLES conflict, full build+tests green, **PR #26 merged** |
 | 17:56 Fri | Saving protocol: handoff + how-my-part-works written |
-| 18:20 Fri | Debug adb radar trigger (TRACK/STOP/STATUS) + `locate/tools/radar_test.sh`; build + tests green, merged latest main |
+| 18:00 Fri | Debug adb radar trigger (TRACK/STOP/STATUS) + `locate/tools/radar_test.sh`; build + tests green, merged latest main |
 | 18:10 Fri | **UWB radar proven on phones, simulation OFF** (S23+ guardian → S26+ target over the real mesh): TRACK → first `src=UWB` fix in 0.5 s, aoa=true, ~3 Hz, d 0.21–0.31 m side by side; arrow hidden <0.3 m as designed. CONTROL "uwb" delivered by NearbyMeshEngine (#24 satisfied) |
 | 18:16 Fri | UWB arrow check (S23+ flat, S26+ at ~1.7 m): ahead → rel ≈ +5…+20°, 45° right → ≈ +30…+40°, 45° left → ≈ 340…350° (−10…−20°). **Sign correct, not mirrored** (`UWB_AZIMUTH_SIGN` stays +1). Angles compressed/biased ~+8° and raw azimuth jitters (single ±40° spikes, a few exact 270° values) → needs smoothing + outlier rejection before the UI arrow |
-| 18:25 Fri | #24 confirmed on phones + commented; merged main (MESH dbb943e: no store-and-forward for CONTROL, fine with our 3 s retry). Test builds removed from S23+ and Chanum's S26+ |
-| 18:40 Fri | `UwbAzimuthFilter` (edge/contact rejection → median-5 → EMA → 1.5 s hold) wired into `track()`; 5 tests replay the real 18:14 recording (max arrow step 138° raw → <25°); locate tests green |
-| 18:50 Fri | Help-point direction: `LocateTargets.helpPoint(HelpPoint)` → reuse `track()` (GPS + compass, live relative bearing); UWB now starts only once the target is a mesh peer with `hasUwb` (no REQUEST flood for help points / non-UWB phones). Build + tests green |
-| 19:05 Fri | PR #39 merged (CI green). Asked UI in #40 (help-point arrow + wire `MeshBeaconInfo.location`). README radar section + AI-disclosure row written (#23) |
+| 18:27 Fri | #24 confirmed on phones + commented; merged main (MESH dbb943e: no store-and-forward for CONTROL, fine with our 3 s retry). Test builds removed from S23+ and Chanum's S26+ |
+| 18:30 Fri | `UwbAzimuthFilter` (edge/contact rejection → median-5 → EMA → 1.5 s hold) wired into `track()`; 5 tests replay the real 18:14 recording (max arrow step 138° raw → <25°); locate tests green |
+| 18:31 Fri | Help-point direction: `LocateTargets.helpPoint(HelpPoint)` → reuse `track()` (GPS + compass, live relative bearing); UWB now starts only once the target is a mesh peer with `hasUwb` (no REQUEST flood for help points / non-UWB phones). Build + tests green |
+| 18:40 Fri | PR #39 merged (CI green). Asked UI in #40 (help-point arrow + wire `MeshBeaconInfo.location`). README radar section + AI-disclosure row written (#23) |
+| 18:53 Fri | Reviewed #14/#15 for LOCATE: 👍 + non-blocking `trackFinder` fix (newest `atMs`, same finder). Saving protocol |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -117,11 +107,13 @@ mismatch → uninstall first, tell them to reinstall).
 | 16:15 Fri | UWB session setup over the mesh (signed CONTROL "uwb" REQUEST/ACCEPT/STOP), tracker = controller, target auto-answers | No pairing screen for a panicking parent; reuses the one pipeline/wire format | Separate BLE GATT exchange; manual pairing UI |
 | 16:15 Fri | Per-session random static-STS key sent in the signed (not sealed) CONTROL payload | TrackTarget has no recipient key to seal to; key is single-use and carries no location/personal data | Fixed key (replayable); sealing (needs contract change) |
 | 17:55 Fri | Device-test the radar via a debug-only adb trigger instead of waiting for the UI radar screen | Lets M1 "engine real" be proven today; same pattern MESH used | Waiting for UI's radar screen |
-| 18:15 Fri | Trigger is a receiver registered by `AndroidLocateEngine.start()`, runtime-gated on FLAG_DEBUGGABLE | Has the live engine instance with no static hook and no edit to UI-owned `app/`; identical to MESH's PING | Static engine hook in `LocateModule` + manifest receiver in `src/debug`; asking UI to expose the graph |
+| 17:58 Fri | Trigger is a receiver registered by `AndroidLocateEngine.start()`, runtime-gated on FLAG_DEBUGGABLE | Has the live engine instance with no static hook and no edit to UI-owned `app/`; identical to MESH's PING | Static engine hook in `LocateModule` + manifest receiver in `src/debug`; asking UI to expose the graph |
 | 18:08 Fri | Device tests install a side-by-side `mu.proxima.app.locatetest` (Gradle `-I locate/tools/locatetest.init.gradle`) | Teammates' builds are signed with other debug keys: installing over them fails, and uninstalling wipes their data | Uninstalling teammates' app; editing UI-owned `app/build.gradle.kts` |
 | 18:17 Fri | Keep `UWB_AZIMUTH_SIGN = +1` | Measured: target to the right gives positive azimuth on S23+ | Flipping to −1 |
-| 18:40 Fri | Clean UWB azimuth with median-of-5 + EMA, drop |az| ≥ 85° and < 0.3 m, hide arrow after 1.5 s without a good angle | Recorded data had single ±40° spikes and exact −90° "don't know" values; median kills spikes without the lag a heavy EMA would add; a stale arrow is worse than none | Raw azimuth (flickers); EMA only (spikes still drag the arrow); Kalman filter (overkill for the deadline) |
-| 18:50 Fri | Help-point direction = a static `TrackTarget` on the existing radar, no new API | One radar for child, finder and help point ("one feature, many uses"); no `core/` interface change; UI gets distance + live turn arrow + proximity for free | New `LocateEngine.directionTo(point)` (contract change); UI computing bearing − heading itself (duplicates heading logic) |
-| 18:50 Fri | Start UWB ranging only when the target is a mesh peer advertising `hasUwb` | Otherwise every track() of a help point or non-UWB phone sends a CONTROL REQUEST over the mesh every 3 s forever | Always try UWB (mesh spam); a node-id prefix check only (misses non-UWB phones) |
-| 19:00 Fri | Drop the LOCATE density grid | AI's `CrowdRiskEngine` (#30) already buckets `mesh.peers[].location` into the same 25 m cells for the Command Center; two would be a parallel system | Building `DensityGrid` in locate |
-| 19:00 Fri | README states RSSI fallback is simulation-only | Real `NearbyMeshEngine` never fills `Peer.rssiDbm` (Nearby Connections exposes no RSSI); judges reward honest limits | Claiming warmer/colder on all phones |
+| 18:29 Fri | Clean UWB azimuth with median-of-5 + EMA, drop |az| ≥ 85° and < 0.3 m, hide arrow after 1.5 s without a good angle | Recorded data had single ±40° spikes and exact −90° "don't know" values; median kills spikes without the lag a heavy EMA would add; a stale arrow is worse than none | Raw azimuth (flickers); EMA only (spikes still drag the arrow); Kalman filter (overkill for the deadline) |
+| 18:31 Fri | Help-point direction = a static `TrackTarget` on the existing radar, no new API | One radar for child, finder and help point ("one feature, many uses"); no `core/` interface change; UI gets distance + live turn arrow + proximity for free | New `LocateEngine.directionTo(point)` (contract change); UI computing bearing − heading itself (duplicates heading logic) |
+| 18:31 Fri | Start UWB ranging only when the target is a mesh peer advertising `hasUwb` | Otherwise every track() of a help point or non-UWB phone sends a CONTROL REQUEST over the mesh every 3 s forever | Always try UWB (mesh spam); a node-id prefix check only (misses non-UWB phones) |
+| 18:37 Fri | Drop the LOCATE density grid | AI's `CrowdRiskEngine` (#30) already buckets `mesh.peers[].location` into the same 25 m cells for the Command Center; two would be a parallel system | Building `DensityGrid` in locate |
+| 18:39 Fri | README states RSSI fallback is simulation-only | Real `NearbyMeshEngine` never fills `Peer.rssiDbm` (Nearby Connections exposes no RSSI); judges reward honest limits | Claiming warmer/colder on all phones |
+| 18:52 Fri | 👍 #14 (lost & found without wristband), fix to `trackFinder` as a non-blocking ask | Finder id = mesh node id, so the radar/UWB path works unchanged; only ordering/multi-finder mixing is wrong, and it's small and in `core` | Blocking #15 until fixed (would stall UI's lost-child flow) |
+| 18:52 Fri | Don't build a beacon-cell fallback for the missing RSSI | Needs UI's beacon wiring, only says "within ~25 m", and shows an unsealed location on the radar; on stage UWB carries the demo | Beacon-cell coarse radar |
