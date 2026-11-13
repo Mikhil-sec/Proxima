@@ -185,6 +185,7 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 20:43 Fri | No M2 results posted yet (README result pending). AI delivered its README sections; only UI owes #23. 👍 on MESH #69 (roles in beacons) and #61 (friend tag in beacons) after checking both against the TRUST rules. |
 | 20:47 Fri | **Role mode merged (#72)**: stable identity for role phones, laptop pass issuer with a check against the shipped public key (smoke run proved the key pair matches), adb delivery. 101/101. Wiring line + adb steps on #55. |
 | 20:49 Fri | Saving protocol. No M2 results posted yet. Corrected two log times that had been written ahead of the clock. |
+| 20:51 Fri | Session resumed. Context7 confirmed (`/tink-crypto/tink`); it still documents no replacement for the 2 deprecated `TinkProtoKeysetFormat` calls, so they stay (wire format must not change before freeze). No M2 results, so no TRUST fix is due. Asked the lead on #53 for the S24 friend-storage test run; #23 chased (only UI owes a section). |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
