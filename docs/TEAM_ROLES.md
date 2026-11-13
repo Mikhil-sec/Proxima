@@ -8,7 +8,7 @@ Each member fills in their own GitHub @ and actual phone in their first PR.
 | Lane | Member | GitHub @ | Phone | Why this phone | Issue |
 |---|---|---|---|---|---|
 | **UI** + Command Center (+ extra tasks) | **Mikhil** (Member 1, lead) | @Mikhil-sec | Honor X8b + Tab S6 Lite | Tablet = Command Center; Honor = Tier 2 scout UX | #2 |
-| **LOCATE** (radar, UWB, position) | **Yorvan** (Member 2) | | Galaxy S26+ (recommended) | UWB + newest sensors | #5 |
+| **LOCATE** (radar, UWB, position) | **Yorvan** (Member 2) | @yorvan2401 | Galaxy S23+ | UWB + newest sensors | #5 |
 | **MESH** (Nearby, relay) | **Chanum** (Member 3) | | Galaxy S23+ (recommended) | Tier 1 relay; UWB partner for LOCATE tests | #3 |
 | **AI** (triage, voice) | **Seeya** (Member 4) | | Galaxy S24 Ultra (recommended) | Strongest on-device LLM (12 GB) | #4 |
 | **TRUST** (crypto, QR, dataset) | **Diya** (Member 5) | | Galaxy A56 (recommended) | Tier 2: proves crypto + QR run on mid-range | #6 |
