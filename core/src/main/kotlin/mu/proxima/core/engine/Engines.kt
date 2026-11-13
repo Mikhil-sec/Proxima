@@ -109,6 +109,35 @@ interface TrustEngine {
      */
     fun verifyRoleClaim(pass: RolePass, packet: MeshPacket, nowMs: Long): Boolean = false
 
+    // ---------- Friend find (#38 item 3). Defaults = feature off, so the fake and simulation are unchanged. ----------
+
+    /**
+     * Tag to put in this node's beacon at [atMs]. Rotates every 10 minutes and is derived from a secret only this
+     * node's paired friends hold, so bystanders cannot link two windows and nobody broadcasts a search.
+     */
+    fun beaconTag(atMs: Long): String? = null
+
+    /** The local label of the paired friend whose beacon carried [tag] (current or adjacent window), else null. */
+    fun matchFriend(tag: String, atMs: Long): String? = null
+
+    /** Six digits both phones show for the pair (this node, [peerKey]). Users confirm they match before pairing. */
+    fun pairingCode(peerKey: String): String? = null
+
+    /** This node's beacon secret sealed to [peerKey]. Send only after both screens showed the same [pairingCode]. */
+    fun friendInvite(peerKey: String): String? = null
+
+    /**
+     * Stores a friend from the invite [peerKey] sealed to this node. [label] is a local nickname that never leaves
+     * the phone. False if the invite does not open or was not made by [peerKey].
+     */
+    fun acceptFriend(peerKey: String, sealedInvite: String, label: String): Boolean = false
+
+    /** Local labels of paired friends. */
+    fun friends(): List<String> = emptyList()
+
+    /** Forget a friend on this phone. To stop THEM finding you, see the engine's own secret rotation. */
+    fun removeFriend(label: String) = Unit
+
     /** Guardian side: mint a new wristband tag bound to this phone's key. */
     fun createWristband(): WristbandTag
     /** Tags this phone minted (so it knows which FoundNotices are its own). */
