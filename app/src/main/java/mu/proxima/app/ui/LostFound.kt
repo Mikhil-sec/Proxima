@@ -25,7 +25,9 @@ class LostFound(private val graph: ProximaGraph) {
 
     /** Records a notice; true the first time we hear about this lost report (time to interrupt the guardian). */
     fun onNotice(notice: FoundNotice): Boolean {
-        notices[notice.tagId] = notice
+        // Store-and-forward can flush older notices after newer ones (#14): keep the newest, so the radar never jumps back.
+        val known = notices[notice.tagId]
+        if (known == null || notice.atMs >= known.atMs) notices[notice.tagId] = notice
         return alerted.add(notice.tagId)
     }
 

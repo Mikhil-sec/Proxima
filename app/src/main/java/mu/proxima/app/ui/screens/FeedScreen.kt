@@ -189,8 +189,10 @@ fun IncidentSheet(
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     var protocol by remember { mutableStateOf<ProtocolCard?>(null) }
+    var protocolChecked by remember { mutableStateOf(false) }
     LaunchedEffect(i.id) {
         protocol = runCatching { (i.protocolId?.let { graph.protocols.byId(it) }) ?: graph.protocols.bestFor(i.type, i.subtype) }.getOrNull()
+        protocolChecked = true
     }
     val (fill, onFill) = i.severity.fill()
 
@@ -236,6 +238,16 @@ fun IncidentSheet(
                 item {
                     Spacer(Modifier.height(MaterialTheme.spacing.xs))
                     Text("Source: ${card.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            // No vetted card (e.g. crowd crush, #20): say so plainly instead of inventing steps or leaving a gap.
+            if (protocolChecked && protocol == null && i.type != IncidentType.LOST_PERSON) {
+                item {
+                    Spacer(Modifier.height(MaterialTheme.spacing.lg))
+                    Text(
+                        "No first-aid steps for this alert. Stay clear and tell a steward.",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
                 }
             }
             item {
