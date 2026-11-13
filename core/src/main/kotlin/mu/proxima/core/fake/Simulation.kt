@@ -22,6 +22,7 @@ import mu.proxima.core.engine.TrustEngine
 import mu.proxima.core.engine.VoiceIo
 import mu.proxima.core.model.DeviceTier
 import mu.proxima.core.model.FixSource
+import mu.proxima.core.model.FoundNotice
 import mu.proxima.core.model.GeoMath
 import mu.proxima.core.model.GeoPoint
 import mu.proxima.core.model.HelpCategory
@@ -38,6 +39,7 @@ import mu.proxima.core.model.Proximity
 import mu.proxima.core.model.RadarFix
 import mu.proxima.core.model.RankedHelpPoint
 import mu.proxima.core.model.RawReport
+import mu.proxima.core.model.Severity
 import mu.proxima.core.model.TrackTarget
 import mu.proxima.core.model.Transport
 import mu.proxima.core.model.VoiceEvent
@@ -142,6 +144,43 @@ class FakeMeshEngine(private val scope: CoroutineScope) : MeshEngine {
         peers.filter { !it.direct }.forEach { far ->
             val via = peers.filter { it.direct }.randomOrNull() ?: return@forEach
             _hops.tryEmit(HopEvent(packet.packetId, packet.kind, packet.severity, via.nodeId, far.nodeId, System.currentTimeMillis()))
+        }
+        if (packet.kind == PacketKind.INCIDENT) {
+            val incident = runCatching { ProximaJson.decodeFromString(Incident.serializer(), packet.payload) }.getOrNull()
+            if (incident?.type == IncidentType.LOST_PERSON) simulateFinder(incident, packet.originKey)
+        }
+    }
+
+    /**
+     * Lost & found rehearsal on one phone: ~12 s after this phone reports a LOST_PERSON, a simulated peer
+     * "is with them" and sends sealed FoundNotices every 2 s, drifting toward you so the radar closes in.
+     * The sealed format mirrors FakeTrustEngine.seal (SIM only).
+     */
+    private fun simulateFinder(lost: Incident, guardianKey: String) = scope.launch {
+        delay(12_000)
+        val finder = _peers.value.filter { it.direct }.randomOrNull() ?: return@launch
+        var pos = finder.location ?: GeoMath.offset(SIM_VENUE_CENTER, 50.0, 70.0)
+        repeat(60) {
+            if (!_running.value) return@launch
+            val notice = FoundNotice(lost.id, finder.nodeId, pos, landmark = "Near the food stalls", atMs = System.currentTimeMillis())
+            val json = ProximaJson.encodeToString(FoundNotice.serializer(), notice)
+            _hops.tryEmit(HopEvent("sim-found", PacketKind.SEALED, Severity.CRITICAL, finder.nodeId, selfNodeId, System.currentTimeMillis()))
+            _inbound.tryEmit(
+                MeshPacket(
+                    packetId = UUID.randomUUID().toString(), kind = PacketKind.SEALED, originNodeId = finder.nodeId,
+                    originKey = "SIMKEY-${finder.nodeId}", createdAtMs = notice.atMs, severity = Severity.CRITICAL,
+                    ttl = Severity.CRITICAL.hopBudget - 1, hopCount = 1, path = listOf(finder.nodeId),
+                    payload = "SIMSEALED|$guardianKey|" + Base64.getEncoder().encodeToString(json.encodeToByteArray()),
+                    recipientKey = guardianKey, signature = "SIM",
+                )
+            )
+            // Close ~4 m toward the venue centre each update, so the guardian's radar visibly converges.
+            val d = GeoMath.distanceM(pos, SIM_VENUE_CENTER)
+            if (d > 3) {
+                val b = Math.toRadians(GeoMath.bearingDeg(pos, SIM_VENUE_CENTER))
+                pos = GeoMath.offset(pos, 4.0 * kotlin.math.sin(b), 4.0 * kotlin.math.cos(b))
+            }
+            delay(2_000)
         }
     }
 

@@ -16,9 +16,12 @@ data class FskConfig(
     val sampleRate: Int = 48_000,
     /** 20 ms per bit = 50 bit/s. Long symbols survive indoor echoes and phone-speaker ringing. */
     val symbolSamples: Int = 960,
-    /** 4–5 kHz: above most crowd/voice energy, still loud on small phone speakers. Multiples of 50 Hz = exact DFT bins. */
-    val markHz: Double = 5_000.0,
-    val spaceHz: Double = 4_000.0,
+    /**
+     * 18.0 / 18.7 kHz near-ultrasound (19.5 kHz did not reach the S26+ mic from the S23+): inaudible to most adults, so it doesn't disturb anyone (4–5 kHz was piercing,
+     * 18:48 Fri). Range is shorter (phone speakers roll off up here). Multiples of 50 Hz = exact DFT bins.
+     */
+    val markHz: Double = 18_700.0,
+    val spaceHz: Double = 18_000.0,
     val amplitude: Float = 0.8f,
     val preambleBits: Int = 16,
     val maxPayloadBytes: Int = 32,
@@ -48,8 +51,8 @@ class FskModem(val config: FskConfig = FskConfig()) {
             }
             phase %= 2 * PI
         }
-        // 5 ms raised-cosine fade in/out of the whole burst (no speaker pop).
-        val ramp = minOf(config.sampleRate / 200, out.size / 2)
+        // 20 ms raised-cosine fade in/out of the whole burst: no audible click at start/end of an inaudible tone.
+        val ramp = minOf(config.sampleRate / 50, out.size / 2)
         for (s in 0 until ramp) {
             val g = (0.5 - 0.5 * cos(PI * s / ramp)).toFloat()
             out[s] *= g
@@ -121,6 +124,16 @@ class FskModem(val config: FskConfig = FskConfig()) {
     /** true = mark tone stronger than space tone in this symbol window (Goertzel). */
     private fun symbolBit(x: FloatArray, from: Int): Boolean =
         goertzel(x, from, config.symbolSamples, config.markHz) > goertzel(x, from, config.symbolSamples, config.spaceHz)
+
+    /** Diagnostics: mean power at [hz] over [x] in dBFS-ish (10·log10), for device-check logs. */
+    fun toneDb(x: FloatArray, len: Int, hz: Double): Double {
+        val n = config.symbolSamples
+        var sum = 0.0
+        var count = 0
+        var from = 0
+        while (from + n <= len) { sum += goertzel(x, from, n, hz) / (n.toDouble() * n / 4); count++; from += n }
+        return if (count == 0) -200.0 else 10 * kotlin.math.log10(sum / count + 1e-20)
+    }
 
     private fun goertzel(x: FloatArray, from: Int, len: Int, hz: Double): Double {
         val coeff = 2 * cos(2 * PI * hz / config.sampleRate)
