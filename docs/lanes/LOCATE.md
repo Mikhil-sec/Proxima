@@ -56,7 +56,7 @@ _Updated 18:53 Fri. `lane/locate` = `main` (PR #39 merged 18:34) + README/lane-d
 - `app/` doesn't set `MeshBeaconInfo.location` → AI's crowd heatmap empty with sim OFF (asked UI in #40).
 
 **Exact next step**
-1. Open PR `lane/locate` → main (README + lane doc), merge after CI.
+1. ~~Open PR lane/locate → main~~ done 19:00 (#42 merged).
 2. (📱 2 phones, ~10 min OUTDOORS) `radar_test.sh setup` → `track <S23+> <other> gps` → compare distance/bearing; check
    `status` heading against a real compass app. Re-check UWB arrow smoothness indoors. Then `cleanup`.
 3. Watch #40 (UI wiring of help-point arrow + beacon location) and #14/#15 (`trackFinder` fix); help UI if asked.
@@ -92,6 +92,7 @@ Chanum's S26+ (SM-S947B, API 37) has UWB + AoA support flag; comma-decimal local
 | 18:31 Fri | Help-point direction: `LocateTargets.helpPoint(HelpPoint)` → reuse `track()` (GPS + compass, live relative bearing); UWB now starts only once the target is a mesh peer with `hasUwb` (no REQUEST flood for help points / non-UWB phones). Build + tests green |
 | 18:40 Fri | PR #39 merged (CI green). Asked UI in #40 (help-point arrow + wire `MeshBeaconInfo.location`). README radar section + AI-disclosure row written (#23) |
 | 18:53 Fri | Reviewed #14/#15 for LOCATE: 👍 + non-blocking `trackFinder` fix (newest `atMs`, same finder). Saving protocol |
+| 19:00 Fri | New session: merged main (#41), build + locate tests green, **PR #42 merged** (README radar + lane doc). Reviewed UI's RadarScreen (lane/ui) against `RadarFix`: compatible; posted ±0 m accuracy-label nit on #40 |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
