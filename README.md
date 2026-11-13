@@ -63,6 +63,24 @@ Everything is one `Incident` on one pipeline — lost person, sighting, found, m
 The same radar also points to the nearest help point in guided response (GPS + compass; a help point is just a
 target that never moves).
 
+**The mesh, honestly: what we measured on phones** (13 Nov, simulation off, airplane mode with Bluetooth + Wi-Fi on)
+
+Every phone runs Google Nearby Connections (`P2P_CLUSTER`), advertising and discovering at the same time. A packet is
+dropped if its id was seen before (Room table, so this survives a restart). Otherwise it is shown and forwarded to every
+*other* neighbour, with `ttl − 1` and the relay appended to its path, so it never travels back the way it came.
+| What | Phones | What we measured |
+|---|---|---|
+| **Link** | S26+ ↔ S23+ | First connection ~6 s after launch; packets both ways in ~0.2 s |
+| **Multi-hop** | S26+ → Honor X8b → S23+ | Chain forced with a neighbour allow-list (so it also works with all phones in one room). Relayed packets arrive with `hops=1` in **0.09–0.17 s**. This was a 3-phone chain with **one relay**. Hop budgets 3 / 5 / 7 / 10 by severity are unit-tested but **not measured beyond one relay**. |
+| **Screen off** | Honor X8b as relay | Kept relaying with its screen off (tested ~80 s, Doze), thanks to a foreground service |
+| **Recovery** | 2–3 phones | Radio off for 15 s: link back in **31 s**. Peer app restarted: reconnected under its new id in **7 s**. |
+| **Store-and-forward** | 2 phones | Live alerts are kept 30 min and re-sent, most severe first, to any phone that connects later. **Confirmed after an app restart.** |
+| **Dedup** | (unit tests) | A seen packet id is dropped, including after a restart. Unit-tested; we did not count duplicates separately on phones. |
+| **Acoustic fallback** (off by default) | S26+ → S23+ | With no radio link at all, a 16-byte SOS is sent as **near-ultrasound (18.0 / 18.7 kHz)**, inaudible to most adults, and lasts 3.7 s. It decoded **2/2 at table distance**, S26+ → S23+. **The reverse direction failed (0/2):** the S23+ speaker is too weak that high. It arrives unsigned, so it is shown as *unverified*, and it is re-sent over the radio mesh once a link returns. |
+
+**Not measured:** range outdoors, chains longer than 3 phones, and behaviour with dozens of phones. Nearby caps
+connections per phone, so a large crowd forms a partial mesh, and relaying is what covers the gaps.
+
 <!-- UI: architecture diagram here. Source: docs/ARCHITECTURE.md -->
 
 ## Data sources
@@ -132,7 +150,8 @@ AGP 9.5.1 · Kotlin 2.4.21 · Gradle 9.9.1 · minSdk 26 · compileSdk 37.
 | Claude Code (Anthropic) | Project scaffolding, shared interfaces, docs; each lane lists further use below |
 | Claude Code — TRUST lane | Wrote the OSM tag-mapping and ranking code, the protocol-selection logic and all 22 unit tests; drove the Overpass fetch. The IFRC protocol steps were **transcribed by hand from the published PDF**, deliberately not generated — and no medical step was written by a model. |
 | Claude Code — LOCATE lane | Wrote the radar engine (GPS, compass heading, UWB session over the mesh), the arrow filter and all LOCATE unit tests, plus the adb device-test tools. Every claim in the radar table above comes from logs on real phones, not from the model; the member placed the phones and judged the arrow direction. |
-<!-- UI / MESH / AI: add your row -->
+| Claude Code — MESH lane | Wrote the Nearby mesh engine (relay, dedup, reconnect backoff, store-and-forward, beacons, allow-list), the acoustic modem and all 34 MESH unit tests (including synthetic-audio tests for noise, echo and clock drift), plus the adb device-test script. The member ran every phone test, chose to install test builds side by side so teammates' phones kept their data, and moved the acoustic tones to near-ultrasound after the audible version disturbed other teams. Every number in the mesh table comes from phone logs. |
+<!-- UI / AI: add your row -->
 
 ## Key decisions
 
