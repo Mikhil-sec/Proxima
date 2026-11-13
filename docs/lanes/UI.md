@@ -125,6 +125,7 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 | 14:40 Fri | Onboarded: build OK, `lane/ui` pushed, M0 wiring check runs on Honor X8b (sim=true, 6 peers) |
 | 14:45 Fri | Design plan + anti-slop checklist + mobile UI guidelines written (this file) |
 | 14:55 Fri | First full UI pass compiles: Home/SOS, Report, Feed, Command Center, Boot, Dev sheet, Wristbands, Finder. Requests #7 TRUST, #8 MESH, #9 AI, interface-change #10 |
+| 15:05 Fri | On-device review (Honor): SOS hold → voice ring → review → auto-send → "Alert sent, passed to 3 phones" works. Fixed: SOS label, truncated links, "Lost child" titles, duplicate kicker, Sending label |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |

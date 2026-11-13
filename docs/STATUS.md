@@ -7,14 +7,14 @@
 ## Lane board
 | Lane | Owner | State | Real or fake in app | Blocker |
 |---|---|---|---|---|
-| UI | Mikhil | not started | wiring check only | — |
+| UI | Mikhil | P0 screens on Honor (SOS→review→sent verified on device) | real UI over fakes | TRUST #7 scanner/QR |
 | MESH | Chanum | not started | FakeMeshEngine | — |
 | AI | Seeya | not started | RuleTriageEngine (real rules) + FakeVoiceIo | LLM runtime check |
 | LOCATE | Yorvan | not started | FakeLocateEngine | UWB check |
 | TRUST | Diya | not started | FakeTrustEngine + empty dataset | Overpass API was overloaded at 13:40; retry script |
 
 ## Milestones
-- [ ] M0 Onboarded (14:30) · [ ] Device checks (15:00) · [ ] M1 Engines real (18:00)
+- [ ] M0 Onboarded (14:30; UI ✅) · [ ] Device checks (15:00) · [ ] M1 Engines real (18:00)
 - [ ] M2 End-to-end, sim OFF (23:00) · [ ] M3 Full story (04:00) · [ ] FREEZE (08:00) · [ ] Submitted (12:00)
 
 ## Submission pack
