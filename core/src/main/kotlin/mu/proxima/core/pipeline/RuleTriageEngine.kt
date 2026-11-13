@@ -71,6 +71,16 @@ class RuleTriageEngine : TriageEngine {
 
     override suspend fun triage(report: RawReport): TriageResult = classify(report)
 
+    /** CHILD / ELDERLY / PERSON from the words, for lost-person, sighting and found reports. Also used by the LLM sanitiser. */
+    fun personSubtype(text: String): String {
+        val t = text.lowercase()
+        return when {
+            childWords.anyWordIn(t) -> "CHILD"
+            elderWords.anyWordIn(t) -> "ELDERLY"
+            else -> "PERSON"
+        }
+    }
+
     fun classify(report: RawReport): TriageResult {
         val text = report.text.lowercase()
         // #16: a panicking user can tap the wrong quick button. The button keeps its type unless the
@@ -90,11 +100,7 @@ class RuleTriageEngine : TriageEngine {
         var severity = if (match?.type == type) match.severity else Severity.MEDIUM
 
         if (type == IncidentType.LOST_PERSON || type == IncidentType.SIGHTING || type == IncidentType.FOUND) {
-            subtype = when {
-                childWords.anyWordIn(text) -> "CHILD"
-                elderWords.anyWordIn(text) -> "ELDERLY"
-                else -> "PERSON"
-            }
+            subtype = personSubtype(text)
             if (type == IncidentType.LOST_PERSON && subtype == "CHILD") severity = Severity.CRITICAL
         }
 

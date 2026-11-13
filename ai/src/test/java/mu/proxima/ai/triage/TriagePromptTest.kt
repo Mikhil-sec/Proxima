@@ -62,7 +62,9 @@ class TriagePromptTest {
             report("help my son is gone", hint = IncidentType.LOST_PERSON),
         )!!
         assertEquals(IncidentType.LOST_PERSON, r.type)
-        assertEquals("PERSON", r.subtype) // MEDICAL subtype is not valid for LOST_PERSON
+        // MEDICAL subtype is not carried over; the words ("my son") make it a lost child, which is CRITICAL.
+        assertEquals("CHILD", r.subtype)
+        assertEquals(Severity.CRITICAL, r.severity)
     }
 
     @Test fun criticalModelTypeBeatsWrongButton_issue16() {
@@ -136,5 +138,39 @@ class TriagePromptTest {
         val merged = TriageMerge.merge(llm, rules)
         assertEquals("CHILD", merged.subtype)
         assertEquals(Severity.CRITICAL, merged.severity)
+    }
+
+    // ---- severity floor by subtype (v2 eval: model picks the subtype well, under-rates severity) ----
+
+    private fun parsed(json: String, text: String = "x", hint: IncidentType? = null) = TriagePrompt.parse(json, report(text, hint))!!
+
+    @Test fun floor_raisesUnderRatedCriticalSubtypes() {
+        assertEquals(Severity.CRITICAL, parsed("""{"type":"MEDICAL","severity":"HIGH","subtype":"UNCONSCIOUS"}""").severity)
+        assertEquals(Severity.CRITICAL, parsed("""{"type":"HAZARD","severity":"HIGH","subtype":"CROWD_CRUSH"}""").severity)
+        assertEquals(Severity.HIGH, parsed("""{"type":"MEDICAL","severity":"MEDIUM","subtype":"SEIZURE"}""").severity)
+    }
+
+    @Test fun floor_neverLowers_andLeavesOtherSubtypes() {
+        assertEquals(Severity.CRITICAL, parsed("""{"type":"MEDICAL","severity":"CRITICAL","subtype":"BLEEDING"}""").severity)
+        assertEquals(Severity.MEDIUM, parsed("""{"type":"MEDICAL","severity":"MEDIUM","subtype":"FRACTURE"}""").severity)
+        assertEquals(Severity.LOW, parsed("""{"type":"ALL_CLEAR","severity":"LOW"}""").severity)
+    }
+
+    @Test fun lostPerson_wordsSayChild_isCriticalChild() {
+        val r = parsed("""{"type":"LOST_PERSON","severity":"HIGH","subtype":"PERSON"}""", text = "please help, my little boy is gone")
+        assertEquals("CHILD", r.subtype)
+        assertEquals(Severity.CRITICAL, r.severity)
+    }
+
+    @Test fun lostPerson_adult_staysPerson() {
+        val r = parsed("""{"type":"LOST_PERSON","severity":"HIGH","subtype":"PERSON"}""", text = "my friend is missing")
+        assertEquals("PERSON", r.subtype)
+        assertEquals(Severity.HIGH, r.severity)
+    }
+
+    @Test fun flooredCritical_beatsWrongButton() {
+        val r = parsed("""{"type":"MEDICAL","severity":"HIGH","subtype":"UNCONSCIOUS"}""", text = "someone collapsed", hint = IncidentType.LOST_PERSON)
+        assertEquals(IncidentType.MEDICAL, r.type)
+        assertEquals(Severity.CRITICAL, r.severity)
     }
 }
