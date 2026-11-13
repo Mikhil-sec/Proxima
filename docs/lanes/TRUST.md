@@ -51,8 +51,8 @@ _Diya 19:12: time is short - merge interface changes WITHOUT waiting for 👍, b
 
 ### #38 status
 - **1. Per-session identity - LIVE on main (#50 + interface change #51/PR #52).** Fresh identity per app launch;
-  previous sessions' keys kept 24 h (max 10); pipeline uses `trust.ownsKey/ownsNodeId`. **Not yet run on a phone**:
-  plug in the S24, `./gradlew :trust:connectedDebugAndroidTest`, read `adb logcat -d -s TestRunner:*`.
+  previous sessions' keys kept 24 h (max 10); pipeline uses `trust.ownsKey/ownsNodeId`. **Device-verified 19:47: 22/22 on
+  the S24 Ultra.**
   Open to MESH: can an id change mid-session (timed rotation)? Gap left with UI: pipeline incidents are in-memory.
 - **2. Verified roles - TRUST side DONE (#55, PRs #56/#57).** `Role`, `RolePass`, `TrustEngine.verifyRoleClaim` (default
   false). Organiser key generated 19:24 by `./gradlew :trust:generateOrganiserKey`: PUBLIC in
@@ -161,6 +161,7 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 19:13 Fri | Diya authorised merging interface changes without waiting for 👍 (inform instead). Merged #52: **per-session identity live**. Informed on #51 and closed it. No phone connected for the device run. |
 | 19:20 Fri | **Verified roles** core + TRUST merged (#55, PR #56): 9 tests (replay, forgery, edits, expiry, no key). |
 | 19:30 Fri | Organiser keypair generated on the laptop (public shipped, private off-repo), issuer for the organiser phone, guard test that the shipped key is public-only. PR #57. 88/88. MESH/UI asked on #55 to wire it, optional. |
+| 19:47 Fri | Everything merged before the 19:45 cutoff (#58); 👍 on #53. **M2 step 3 PASS: 22/22 on the S24 Ultra** with per-session identity under the real Keystore, built from main. Paused until main reopens. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
