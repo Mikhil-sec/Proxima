@@ -29,7 +29,7 @@ core/src/main/kotlin/mu/proxima/core/
   pipeline/  IncidentPipeline · IncidentMerger · RuleTriageEngine · Packets (ProximaJson, PacketFactory)
   fake/      Simulation.kt (dev-only fakes + honest empty repositories)
 mesh/   src/main/java/mu/proxima/mesh/    MeshModule + NearbyMeshEngine, Room dedup store, foreground service
-ai/     src/main/java/mu/proxima/ai/      AiModule + tiered TriageEngine, TriageServer, VoiceIo
+ai/     src/main/java/mu/proxima/ai/      AiModule + tiered TriageEngine, TriageServer, VoiceIo, HandsFreeGuide, CrowdRiskMonitor
 locate/ src/main/java/mu/proxima/locate/  LocateModule + AndroidLocateEngine, UWB session, venue map data
 trust/  src/main/java/mu/proxima/trust/   TrustModule + TinkTrustEngine, QR gen/scan, Asset repositories
         src/main/assets/data/             help_points_mu.json (OSM), protocols.json (cited)
@@ -39,11 +39,16 @@ app/    src/main/java/mu/proxima/app/     ProximaApp, ProximaGraph, ui/ (theme, 
 ## Wire format (the `MeshPacket` JSON envelope)
 ```json
 { "packetId":"uuid", "kind":"INCIDENT|SEALED|TRIAGE_REQUEST|TRIAGE_RESULT|BEACON|CONTROL",
-  "originNodeId":"…", "originKey":"base64 Ed25519 pub", "createdAtMs":0, "severity":"LOW|MEDIUM|HIGH|CRITICAL",
+  "originNodeId":"…", "originKey":"<sig pub keyset b64>.<enc pub keyset b64>", "createdAtMs":0, "severity":"LOW|MEDIUM|HIGH|CRITICAL",
   "ttl":7, "hopCount":0, "path":["nodeA","nodeB"], "payload":"<Incident JSON | sealed b64 | …>",
   "recipientKey":null, "channel":null, "signature":"base64" }
 ```
 - Relays change only `ttl`, `hopCount` and `path`. The signature covers `MeshPacket.signingBytes()`.
+- **Identity (TRUST, #38):** `originKey` / `NodeIdentity.publicKey` = Ed25519 + HPKE-X25519 public keysets (~317 chars);
+  `nodeId = NodeIds.derive(publicKey)` (8 hex), and `verify()` rejects a packet whose `originNodeId` does not match.
+  A **fresh identity per app session**, so a node id cannot follow one phone around; the previous 24 h of keys are
+  kept, and the pipeline asks `trust.ownsKey()` / `ownsNodeId()` (never `== identity.*`), so a restart mid-search
+  does not lose found-notices. Role phones (medic tent, steward) use a stable identity.
 - Duplicates are dropped by `packetId` (MESH keeps a Room table of seen ids). TTL starts at `Severity.hopBudget` (3/5/7/10).
 - Serialisation always goes through `ProximaJson`.
 
@@ -78,3 +83,4 @@ ALL_CLEAR and FOUND close the incident named in `relatedIncidentId`.
 |---|---|---|---|
 | 13:40 Fri | setup | Initial contract | — |
 | 15:40 Fri | UI | `IncidentRecord.originKey`; `reportFound(IncidentRecord)` + `shareLocationWithGuardian(IncidentRecord)`; guardian accepts notices for its own LOST_PERSON reports; SIM finder in FakeMeshEngine | see PR |
+| 19:05 Fri | AI | Additive: `GuideState` + `GuideEngine` (hands-free guided first aid) and `CrowdRiskLevel` + `CrowdRisk` + `CrowdRiskEngine` (crowd-crush early warning) moved from `ai/` into `Domain.kt` / `Engines.kt`. Deprecated typealiases at the old `mu.proxima.ai.guide/crowd` names keep `app/` compiling until its imports switch | #30 |

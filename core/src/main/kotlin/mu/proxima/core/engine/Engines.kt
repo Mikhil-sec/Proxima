@@ -3,8 +3,10 @@ package mu.proxima.core.engine
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import mu.proxima.core.model.CrowdRisk
 import mu.proxima.core.model.DeviceCapabilities
 import mu.proxima.core.model.GeoPoint
+import mu.proxima.core.model.GuideState
 import mu.proxima.core.model.HelpCategory
 import mu.proxima.core.model.HelpPoint
 import mu.proxima.core.model.HopEvent
@@ -16,6 +18,7 @@ import mu.proxima.core.model.ProtocolCard
 import mu.proxima.core.model.RadarFix
 import mu.proxima.core.model.RankedHelpPoint
 import mu.proxima.core.model.RawReport
+import mu.proxima.core.model.RolePass
 import mu.proxima.core.model.TrackTarget
 import mu.proxima.core.model.TriageCapability
 import mu.proxima.core.model.TriageResult
@@ -89,6 +92,23 @@ interface TrustEngine {
     /** Returns null if not addressed to this node or tampered. */
     fun open(sealedB64: String): ByteArray?
 
+    /**
+     * True if [publicKey] is this node's: its current key, or (with per-session identity, #38) a previous
+     * session's key it still retains. Use this, not `== identity.publicKey`, so an app restart does not lose
+     * notices sealed to the guardian before it.
+     */
+    fun ownsKey(publicKey: String): Boolean = publicKey == identity.publicKey
+
+    /** Same as [ownsKey] for node ids, so "is this lost report mine?" survives an app restart. */
+    fun ownsNodeId(nodeId: String): Boolean = nodeId == identity.nodeId
+
+    /**
+     * True only if [pass] is signed by the event organiser, unexpired at [nowMs], AND [packet] (e.g. the holder's
+     * beacon) verifies and was signed by `pass.holderKey` - so an overheard pass cannot be replayed by another phone.
+     * Default false: an engine without the organiser's key never shows anyone as verified (#38).
+     */
+    fun verifyRoleClaim(pass: RolePass, packet: MeshPacket, nowMs: Long): Boolean = false
+
     /** Guardian side: mint a new wristband tag bound to this phone's key. */
     fun createWristband(): WristbandTag
     /** Tags this phone minted (so it knows which FoundNotices are its own). */
@@ -111,4 +131,20 @@ interface ProtocolRepository {
 /** UI lane. Decides the tier at startup. */
 interface DeviceCapabilityProvider {
     fun detect(): DeviceCapabilities
+}
+
+/** AI lane (#30). Reads a vetted card step by step and follows voice commands. Never authors steps. */
+interface GuideEngine {
+    val state: StateFlow<GuideState>
+    fun start(card: ProtocolCard)
+    fun next()
+    fun back()
+    fun repeat()
+    fun stop()
+}
+
+/** AI lane (#30). Crowd-crush early warning from anonymous density cells + incident reports. */
+interface CrowdRiskEngine {
+    /** Only areas at WATCH or above, most severe first. */
+    val risks: StateFlow<List<CrowdRisk>>
 }

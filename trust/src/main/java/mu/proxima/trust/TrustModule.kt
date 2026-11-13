@@ -16,7 +16,12 @@ object TrustModule {
      * Simulation ON = `FakeTrustEngine`, which signs with "SIM" and base64s instead of encrypting - dev only.
      */
     fun createTrust(context: Context, simulation: Boolean): TrustEngine =
-        if (simulation) FakeTrustEngine() else TinkTrustEngine(context)
+        // Fresh identity per app session, so a node id cannot follow one phone around (#38). The pipeline asks
+        // trust.ownsKey / ownsNodeId, so a guardian's restart mid-search still receives the finder's notices.
+        if (simulation) FakeTrustEngine() else TinkTrustEngine(context, KeyRotation.PER_SESSION)
+
+    /** Organiser phone only (holds the adb-pushed organiser key): issues verified-role passes. Null everywhere else. */
+    fun createRoleIssuer(context: Context): RolePassIssuer? = RolePasses.loadIssuer(context)
 
     /**
      * Real OSM dataset, always - there is no simulated variant. 524 Mauritius help points parsed from

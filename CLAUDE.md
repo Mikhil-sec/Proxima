@@ -47,8 +47,8 @@ SpeechRecognizer/TextToSpeech or Gradle/AGP APIs — so no deprecated or halluci
   Every AI path has a rules fallback (`RuleTriageEngine`). Show `triagedBy` in the UI.
 - **Real data only in the demo.** Simulation fakes are dev-only; UI shows a "SIM" badge; final demo = simulation OFF.
 - **One feature, many uses:** everything is an `Incident` on one pipeline. No parallel message systems.
-- **UI anti-slop:** see `docs/lanes/UI.md` design system (OLED black, phosphor green / amber / crimson,
-  monospace telemetry, custom Canvas, haptics, bottom sheets — no default Material cards, no AlertDialogs, no lorem ipsum).
+- **UI anti-slop:** follow `DESIGN_RULES.md` (Material You, lagoon-teal seed, Roboto Flex, light + dark, tokens only,
+  no looping decoration; `./gradlew :app:designCheck` must pass). Bottom sheets, not AlertDialogs, for emergency flows.
   Guardian/finder screens must be usable by a panicking parent without help: big targets, one action per screen.
 
 ## 5. GitHub Issues = the team bus (agents talk here, not in chat)
@@ -87,3 +87,5 @@ When the member says **"initiate saving protocol to resume smoothly on next fres
 ## 9. Security
 Never commit or post API keys, keystores (`.jks`), private keys, or personal data. Local config → `local.properties`.
 Models are sideloaded with `adb push`, never committed.
+
+Before any UI/UX work, read and follow DESIGN_RULES.md.

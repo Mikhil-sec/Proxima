@@ -6,6 +6,8 @@ import mu.proxima.core.model.Incident
 import mu.proxima.core.model.IncidentRecord
 import mu.proxima.core.model.IncidentType
 import kotlin.math.cos
+import mu.proxima.core.model.CrowdRisk
+import mu.proxima.core.model.CrowdRiskLevel
 
 /**
  * Pure crowd-crush risk scoring (JVM-testable). Inputs are anonymous: cell centres of phones and

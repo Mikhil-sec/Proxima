@@ -14,17 +14,31 @@ import com.google.crypto.tink.signature.SignatureConfig
 import mu.proxima.core.engine.TrustEngine
 import mu.proxima.core.model.MeshPacket
 import mu.proxima.core.model.NodeIdentity
+import mu.proxima.core.model.RolePass
 import mu.proxima.core.model.WristbandTag
 import java.security.SecureRandom
 import java.util.Base64
 
+/** How long a node keeps one identity. */
+enum class KeyRotation {
+    /** One identity for the life of the install. For role phones (a medic tent is a post meant to be found). */
+    STABLE,
+
+    /**
+     * A fresh identity every app session, so a node id cannot be used to follow one phone across sessions (#38).
+     * Previous sessions' keys are kept for [TinkTrustEngine.RETAIN_MS] so a notice sealed to the guardian before a
+     * restart can still be opened after it.
+     */
+    PER_SESSION,
+}
+
 /**
  * The real [TrustEngine]: Ed25519 signatures and HPKE (X25519 / HKDF-SHA256 / AES-256-GCM) sealing, via Tink.
  *
- * **Identity.** Each install holds two private keysets, one per purpose, persisted by [keys] (the Android
- * Keystore in the app). `identity.publicKey` is `"<signing public keyset b64>.<encryption public keyset b64>"`
- * built by [NodeIds.publicKey], and `identity.nodeId` is [NodeIds.derive] of that - so a node id is a function of
- * the key, not a chosen name, and is stable across restarts.
+ * **Identity.** A session holds two private keysets, one per purpose, persisted by [keys] (the Android Keystore
+ * in the app). `identity.publicKey` is `"<signing public keyset b64>.<encryption public keyset b64>"` built by
+ * [NodeIds.publicKey], and `identity.nodeId` is [NodeIds.derive] of that - so a node id is a function of the key,
+ * not a chosen name. With [KeyRotation.PER_SESSION] each construction is a new session with a new identity.
  *
  * **Verify** checks two things: the Ed25519 signature over `signingBytes()` against the *sender's* key in
  * `originKey`, and that `originNodeId` really is derived from that key. Without the second check a node could sign
@@ -40,27 +54,57 @@ import java.util.Base64
 class TinkTrustEngine(
     keys: KeysetStore,
     private val wristbands: WristbandStore,
+    rotation: KeyRotation = KeyRotation.PER_SESSION,
     private val clock: () -> Long = System::currentTimeMillis,
+    /** The event organiser's PUBLIC keyset; null = this build cannot verify roles, so it never shows any. */
+    organiserKey: KeysetHandle? = null,
 ) : TrustEngine {
 
     /** The app's constructor: keysets encrypted under an Android Keystore master key, tags in private prefs. */
-    constructor(context: Context) : this(AndroidKeystoreKeysetStore(context), SharedPrefsWristbandStore(context))
+    constructor(context: Context, rotation: KeyRotation = KeyRotation.PER_SESSION) : this(
+        AndroidKeystoreKeysetStore(context), SharedPrefsWristbandStore(context), rotation,
+        organiserKey = RolePasses.loadOrganiserKey(context),
+    )
 
-    private val signingKeys: KeysetHandle = keys.getOrCreate(SIGNING_KEYSET, KeyTemplates.get(SIGNING_TEMPLATE))
-    private val encryptionKeys: KeysetHandle = keys.getOrCreate(ENCRYPTION_KEYSET, KeyTemplates.get(ENCRYPTION_TEMPLATE))
+    private val random = SecureRandom()
+    private val organiser: PublicKeyVerify? = organiserKey?.let(RolePasses::verifier)
 
-    private val signer: PublicKeySign = signingKeys.getPrimitive(RegistryConfiguration.get(), PublicKeySign::class.java)
-    private val decrypter: HybridDecrypt = encryptionKeys.getPrimitive(RegistryConfiguration.get(), HybridDecrypt::class.java)
+    /** This session's keys, and (PER_SESSION only) the previous sessions' keys still inside the retention window. */
+    private val current: SessionKeys
+    private val retired: List<SessionKeys>
 
-    override val identity: NodeIdentity = run {
-        val publicKey = NodeIds.publicKey(exportPublic(signingKeys), exportPublic(encryptionKeys))
-        NodeIdentity(nodeId = NodeIds.derive(publicKey), publicKey = publicKey)
+    init {
+        when (rotation) {
+            KeyRotation.STABLE -> {
+                current = SessionKeys.load(keys, STABLE_SIGNING, STABLE_ENCRYPTION)
+                retired = emptyList()
+            }
+            KeyRotation.PER_SESSION -> {
+                val now = clock()
+                // A stable keyset left over from an earlier build would be a long-lived identity: destroy it.
+                keys.delete(STABLE_SIGNING)
+                keys.delete(STABLE_ENCRYPTION)
+                val (keep, drop) = StoredSession.all(keys.names())
+                    .sortedByDescending { it.startedAtMs }
+                    .partition { it.complete && now - it.startedAtMs <= RETAIN_MS }
+                    .let { (fresh, stale) -> fresh.take(MAX_RETIRED) to (stale + fresh.drop(MAX_RETIRED)) }
+                drop.forEach { session -> session.names.forEach(keys::delete) }
+                retired = keep.map { SessionKeys.load(keys, it.signingName, it.encryptionName) }
+
+                val id = "$SESSION_PREFIX${now}_${hex(SESSION_ID_BYTES)}"
+                current = SessionKeys.load(keys, "${id}$SIGNING_SUFFIX", "${id}$ENCRYPTION_SUFFIX")
+            }
+        }
     }
+
+    private val signer: PublicKeySign =
+        current.signing.getPrimitive(RegistryConfiguration.get(), PublicKeySign::class.java)
+
+    override val identity: NodeIdentity = NodeIdentity(nodeId = current.nodeId, publicKey = current.publicKey)
 
     /** Parsing a peer's keyset on every packet would be wasteful on a busy mesh; peers repeat, so cache. */
     private val verifiers = LruCache<String, PublicKeyVerify>(VERIFIER_CACHE_SIZE)
     private val minted = wristbands.load().toMutableList()
-    private val random = SecureRandom()
 
     override fun sign(packet: MeshPacket): MeshPacket =
         packet.copy(signature = B64.encodeToString(signer.sign(packet.signingBytes())))
@@ -95,16 +139,46 @@ class TinkTrustEngine(
         return B64.encodeToString(encrypter.encrypt(plaintext, SEAL_CONTEXT))
     }
 
-    override fun open(sealedB64: String): ByteArray? = try {
-        decrypter.decrypt(B64_DECODER.decode(sealedB64), SEAL_CONTEXT)
-    } catch (e: Exception) {
-        // Not addressed to us, tampered, truncated, or not base64 at all: all the same to the caller.
-        null
+    /** Tries this session's key, then each retained previous session's, so a restart does not lose a notice. */
+    override fun open(sealedB64: String): ByteArray? {
+        val ciphertext = try {
+            B64_DECODER.decode(sealedB64)
+        } catch (e: IllegalArgumentException) {
+            return null
+        }
+        for (session in listOf(current) + retired) {
+            try {
+                return session.decrypter.decrypt(ciphertext, SEAL_CONTEXT)
+            } catch (e: Exception) {
+                // Not this session's key, or tampered. Try the next; null if none can open it.
+            }
+        }
+        return null
+    }
+
+    /**
+     * True if [publicKey] is this node's current key or a previous session's still-retained key - i.e. "was this
+     * addressed to me?" in a way that survives a restart (#38).
+     */
+    override fun ownsKey(publicKey: String): Boolean = publicKey == current.publicKey || retired.any { it.publicKey == publicKey }
+
+    /** Same as [ownsKey] for node ids, so "is this lost report mine?" survives a restart. */
+    override fun ownsNodeId(nodeId: String): Boolean = nodeId == current.nodeId || retired.any { it.nodeId == nodeId }
+
+    /**
+     * A role is shown only if all four hold: the pass is unexpired, [packet] comes from the pass holder's key, the
+     * packet's own signature verifies (so the claim is fresh, not a replayed pass), and the organiser signed the pass.
+     */
+    override fun verifyRoleClaim(pass: RolePass, packet: MeshPacket, nowMs: Long): Boolean {
+        val organiser = organiser ?: return false
+        if (nowMs >= pass.expiresAtMs) return false
+        if (packet.originKey != pass.holderKey) return false
+        if (!verify(packet)) return false
+        return RolePasses.signatureValid(organiser, pass)
     }
 
     override fun createWristband(): WristbandTag {
-        val id = ByteArray(TAG_BYTES).also(random::nextBytes).joinToString("") { "%02x".format(it) }
-        val tag = WristbandTag(tagId = id, guardianKey = identity.publicKey, createdAtMs = clock())
+        val tag = WristbandTag(tagId = hex(TAG_BYTES), guardianKey = identity.publicKey, createdAtMs = clock())
         synchronized(minted) {
             minted += tag
             wristbands.save(minted.toList())
@@ -114,16 +188,62 @@ class TinkTrustEngine(
 
     override fun myWristbands(): List<WristbandTag> = synchronized(minted) { minted.toList() }
 
+    private fun hex(bytes: Int): String =
+        ByteArray(bytes).also(random::nextBytes).joinToString("") { "%02x".format(it) }
+
+    /** One session's two private keysets plus everything derived from them. */
+    private class SessionKeys(val signing: KeysetHandle, encryption: KeysetHandle) {
+        val publicKey: String = NodeIds.publicKey(exportPublic(signing), exportPublic(encryption))
+        val nodeId: String = NodeIds.derive(publicKey)
+        val decrypter: HybridDecrypt = encryption.getPrimitive(RegistryConfiguration.get(), HybridDecrypt::class.java)
+
+        companion object {
+            fun load(keys: KeysetStore, signingName: String, encryptionName: String) = SessionKeys(
+                keys.getOrCreate(signingName, KeyTemplates.get(SIGNING_TEMPLATE)),
+                keys.getOrCreate(encryptionName, KeyTemplates.get(ENCRYPTION_TEMPLATE)),
+            )
+        }
+    }
+
+    /** A previous session found in storage by its keyset names: `s<startedAtMs>_<random>_sig` / `_enc`. */
+    private data class StoredSession(val id: String, val startedAtMs: Long, val names: List<String>) {
+        val signingName get() = "$id$SIGNING_SUFFIX"
+        val encryptionName get() = "$id$ENCRYPTION_SUFFIX"
+
+        /** A crash between creating the two halves leaves one behind; such a session is unusable. */
+        val complete get() = signingName in names && encryptionName in names
+
+        companion object {
+            private val NAME = Regex("^($SESSION_PREFIX(\\d+)_[0-9a-f]+)($SIGNING_SUFFIX|$ENCRYPTION_SUFFIX)$")
+
+            fun all(stored: Set<String>): List<StoredSession> = stored
+                .mapNotNull { name -> NAME.matchEntire(name)?.let { it.groupValues[1] to name } }
+                .groupBy({ it.first }, { it.second })
+                .map { (id, names) -> StoredSession(id, NAME.matchEntire(names.first())!!.groupValues[2].toLong(), names) }
+        }
+    }
+
     companion object {
         init {
             SignatureConfig.register()
             HybridConfig.register()
         }
 
-        const val SIGNING_KEYSET = "proxima_signing"
-        const val ENCRYPTION_KEYSET = "proxima_encryption"
+        /** How long a previous session's keys can still open notices: one event day. */
+        const val RETAIN_MS = 24L * 60 * 60 * 1000
+
+        /** Cap on retained sessions, so a phone restarted all day does not try dozens of keys per notice. */
+        const val MAX_RETIRED = 10
+
+        const val STABLE_SIGNING = "proxima_signing"
+        const val STABLE_ENCRYPTION = "proxima_encryption"
         const val SIGNING_TEMPLATE = "ED25519"
         const val ENCRYPTION_TEMPLATE = "DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_256_GCM"
+
+        private const val SESSION_PREFIX = "s"
+        private const val SIGNING_SUFFIX = "_sig"
+        private const val ENCRYPTION_SUFFIX = "_enc"
+        private const val SESSION_ID_BYTES = 4
 
         /**
          * HPKE context info. Binds every ciphertext to this protocol and version, so a sealed notice cannot be

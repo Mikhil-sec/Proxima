@@ -1,32 +1,10 @@
 package mu.proxima.ai.guide
 
-import kotlinx.coroutines.flow.StateFlow
-import mu.proxima.core.model.ProtocolCard
+// #30: the contract now lives in core/ (model/Domain.kt + engine/Engines.kt).
+// These aliases keep existing imports compiling; switch to mu.proxima.core.* and they can be deleted.
 
-// TEMPORARY HOME: these mirror the additive contract proposed in #30. When UI gives 👍 they move to
-// core/model/Domain.kt + core/engine/Engines.kt in a small dedicated PR, and only the imports change.
+@Deprecated("Moved to core (#30)", ReplaceWith("mu.proxima.core.model.GuideState"))
+typealias GuideState = mu.proxima.core.model.GuideState
 
-data class GuideState(
-    val active: Boolean = false,
-    val cardId: String? = null,
-    val cardTitle: String? = null,
-    val source: String? = null,
-    val stepIndex: Int = 0,
-    val stepCount: Int = 0,
-    val stepText: String? = null,
-    val listening: Boolean = false,
-    /** Caption of what the user just said. */
-    val heard: String? = null,
-    /** Shown when a voice command changed the card, e.g. "Breathing → recovery position". */
-    val notice: String? = null,
-)
-
-/** AI lane. Reads a vetted card step by step and follows voice commands. */
-interface GuideEngine {
-    val state: StateFlow<GuideState>
-    fun start(card: ProtocolCard)
-    fun next()
-    fun back()
-    fun repeat()
-    fun stop()
-}
+@Deprecated("Moved to core (#30)", ReplaceWith("mu.proxima.core.engine.GuideEngine"))
+typealias GuideEngine = mu.proxima.core.engine.GuideEngine
