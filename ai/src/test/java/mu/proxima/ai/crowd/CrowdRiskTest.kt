@@ -25,6 +25,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.cos
+import mu.proxima.core.model.CrowdRiskLevel
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CrowdRiskTest {

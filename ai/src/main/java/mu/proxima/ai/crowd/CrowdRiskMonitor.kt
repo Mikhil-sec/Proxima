@@ -13,6 +13,9 @@ import mu.proxima.core.model.Incident
 import mu.proxima.core.model.IncidentRecord
 import mu.proxima.core.model.IncidentType
 import mu.proxima.core.model.RawReport
+import mu.proxima.core.model.CrowdRisk
+import mu.proxima.core.model.CrowdRiskLevel
+import mu.proxima.core.engine.CrowdRiskEngine
 
 /**
  * Re-scores crowd risk every [tickMs] from live mesh peers (anonymous cell centres, #28), this phone's
