@@ -57,8 +57,8 @@ class RuleTriageEngineTest {
     // ---------- French ----------
     @Test fun french() {
         assertTriage("Il y a de la fumée derrière les stands", HAZARD, "FIRE", CRITICAL)
-        assertTriage("un câble électrique est tombé", HAZARD, "ELECTRICAL", HIGH)
-        assertTriage("mon fils a disparu", LOST_PERSON, "PERSON", HIGH)
+        assertTriage("un câble électrique est tombé", HAZARD, "ELECTRICAL", CRITICAL)
+        assertTriage("mon fils a disparu", LOST_PERSON, "CHILD", CRITICAL) // "fils" added after the fresh set (fs09)
     }
 
     // ---------- Kreol Morisien (best-effort list, to be verified) ----------
@@ -145,8 +145,26 @@ class RuleTriageEngineTest {
 
     @Test fun v1KeywordGaps() {
         assertTriage("Il ne respire plus", MEDICAL, "CARDIAC_ARREST", CRITICAL)
-        assertTriage("Un homme fait une crise d'épilepsie", MEDICAL, "SEIZURE", HIGH)
+        assertTriage("Un homme fait une crise d'épilepsie", MEDICAL, "SEIZURE", CRITICAL)
         assertTriage("people are getting squeezed against the barrier", HAZARD, "CROWD_CRUSH", CRITICAL)
         assertTriage("Dimounn pe pous pous", HAZARD, "CROWD_CRUSH", CRITICAL)
+    }
+
+    // ---- fresh teammate set (fs*), decided with Seeya 20:30 Fri ----
+
+    @Test fun seizureAndLiveWire_areCritical() {
+        assertTriage("guy having a seizure by the food stalls", MEDICAL, "SEIZURE", CRITICAL)
+        assertTriage("live wire hanging down from a pole", HAZARD, "ELECTRICAL", CRITICAL)
+    }
+
+    @Test fun frenchLostSon_beatsWrongButton() {
+        val r = classify("mon fils de 5 ans a disparu pres du lac", hint = MEDICAL)
+        assertEquals(LOST_PERSON, r.type)
+        assertEquals("CHILD", r.subtype)
+        assertEquals(CRITICAL, r.severity)
+    }
+
+    @Test fun oldLady_isElderly() {
+        assertEquals("ELDERLY", engine.personSubtype("found an old lady confused near the main gate"))
     }
 }
