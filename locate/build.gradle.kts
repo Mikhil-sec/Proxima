@@ -21,7 +21,7 @@ dependencies {
     implementation(libs.play.services.location)
     // UWB is API 31+; guard every call with DeviceCapabilities.hasUwb.
     // If the manifest merger complains about minSdk, use tools:overrideLibrary in this module's manifest.
-    // implementation(libs.androidx.core.uwb)
+    implementation(libs.androidx.core.uwb)
 
     testImplementation(libs.junit)
 }

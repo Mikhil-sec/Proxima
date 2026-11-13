@@ -31,12 +31,23 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 
 ## NEXT_SESSION_HANDOFF
-- Not started. First step: UWB device check between two Samsungs.
+- Onboarded (S23+, @yorvan2401). App installs and runs in SIM mode.
+- UWB device-check tool written and compiles, **not yet run on hardware**: needs 2 UWB phones on one PC
+  (S23+ + S24U/S23+), UWB ON, airplane OFF → `./gradlew installDebug` on both → `bash locate/tools/uwb_check.sh`.
+  Record: distance y/n, azimuth y/n, typical error, range. Then log the result here + on #5.
+- Files: `locate/src/debug/.../UwbCheckActivity.kt`, `locate/src/debug/AndroidManifest.xml`,
+  `locate/src/main/AndroidManifest.xml` (UWB perm + overrideLibrary), `locate/tools/uwb_check.sh`, `locate/build.gradle.kts`.
+- Next after the check: `AndroidLocateEngine` (fused location + rotation-vector heading → `track()`).
 
 ## Progress log
 | Time | What |
 |---|---|
+| 15:00 Fri | Onboarding done: lane branch pushed, app installed on S23+ in SIM mode |
+| 15:46 Fri | UWB device-check tool (debug-only activity + adb script) builds; waiting for 2 phones |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
 |---|---|---|---|
+| 15:40 Fri | UWB check exchanges session params over adb, not the mesh | Mesh is still a fake; answers "does UWB AoA work" today without blocking on MESH | Waiting for real mesh; manual typing of addresses on-screen |
+| 15:40 Fri | Device-check screen lives in `locate/src/debug` | Never ships in release, doesn't touch UI lane's `app/` | Adding a screen to `app/` (not our lane) |
+| 15:40 Fri | Static STS key for the check only; real engine will use per-session random key sent sealed | Simplest way to prove ranging works; security handled in the real engine | Provisioned STS (needs FiRa provisioning) |

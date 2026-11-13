@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LOCATE lane owns this file. Merged into the app manifest automatically. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- androidx.core.uwb has minSdk 31; every UWB call is guarded by an API 31+ / hasUwb check. -->
+    <uses-sdk tools:overrideLibrary="androidx.core.uwb" />
+
+    <uses-feature android:name="android.hardware.uwb" android:required="false" />
+    <uses-permission android:name="android.permission.UWB_RANGING" />
+</manifest>
