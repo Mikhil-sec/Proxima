@@ -46,33 +46,36 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 
 
 ## NEXT_SESSION_HANDOFF
-**Works (written, NOT yet compiled)**
+**Works (compiled, tests green)**
 - Onboarding complete: `lane/trust` pushed, TEAM_ROLES row filled, gh authed as @diya-r6 (lane issue **#6**),
   Context7 MCP connected, Android Studio installed (JBR = JDK 25).
 - **P0 dataset done**: `trust/src/main/assets/data/osm_help_points_raw.json`, 524 real Mauritius OSM features,
   fetched 14:43 Fri, OSM base `2026-11-13T10:42:12Z`. All 524 map to a `HelpCategory`.
 - **P0 repository done**: `OsmHelpPoints` (pure parser + `rankNearest`) and `AssetHelpPointRepository`
   (Android asset load, cached, off-main-thread). `TrustModule.createHelpPoints` returns the real one.
-- 7 unit tests in `trust/src/test/.../OsmHelpPointsTest.kt`, asserted against the real dataset by stable OSM id.
-  Every assertion was verified numerically against the data before committing, but by re-implementing the logic in
-  Python - that is NOT a substitute for running them.
+- **8 unit tests, all PASSING** (`./gradlew :trust:test`, 15:12 Fri) in `trust/src/test/.../OsmHelpPointsTest.kt`,
+  asserted against the real dataset by stable OSM id. No compiler warnings.
+- Toolchain is set up: Android Studio + JBR (**JDK 25**, works with Gradle 9.9.1 and AGP as configured),
+  SDK platform `android-37.0`, build-tools 36.0.0, adb, `local.properties` written (gitignored, forward-slash
+  `sdk.dir` - `printf` with backslashes silently mangles it).
+- `trust/build.gradle.kts` now prints per-test results, because `build/` is deny-listed so a silent `test` task
+  looks identical to one that ran zero tests.
 
-**Blocked / unverified**
-- **Nothing in `trust/` has ever been compiled.** No Android SDK yet (Studio installed but the first-run wizard,
-  which creates the SDK and `local.properties`, has not been completed). So `./gradlew :trust:test` has never run.
-  **Do not merge this branch to `main` until it does.**
+**Not done yet**
 - `TrustEngine` is still `FakeTrustEngine`. `ProtocolRepository` is still `EmptyProtocolRepository`.
+- No wristband QR, no scanner (asked for by UI in #7).
+- Never run on a phone: `installDebug` has not been tried, the S24 Ultra has not been connected.
 
 **Exact next step**
-1. Finish the Studio first-run wizard, then:
-   `export JAVA_HOME="C:/Program Files/Android/Android Studio/jbr"` and `./gradlew :trust:test`.
-   Expect possible fixes: unused imports, and Gradle/AGP acceptance of JDK 25 (may need a toolchain pin to 17).
-2. `TinkTrustEngine` - **query Context7 for Tink before writing any of it** (CLAUDE.md section 3): Ed25519 over
+1. `TinkTrustEngine` - **query Context7 for Tink before writing any of it** (CLAUDE.md section 3): Ed25519 over
    `MeshPacket.signingBytes()`, HPKE X25519 seal/open, keysets in the Android Keystore,
    `identity.publicKey = "<sigB64>.<encB64>"`, `nodeId` = first 8 hex of SHA-256(publicKey).
    **Then tell MESH on the bus that it must use this nodeId.**
-3. `protocols.json` transcribed from IFRC International First Aid Guidelines 2020. Never AI-written.
-   Subtype codes must match `RuleTriageEngine`.
+2. `wristbandQrBitmap(tag, sizePx)` - zxing is already a dependency, no new plumbing needed.
+3. `WristbandScanner` - needs the compose plugin + CameraX + ML Kit in `trust/build.gradle.kts`
+   (stubbed as comments there). **Context7 first** per CLAUDE.md section 3.
+4. `protocols.json` transcribed from IFRC International First Aid Guidelines 2020. Never AI-written.
+   Subtype codes must match `RuleTriageEngine`. A second member proof-reads them.
 
 **Open asks on the bus (posted on #6)**
 - UI: "works on mid-range" needs the Honor X8b; my S24 Ultra is Tier 1.
@@ -97,6 +100,8 @@ No `core/` changes. No interface changes.
 | 14:52 Fri | `OsmHelpPoints` (pure parser + `rankNearest`) and `AssetHelpPointRepository` written; `TrustModule.createHelpPoints` now returns the real repository. 7 unit tests against the real dataset. **Not compiled yet** - no SDK. |
 | 14:55 Fri | Found that `IncidentType.helpCategories` never routes to `PHARMACY`/`WATER`/`TOILETS` (292 of 524 points). Resolved without a `core/` change: UI passes explicit categories. Not folded into `MEDICAL` - see decision log. |
 | 14:56 Fri | Android Studio installed via winget (JBR = JDK 25). SDK still pending the first-run wizard. |
+| 15:10 Fri | SDK installed (platform android-37.0, build-tools 36.0.0, adb). `local.properties` written. |
+| 15:12 Fri | **`./gradlew :trust:test` BUILD SUCCESSFUL - 8/8 tests pass, no compiler warnings.** First compile of this lane's code. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
