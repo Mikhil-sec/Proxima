@@ -240,7 +240,25 @@ ever travels encrypted to the guardian's key.
 
 ## Surprise card
 
-<!-- see docs/SURPRISE_CARD.md, once drawn -->
+**Card: "Scale up"**: *thousands of users at once; identify one thing that would break, and adapt.*
+
+**What breaks: the relay storm.** In a crowd crush hundreds of people press SOS within seconds. Every phone used to
+re-send every copy to every neighbour, so an unrelated cardiac arrest queued behind hundreds of copies of the same
+crush.
+
+**What we changed** (`mesh/.../SurgeControl.kt`):
+- **One hazard is one event per 25 m square.** A relay forwards the first 3 reports and counts the rest.
+  **People are never collapsed:** medical and lost-person reports always travel.
+- **A rate cap with a priority buffer.** Most severe first; a person beats a known hazard; beacons are shed first.
+  Your own SOS never waits.
+- **Store-and-forward drops the least severe packet, not the oldest.**
+
+**Evidence.** A **model** of 1,400 phones (400 packed at a gate) runs these exact classes. The rules cut radio sends
+by 27–36% and the worst backlog by about 4x, and the unrelated critical still reached the post in 0.4 s. On very
+slow links neither design delivers. The model found why ("first copy wins" dedup keeps a detoured copy with too few
+hops left), and that fix is our next step. It's a model, not a measurement: see
+[docs/SURPRISE_CARD.md](docs/SURPRISE_CARD.md). Live, the Command Center's "Relay" line shows the surge control at
+work.
 
 ## Team
 
