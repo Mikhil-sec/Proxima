@@ -26,7 +26,14 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import mu.proxima.ai.triage.LiteRtLmBackend
 import mu.proxima.ai.triage.TriagePrompt
+import kotlinx.coroutines.delay
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import mu.proxima.core.model.RawReport
 import java.io.File
 
@@ -40,6 +47,8 @@ import java.io.File
  *           --ez voice true          voice check only: speak a sentence, then listen once (mic permission needed)
  *           --es lang en-MU|fr-MU|mfe  language for the voice check
  *           --ez guide true          hands-free guide on the real protocols.json; --es card cpr-adult (default)
+ *           --ez eval true           triage accuracy eval through the SHIPPED LiteRtLmBackend (ai/eval/README.md):
+ *                                    reads files/eval/prompts.jsonl, writes files/eval/<name>_raw.jsonl (--es name gemma)
  * LiteRT-LM runs only if a *.litertlm file is in /sdcard/Android/data/mu.proxima.app/files/models/
  * Results:  adb logcat -d -s Proxima:*
  */
@@ -62,6 +71,10 @@ class LlmProbeActivity : Activity() {
         val backend = intent.getStringExtra("backend") ?: "gpu"
         if (intent.getBooleanExtra("guide", false)) {
             scope.launch { runCatching { probeGuide(intent.getStringExtra("card") ?: "cpr-adult") }.onFailure { log("GUIDE error: ${it.javaClass.simpleName}: ${it.message}") } }
+            return
+        }
+        if (intent.getBooleanExtra("eval", false)) {
+            scope.launch { runCatching { probeEval(intent.getStringExtra("name") ?: "gemma") }.onFailure { log("EVAL error: ${it.javaClass.simpleName}: ${it.message}") } }
             return
         }
         if (intent.getBooleanExtra("voice", false)) {
@@ -160,6 +173,44 @@ class LlmProbeActivity : Activity() {
         } finally {
             engine.close()
         }
+    }
+
+    // ---------- Triage accuracy eval (ai/eval/) on the shipped backend ----------
+    private suspend fun probeEval(name: String) {
+        val evalDir = File(getExternalFilesDir(null), "eval")
+        val prompts = File(evalDir, "prompts.jsonl").readLines().filter { it.isNotBlank() }
+            .map { Json.parseToJsonElement(it).jsonObject }
+        log("=== EVAL ${prompts.size} prompts · ${android.os.Build.MODEL} · sdk ${android.os.Build.VERSION.SDK_INT} ===")
+        mem("baseline")
+        val t0 = SystemClock.elapsedRealtime()
+        val backend = LiteRtLmBackend(File(getExternalFilesDir(null), "models"), cacheDir, scope, log = ::log)
+        val ready = withTimeoutOrNull(180_000) { while (!backend.isReady()) delay(200); true } ?: false
+        if (!ready) { log("EVAL model not ready after ${SystemClock.elapsedRealtime() - t0} ms; see llm: lines above"); return }
+        log("EVAL ready_ms=${SystemClock.elapsedRealtime() - t0}")
+        mem("after load")
+        val outFile = File(evalDir, "${name}_raw.jsonl")
+        outFile.writeText("")
+        for (p in prompts) {
+            val id = p["id"]!!.jsonPrimitive.content
+            val t = SystemClock.elapsedRealtime()
+            // 30 s cap here so slow replies are still recorded; the scorer applies the app's 6 s budget.
+            val result = runCatching { withTimeoutOrNull(30_000) { backend.generate(p["system"]!!.jsonPrimitive.content, p["user"]!!.jsonPrimitive.content) } }
+            val ms = SystemClock.elapsedRealtime() - t
+            val row = buildJsonObject {
+                put("id", id)
+                result.getOrNull()?.let { put("raw", it) }
+                when {
+                    result.isFailure -> put("error", "${result.exceptionOrNull()?.javaClass?.simpleName}: ${result.exceptionOrNull()?.message}")
+                    result.getOrNull() == null -> put("error", "timeout 30s")
+                }
+                put("ms", ms)
+            }
+            outFile.appendText(row.toString() + "\n")
+            val preview = (result.getOrNull() ?: row["error"].toString()).replace('\n', ' ').take(90)
+            log("EVAL $id ${ms}ms $preview")
+        }
+        mem("after eval")
+        log("=== EVAL done → ${outFile.path} ===")
     }
 
     // ---------- Hands-free guide check ----------

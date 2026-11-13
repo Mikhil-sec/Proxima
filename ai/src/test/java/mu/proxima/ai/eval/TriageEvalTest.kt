@@ -44,7 +44,7 @@ class TriageEvalTest {
         )
     }
 
-    private enum class Verdict { OK, WRONG, UNDER }
+    private companion object { const val BUDGET_MS = 6_000L }
 
     private class Score(val name: String) {
         var type = 0; var subtype = 0; var severity = 0; var under = 0; var n = 0
@@ -70,7 +70,8 @@ class TriageEvalTest {
 
     @Test fun score() {
         assumeTrue(mode.startsWith("score"))
-        val model = mode.substringAfter("score:", "gemma")
+        val model = mode.substringAfter("score:", "gemma").substringBefore("@")
+        val device = mode.substringAfter("@", "device not recorded")
         val rawFile = File(dir, "out/${model}_raw.jsonl")
         val raws = rawFile.readLines().filter { it.isNotBlank() }.map { json.decodeFromString<Raw>(it) }.associateBy { it.id }
         val rules = RuleTriageEngine()
@@ -79,6 +80,7 @@ class TriageEvalTest {
         val sModel = Score("$model alone (parsed + sanitised)")
         val sShip = Score("**Shipped: $model + rules safety net**")
         var valid = 0
+        var late = 0
         val latencies = mutableListOf<Long>()
         val rows = cases().map { c ->
             val report = c.report()
@@ -87,7 +89,10 @@ class TriageEvalTest {
             val parsed = raw?.raw?.let { TriagePrompt.parse(it, report) }
             if (parsed != null) valid++
             raw?.ms?.let { latencies += it }
-            val shipped = parsed?.let { TriageMerge.merge(it, r) } ?: r
+            // The app waits at most 6 s (LlmTriageEngine.timeoutMs); a later reply means rules answered.
+            val inTime = (raw?.ms ?: 0) <= BUDGET_MS
+            if (parsed != null && !inTime) late++
+            val shipped = parsed?.takeIf { inTime }?.let { TriageMerge.merge(it, r) } ?: r
             val expect = "${c.types.joinToString("/")} · ${c.subtypes.ifEmpty { listOf("-") }.joinToString("/")} · ${c.severities.joinToString("/")}"
             "| ${c.id} | ${c.lang} | ${c.hint ?: ""} | ${c.text.replace("|", "\\|")} | $expect | ${sRules.add(c, r)} | ${sModel.add(c, parsed)} | ${sShip.add(c, shipped)} |"
         }
@@ -105,7 +110,8 @@ class TriageEvalTest {
             appendLine(sRules.line()); appendLine(sModel.line()); appendLine(sShip.line())
             appendLine()
             appendLine("- Model replies that were valid JSON with a valid type and severity: **$valid/$n**.")
-            if (latencies.isNotEmpty()) appendLine("- Latency on the laptop CPU (not the phone): median ${latencies.sorted()[latencies.size / 2]} ms, max ${latencies.max()} ms. Phone numbers come from the device probe.")
+            appendLine("- Valid replies slower than the app's ${BUDGET_MS / 1000} s budget (the shipped path used rules instead): **$late**.")
+            if (latencies.isNotEmpty()) appendLine("- Latency per report ($device): median ${latencies.sorted()[latencies.size / 2]} ms, max ${latencies.max()} ms.")
             appendLine("- **Under-triaged** = severity below the lowest acceptable level. It is the dangerous error, so it is counted separately.")
             appendLine("- The shipped path is the model's answer passed through `TriagePrompt.sanitize` and `TriageMerge` (keyword rules can raise severity, never lower it); if the reply is invalid or late, rules answer.")
             appendLine()
