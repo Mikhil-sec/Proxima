@@ -1,6 +1,6 @@
 # LANE: TRUST (crypto, wristband QR, real dataset)
-Owner: Member 5 — Diya (@Diya-Ramkalawon) · test phone **Galaxy S24 Ultra** (Tier 1, not the A56 this lane assumed)
-· Branch `lane/trust` · Issue `[LANE:TRUST]`
+Owner: **Diya** (Member 5, @diya-r6) - test phone **Galaxy S24 Ultra** (Tier 1, not the A56 this lane
+assumed) - Branch `lane/trust` - Issue `[LANE:TRUST]` #6
 
 ## Mission
 Make the app trustworthy and real: signed packets, child location only the guardian can read, and the Mauritian dataset that powers "nearest help".

@@ -7,11 +7,11 @@
 ## Lane board
 | Lane | Owner | State | Real or fake in app | Blocker |
 |---|---|---|---|---|
-| UI | Member 1 | not started | wiring check only | — |
-| MESH | ? | not started | FakeMeshEngine | — |
-| AI | ? | not started | RuleTriageEngine (real rules) + FakeVoiceIo | LLM runtime check |
-| LOCATE | ? | not started | FakeLocateEngine | UWB check |
-| TRUST | ? | not started | FakeTrustEngine + empty dataset | Overpass API was overloaded at 13:40; retry script |
+| UI | Mikhil | not started | wiring check only | — |
+| MESH | Chanum | not started | FakeMeshEngine | — |
+| AI | Seeya | not started | RuleTriageEngine (real rules) + FakeVoiceIo | LLM runtime check |
+| LOCATE | Yorvan | not started | FakeLocateEngine | UWB check |
+| TRUST | Diya | not started | FakeTrustEngine + empty dataset | Overpass API was overloaded at 13:40; retry script |
 
 ## Milestones
 - [ ] M0 Onboarded (14:30) · [ ] Device checks (15:00) · [ ] M1 Engines real (18:00)

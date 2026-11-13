@@ -1,5 +1,5 @@
 # LANE: MESH
-Owner: see `docs/TEAM_ROLES.md` (recommended phone: Galaxy S23+) · Branch `lane/mesh` · Issue `[LANE:MESH]`
+Owner: **Chanum** (Member 3) · recommended phone: Galaxy S23+ · Branch `lane/mesh` · Issue `[LANE:MESH]`
 
 ## Mission
 Packets reach every phone in the crowd with no network: multi-hop, de-duplicated, store-and-forward, alive in the background.

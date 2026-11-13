@@ -3,26 +3,31 @@
 Each member owns one lane: one Gradle module and one lane file. Lanes only touch each other through
 `core/` interfaces, so you can all work in parallel without merge conflicts.
 
-**Fill in the table** (each member edits only their own row, in their first PR):
+Each member fills in their own GitHub @ and actual phone in their first PR.
 
-| Lane | Member | GitHub @ | Phone | Why this phone |
-|---|---|---|---|---|
-| **UI** + Command Center | Member 1 | | Honor X8b + Tab S6 Lite | Tablet = Command Center; Honor = Tier 2 scout UX |
-| **AI** (triage, voice) | | | Galaxy S24 Ultra (recommended) | Strongest on-device LLM (12 GB) |
-| **LOCATE** (radar, UWB, map) | | | Galaxy S26+ (recommended) | UWB + newest sensors |
-| **MESH** (Nearby, relay) | | | Galaxy S23+ (recommended) | Tier 1 relay; UWB partner for LOCATE tests |
-| **TRUST** (crypto, QR, dataset) | Member 5 — Diya | @diya-r6 | Galaxy S24 Ultra | Tier 1 in practice — also usable as 2nd UWB phone (LOCATE) and relay (MESH). See note below |
+| Lane | Member | GitHub @ | Phone | Why this phone | Issue |
+|---|---|---|---|---|---|
+| **UI** + Command Center (+ extra tasks) | **Mikhil** (Member 1, lead) | @Mikhil-sec | Honor X8b + Tab S6 Lite | Tablet = Command Center; Honor = Tier 2 scout UX | #2 |
+| **LOCATE** (radar, UWB, position) | **Yorvan** (Member 2) | | Galaxy S26+ (recommended) | UWB + newest sensors | #5 |
+| **MESH** (Nearby, relay) | **Chanum** (Member 3) | | Galaxy S23+ (recommended) | Tier 1 relay; UWB partner for LOCATE tests | #3 |
+| **AI** (triage, voice) | **Seeya** (Member 4) | | Galaxy S24 Ultra (recommended) | Strongest on-device LLM (12 GB) | #4 |
+| **TRUST** (crypto, QR, dataset) | **Diya** (Member 5) | @diya-r6 | Galaxy S24 Ultra | Tier 1 in practice - see the phone note below | #6 |
 
 Phones are shared for tests: LOCATE needs a second UWB phone (S23+ or S24 Ultra), and MESH needs 3+ phones for hops.
 
-> **Phone note (TRUST, 13 Nov):** Diya tests on a Galaxy S24 Ultra, which is **Tier 1** (`docs/ARCHITECTURE.md` device tiers),
-> not the Tier 2 A56 the lane assumed. Two consequences: (1) the "crypto + QR run on mid-range" proof point is **not**
-> demonstrated by the TRUST phone — it needs the Honor X8b (UI) or another Tier 2 device for that check; (2) the S24 Ultra
-> overlaps with the AI lane's recommended phone, so AI/LOCATE/MESH should coordinate who borrows it and when.
+> **Phone note (TRUST, 13 Nov):** Diya tests on a Galaxy S24 Ultra, which is **Tier 1** (`docs/ARCHITECTURE.md` device
+> tiers), not the Tier 2 A56 this lane assumed. Three consequences:
+> 1. The "crypto + QR run on mid-range" proof point is **not** demonstrated by the TRUST phone. It needs Mikhil's
+>    Honor X8b or another Tier 2 device. Raised in #11.
+> 2. Diya's S24 Ultra is the same handset Seeya (AI) is down for, so there may be only one between the two lanes -
+>    agree who gets it for the LLM device check vs. crypto/QR runs.
+> 3. Upside: it is a usable second UWB phone for Yorvan (LOCATE) and a Tier 1 relay for Chanum (MESH).
 
 ## How to tell your Claude its lane
 In a fresh session after cloning, say:
 > "I am Member N, my lane is <LANE>. Run the onboarding checklist in docs/ONBOARDING.md."
+
+e.g. Yorvan: *"I am Yorvan, Member 2, my lane is LOCATE. Run the onboarding checklist in docs/ONBOARDING.md."*
 
 Claude writes this into `CLAUDE.local.md` (gitignored), so every later session knows your lane automatically.
 
