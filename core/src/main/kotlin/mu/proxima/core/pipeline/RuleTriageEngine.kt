@@ -38,7 +38,7 @@ class RuleTriageEngine : TriageEngine {
             listOf("fire", "smoke", "flames", "dife", "feu", "fumee", "fumée", "lafime", "burning")),
         Rule(IncidentType.MEDICAL, "UNCONSCIOUS", Severity.CRITICAL,
             listOf("unconscious", "collapsed", "fainted", "passed out", "evanoui", "évanoui", "sans connaissance", "tom feb")),
-        Rule(IncidentType.MEDICAL, "SEIZURE", Severity.HIGH,
+        Rule(IncidentType.MEDICAL, "SEIZURE", Severity.CRITICAL,
             listOf("seizure", "convulsion", "fits", "epilep", "épilep", "kriz")),
         Rule(IncidentType.MEDICAL, "BLEEDING", Severity.HIGH,
             listOf("bleeding", "blood", "saigne", "disan", "cut", "wound", "blessure")),
@@ -48,7 +48,7 @@ class RuleTriageEngine : TriageEngine {
             listOf("heat", "dehydrat", "dizzy", "sunstroke", "insolation", "latet pe vire", "tourdi")),
         Rule(IncidentType.MEDICAL, "FRACTURE", Severity.MEDIUM,
             listOf("broken", "fracture", "kase", "cassé", "sprain", "twisted")),
-        Rule(IncidentType.HAZARD, "ELECTRICAL", Severity.HIGH,
+        Rule(IncidentType.HAZARD, "ELECTRICAL", Severity.CRITICAL,
             listOf("live wire", "electric", "kouran", "électrique", "electrocut")),
         Rule(IncidentType.HAZARD, "FALLEN_BRANCH", Severity.MEDIUM,
             listOf("branch", "tree fell", "fallen tree", "branche", "arbre", "pie dibwa", "labranch")),
@@ -64,8 +64,8 @@ class RuleTriageEngine : TriageEngine {
             listOf("injured", "hurt", "sick", "malad", "malade", "blese", "blessé", "doctor", "dokter", "ambulance", "help")),
     )
 
-    private val childWords = listOf("child", "kid", "boy", "girl", "my son", "our son", "her son", "his son", "daughter", "zanfan", "enfant", "garson", "tifi", "fiy", "fille", "baby", "bebe")
-    private val elderWords = listOf("old man", "old woman", "elderly", "grandmother", "grandfather", "granny", "granmer", "granper", "dadi", "nana", "vieux", "vieille")
+    private val childWords = listOf("child", "kid", "boy", "girl", "my son", "our son", "her son", "his son", "daughter", "zanfan", "enfant", "fils", "garson", "tifi", "fiy", "fille", "baby", "bebe")
+    private val elderWords = listOf("old man", "old woman", "old lady", "old person", "elderly", "grandmother", "grandfather", "granny", "granmer", "granper", "dadi", "nana", "vieux", "vieille")
     private val landmarkRegex = Regex("""\b(?:near|next to|beside|behind|at|pre|kot|près de|à côté de)\s+(?:the\s+|le\s+|la\s+)?([\p{L}\d' -]{3,32})""", RegexOption.IGNORE_CASE)
     private val countRegex = Regex("""(\d{1,3})\s*(?:people|persons|ppl|dimounn|personnes|injured|victims)""", RegexOption.IGNORE_CASE)
 
