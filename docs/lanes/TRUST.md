@@ -77,8 +77,9 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 **Open asks on the bus (posted on #6)**
 - UI: "works on mid-range" needs the Honor X8b; my S24 Ultra is Tier 1.
 - LOCATE: assembly/meeting points must come from venue data - OSM Mauritius has none.
-- Core/AI: `IncidentType.helpCategories` never routes to `PHARMACY`, stranding 169 of 524 points.
-  Needs an `interface-change` issue if we want it; I did not touch `core/`.
+- UI: `IncidentType.helpCategories` never routes to `PHARMACY`/`WATER`/`TOILETS` (292 of 524 points).
+  **No core change needed** - UI can call `nearest(loc, setOf(PHARMACY))` directly for a non-emergency list.
+  Deliberately NOT added to `MEDICAL`: a pharmacy 80 m away would then outrank a hospital for a cardiac arrest.
 
 **Files touched**
 `trust/src/main/java/mu/proxima/trust/{OsmHelpPoints,AssetHelpPointRepository,TrustModule}.kt`,
@@ -94,7 +95,7 @@ No `core/` changes. No interface changes.
 | 14:43 Fri | **P0 dataset done.** `fetch_help_points.sh` → 524 real OSM features for Mauritius, committed raw with fetch date. Counts: pharmacy 169, toilets 117, police 85, clinic 53, hospital 42, doctors 31, fire_station 11, drinking_water 6; healthcare tags add hospital 34 / clinic 42 / centre 7. |
 | 14:44 Fri | Context7 MCP added and reporting Connected. |
 | 14:52 Fri | `OsmHelpPoints` (pure parser + `rankNearest`) and `AssetHelpPointRepository` written; `TrustModule.createHelpPoints` now returns the real repository. 7 unit tests against the real dataset. **Not compiled yet** - no SDK. |
-| 14:55 Fri | Found that `IncidentType.helpCategories` never routes to `PHARMACY`, so 169 of 524 real points (the largest category) are unreachable. Raised, not fixed - it is a `core/` change. |
+| 14:55 Fri | Found that `IncidentType.helpCategories` never routes to `PHARMACY`/`WATER`/`TOILETS` (292 of 524 points). Resolved without a `core/` change: UI passes explicit categories. Not folded into `MEDICAL` - see decision log. |
 | 14:56 Fri | Android Studio installed via winget (JBR = JDK 25). SDK still pending the first-run wizard. |
 
 ## Decision log
@@ -107,3 +108,4 @@ No `core/` changes. No interface changes.
 | 14:52 Fri | Keep the distance/bearing ranking in the pure `OsmHelpPoints.rankNearest`, with `AssetHelpPointRepository.nearest()` as a one-line delegate | `nearest()` is the logic judges and the guided-response screen depend on; this way it is covered by a plain JVM unit test instead of needing an instrumented device or Robolectric | Robolectric (extra dependency, slow, and the build does not compile here yet); testing only the parser and leaving ranking unverified |
 | 14:53 Fri | Unnamed OSM features keep a category label ("Pharmacy", "Police station") instead of being dropped | ~180 of 524 real facilities have no `name` tag; hiding a pharmacy 100 m away because OSM never named it would be worse than showing it by category | Dropping unnamed features (loses a third of the dataset); showing a blank name (unusable for a panicking parent) |
 | 14:54 Fri | Asset stays `data/osm_help_points_raw.json`; no derived `help_points_mu.json` is generated | One file, one provenance chain; `docs/ARCHITECTURE.md` names `help_points_mu.json` but that is a doc in another lane's path, so it is flagged on the bus rather than edited silently | Generating a second trimmed asset at build time (two files to keep in sync, and the raw one still has to ship for ODbL) |
+| 14:55 Fri | Do NOT add `PHARMACY` to `IncidentType.MEDICAL.helpCategories`; UI queries it as a separate non-emergency list instead | Ranking is by distance alone, so a pharmacy 80 m away would outrank a hospital 800 m away for a cardiac arrest - that is bad guidance, and "AI selects, never authors medical advice" cuts the same way for routing | Adding PHARMACY to the MEDICAL set (unsafe ordering); making `helpCategories` severity-aware (a `core/` interface change for something the UI can already do by passing explicit categories) |
