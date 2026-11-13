@@ -152,6 +152,9 @@ TRUST's draft stopped at 18:05; the main change is adding the evening decisions.
 | 20:23 Fri | Fresh teammate set (12) run once on Diya's S24U with the team build (no install, eval folder removed after): EN+FR shipped under-triage 4/7, Kreol 1/5. |
 | 20:35 Fri | Seizure/electrical → CRITICAL, "fils", "old lady", lost/found floor; README reports fresh set pre-fix; REPORT_v3_fresh.md frozen. |
 | 20:40 Fri | Saving protocol: handoff rewritten; #23 answered (AI README already on main); memory note on teammate-phone safety. |
+| 20:45 Fri | PR #71 merged (main reopened): Gemma backend, eval, seizure/live wire CRITICAL on main. |
+| 20:55 Fri | #45 proof-read posted: 9 cards vs IFRC 2020 PDF, no contradictions; 5 pages, 1 order fix, ABC check, 5 wording nits to TRUST. |
+| 21:00 Fri | Guide: timed steps now say "Say next to hear the next step now." (+1 test). |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -186,3 +189,4 @@ TRUST's draft stopped at 18:05; the main change is adding the evening decisions.
 | 20:30 Fri | **Seizure and live wire raised HIGH → CRITICAL** (rules + severity floor), adopting the teammate's ratings (Seeya) | Under-triage is the dangerous error; both justify the widest alert (hop budget 10 vs 7) | Keeping HIGH and reporting them as policy disagreements |
 | 20:30 Fri | Fix the two real fresh-set misses, but report the fresh number as measured **before** the fixes (Seeya) | Fixing after seeing a test set inflates it; judges get the unbiased number plus what we changed | Re-scoring after fixes; not fixing |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |
+| 20:55 Fri | Timed steps held back "call EMS" (burns/fracture 20 min, heat 15, seizure 5, CPR defib 2): fix in the **guide** with a spoken next-step cue, not by reordering cards (Seeya) | One change covers all 5 cards, stays in AI lane, cards keep IFRC order; cue is navigation only so no AI-authored advice | TRUST reorders cards; reading the next step automatically after a timed step (breaks one-action-per-step) |
