@@ -132,6 +132,27 @@ class ProtocolsTest {
     }
 
     /**
+     * The AI lane's hands-free guide (#30) switches cards **by id** when the casualty's condition changes
+     * ("he's breathing" -> `unresponsive-breathing`, "he stopped breathing" -> `cpr-adult`, ...). That makes
+     * these ids a published API between two lanes, not an internal detail, so renaming one must break the
+     * build here rather than silently break their voice command at 03:00.
+     */
+    @Test
+    fun `card ids the AI guide switches by are stable`() {
+        val switchedByVoice = setOf("cpr-adult", "unresponsive-breathing", "severe-bleeding", "seizure")
+        val ids = cards.map { it.id }.toSet()
+
+        assertTrue(
+            "ids relied on by GuideEngine (#30) are missing: ${switchedByVoice - ids}",
+            ids.containsAll(switchedByVoice),
+        )
+        // The guide also needs a non-empty step list to read out, one step at a time.
+        cards.filter { it.id in switchedByVoice }.forEach {
+            assertTrue("${it.id} must have steps for the guide to read", it.steps.size >= 2)
+        }
+    }
+
+    /**
      * The real drift guard: drives the live `RuleTriageEngine` with one trigger phrase per subtype and checks
      * that whatever it actually emits either resolves to a card or is a documented gap.
      *
