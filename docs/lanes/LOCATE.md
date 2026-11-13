@@ -99,6 +99,7 @@ Chanum's S26+ (SM-S947B, API 37) has UWB + AoA support flag; comma-decimal local
 | 19:45 Fri | Sync (#53): merged main, build + locate tests green, **PR #60 merged** at the 19:45 cutoff; 👍 + M2 heads-ups on #53. Paused until main reopens. Next: arrow cutoff 0.3→0.5 m, compass-calibration hint (heading accuracy from rotation vector) |
 | 20:15 Fri | Pulled main fb20894 (#68), build + all tests green. UWB arrow cutoff 0.3 → 0.5 m (+ boundary tests), README row updated (0.5 m, UWB from 10.8 m outdoors) |
 | 20:25 Fri | Compass reliability logging: rotation-vector heading accuracy (`values[4]`) + accuracy status in the debug STATUS line and on every status change. Needed before a calibration hint: must know what the S23+ reports when it is right vs ~70° off |
+| 20:46 Fri | Compass signal test on S23+ (side-by-side build, demo build untouched): **S23+ reports no heading-accuracy estimate** (`values[4]` absent) and the accuracy status stayed **HIGH** throughout (indoors, flat on the laptop hinge, figure-8, on the ground), no status change event. → the phone gives no usable "compass is wrong" signal. Test build removed (it was joining the team M2 mesh). Lesson: an `adb shell` loop dies on unplug; log from the app for walk-away tests |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
