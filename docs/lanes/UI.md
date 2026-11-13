@@ -96,14 +96,28 @@ The previous "Field Terminal" look (OLED black, phosphor green, Space Grotesk + 
 
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 
-## NEXT_SESSION_HANDOFF
-- Read `DESIGN_RULES.md` first. UI = Material You tokens in `app/.../ui/theme/` (Color, Type, Shape, Spacing+Sizes, Motion, Theme);
-  icons = Material Symbols Rounded vectors `res/drawable/ic_*.xml` via `components/Symbols.kt`. Gate: `./gradlew :app:designCheck :app:lintDebug`.
-- All screens rebuilt (Home/SOS 0.6 s arm, Report, Feed + sheet, Finder, Found alert, Radar, Boot, Dev sheet, Command Center dispatch board).
-  Builds, designCheck 0, lint clean. **Not yet verified on device in the new look** (light + dark) — first thing to do.
-- Old look restorable: `git checkout ui-v1-field-terminal -- app/`.
-- `lane/ui` contains `iface/lost-found` (PR #15, waiting 👍 MESH + TRUST on #14). Open asks: #8, #9, #10, #16.
-- Next: device review (phone light/dark, tablet), 130% font + TalkBack, wire `MeshDemoControls` when on main, pitch screenshots.
+## NEXT_SESSION_HANDOFF (17:15 Fri)
+**Read first:** `DESIGN_RULES.md` (design source of truth) · this file · `CLAUDE.local.md` (gh/adb full paths).
+**Works (builds, designCheck 0 violations, lint clean, all module tests green — NOT yet seen on a device in the new look):**
+- Material You overhaul via the audited `ui-android` skill (`~/.claude/skills/ui-android`, invoke `/ui-android`): tokens in
+  `app/.../ui/theme/` (Color+semantic roles, Type=Roboto Flex, Shape, Spacing+Sizes, Motion, Theme), icons = Material Symbols
+  Rounded `res/drawable/ic_*.xml` via `components/Symbols.kt`. Old look: `git checkout ui-v1-field-terminal -- app/`.
+- Screens: Home (SOS 0.6 s hold-to-arm, voice ticks), Report (listen → review → 3 s auto-send → sent + nearest help), Feed + incident
+  sheet, Finder ("I'm with them" → sealed location), Found alert + Radar (guardian), Boot (permissions), Dev sheet (long-press
+  "Proxima"), Command Center dispatch board (tickets, someone's going / cleared, site plan with letter pins + hop pulses).
+- #28 done: `ProximaGraph` feeds `MeshBeaconInfo` (coarse location + llmReady).
+**Branch state:** `lane/ui` = main + `iface/lost-found` (PR #15, needs 👍 MESH+TRUST on #14) + lane/mesh `a548ed6` (MeshBeaconInfo).
+Do NOT merge lane/ui → main before PR #15 merges.
+**Mocked / broken:** sim ON by default; TRUST crypto still fake even with sim OFF (Diya, Tink by 23:00) — don't claim real
+encryption in the pitch yet. Protocol cards: 9 IFRC cards on main; crowd crush / electrical / branch / flood have none (#20).
+**Exact next steps:**
+1. Plug in the Honor X8b → `./gradlew installDebug` → screenshot every screen in light AND dark (`adb shell cmd uimode night yes|no`),
+   fix what fails `DESIGN_RULES.md` + the UI audit; then the Tab S6 Lite (landscape) for the Command Center.
+2. #8: Dev sheet lists `mesh.peers` with tap-to-allow → `MeshDemoControls.allowedNeighbours` (MeshDemoControls is on main).
+3. Command Center density heatmap from `mesh.peers[].location` (25 m cells from beacons).
+4. #20 decision (lead): recommend option A (crowd crush = hazard, no card). 130% font + TalkBack pass. README UI section (#23, by 10:30 Sat).
+**Files touched this session:** `app/**` (all UI), `DESIGN_RULES.md`, `CLAUDE.md` (§4 + last line), `docs/lanes/UI.md`,
+`docs/DECISIONS.md`, `docs/STATUS.md`, `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `core/**` (only via iface/lost-found PR #15).
 
 ## Progress log
 | Time | What |
@@ -113,6 +127,7 @@ The previous "Field Terminal" look (OLED black, phosphor green, Space Grotesk + 
 | 14:55 Fri | First full UI pass compiles: Home/SOS, Report, Feed, Command Center, Boot, Dev sheet, Wristbands, Finder. Requests #7 TRUST, #8 MESH, #9 AI, interface-change #10 |
 | 15:05 Fri | On-device review (Honor): SOS hold → voice ring → review → auto-send → "Alert sent, passed to 3 phones" works. Fixed: SOS label, truncated links, "Lost child" titles, duplicate kicker, Sending label |
 | 15:30 Fri | SOS arms only after a steady 0.6 s hold (arming arc); verified a swipe + tap no longer fires it |
+| 17:10 Fri | #28: beacons carry coarse location + llmReady (ProximaGraph → MeshBeaconInfo); merged main + lane/mesh a548ed6 |
 | 16:45 Fri | ui-android overhaul phase 2: every screen rebuilt on Material You tokens + Material Symbols; designCheck 304 → 0 violations; lint clean; core tests green. Device check pending (cable lent to MESH) |
 | 16:20 Fri | ui-android skill audited (MIT, markdown + templates only) and installed; phase 1 tokens approved (58/58 contrast pairs AA) |
 | 16:00 Fri | Command Center rebuilt as a dispatch board (tickets, someone's going / cleared, site plan with letter pins) |
