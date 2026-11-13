@@ -51,8 +51,8 @@ _Diya 19:12: time is short - merge interface changes WITHOUT waiting for 👍, b
 
 ### #38 status
 - **1. Per-session identity - LIVE on main (#50 + interface change #51/PR #52).** Fresh identity per app launch;
-  previous sessions' keys kept 24 h (max 10); pipeline uses `trust.ownsKey/ownsNodeId`. **Not yet run on a phone**:
-  plug in the S24, `./gradlew :trust:connectedDebugAndroidTest`, read `adb logcat -d -s TestRunner:*`.
+  previous sessions' keys kept 24 h (max 10); pipeline uses `trust.ownsKey/ownsNodeId`. **Device-verified 19:47: 22/22 on
+  the S24 Ultra.**
   Open to MESH: can an id change mid-session (timed rotation)? Gap left with UI: pipeline incidents are in-memory.
 - **2. Verified roles - TRUST side DONE (#55, PRs #56/#57).** `Role`, `RolePass`, `TrustEngine.verifyRoleClaim` (default
   false). Organiser key generated 19:24 by `./gradlew :trust:generateOrganiserKey`: PUBLIC in
@@ -60,11 +60,12 @@ _Diya 19:12: time is short - merge interface changes WITHOUT waiting for 👍, b
   **outside the repo - never commit, never post it**. Push to the organiser phone per `RolePasses.ORGANISER_PRIVATE_FILE` doc.
   The task refuses to overwrite the key (that would void issued passes). MESH/UI wiring asked as OPTIONAL on #55.
   Not built: role-phone mode (`KeyRotation.STABLE`) and pass delivery - only if MESH/UI say they'll wire the rest.
-- **3. Friend find - NOT started.** 1 and 2 merged by 19:30, so per the #38 promise it is now allowed, but it costs
-  ~4 h TRUST + MESH + UI: needs Diya's go-ahead (key decision).
+- **3. Friend find - TRUST side DONE 19:53 (approved by Diya), interface #61, PR #62 HELD until main reopens (#53).**
+  Branch `iface/friend-find`. 11 tests, 99/99. When the lead reopens main: merge main into the branch, build, merge #62,
+  run `:trust:connectedDebugAndroidTest` on the S24 (the Keystore AES-GCM friend key has only run on the JVM).
 
 ### THE ONE THING THAT MATTERS NEXT
-Ask Diya: friend find yes/no. Then: S24 device run of per-session storage; two-phone found-notice once everyone is on
+Merge PR #62 once main reopens. Then: S24 device run of per-session storage; two-phone found-notice once everyone is on
 one build; chase #23 (README sections by 10:30) and #45 (protocol proof-read); update README privacy/roles lines.
 
 ### What works, merged to `main`, verified
@@ -161,6 +162,8 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 19:13 Fri | Diya authorised merging interface changes without waiting for 👍 (inform instead). Merged #52: **per-session identity live**. Informed on #51 and closed it. No phone connected for the device run. |
 | 19:20 Fri | **Verified roles** core + TRUST merged (#55, PR #56): 9 tests (replay, forgery, edits, expiry, no key). |
 | 19:30 Fri | Organiser keypair generated on the laptop (public shipped, private off-repo), issuer for the organiser phone, guard test that the shipped key is public-only. PR #57. 88/88. MESH/UI asked on #55 to wire it, optional. |
+| 19:47 Fri | Everything merged before the 19:45 cutoff (#58); 👍 on #53. **M2 step 3 PASS: 22/22 on the S24 Ultra** with per-session identity under the real Keystore, built from main. Paused until main reopens. |
+| 19:53 Fri | **Friend find built** on `iface/friend-find` (11 tests, 99/99): rotating HMAC beacon tags, 6-digit pairing code, sealed invites bound to the confirmed peer, friend book AES-GCM under the Keystore. Interface #61, PR #62 held until main reopens. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -204,3 +207,6 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 19:18 Fri | A role is checked ONLY as `verifyRoleClaim(pass, packet, now)`, never as a bare pass check | A pass travels in the clear, so a bare signature check lets anyone replay an overheard medic pass. Requiring the carrying packet to be signed by `holderKey` makes the claim unforgeable without the holder's private key. Default `false` means the fake and any build without the organiser key never show a role | A public `verifyRolePass(pass)` as the lead proposed (replayable); sealing the pass (it is not secret, sealing adds nothing) |
 | 19:24 Fri | **Organiser key generated on the laptop, private half outside the repo** (approved by Diya) | One build serves every phone, and `~/.proxima/` cannot be picked up by any `git add`, which is stronger than a gitignore entry. The generator refuses to overwrite, since a new key silently voids every pass already issued | Generating on the organiser phone (needs a phone now and a second build round); a gitignored folder in the repo (one `-f` away from a leak) |
 | 19:30 Fri | Ask MESH/UI to wire roles as **optional** (approved by Diya) | Their own P0/P1s before the 08:00 freeze matter more, and TRUST-side roles are complete and tested either way, so the README can state it honestly | Pushing roles as a priority (risks other lanes' core features); not asking (the capability would never be visible) |
+| 19:52 Fri | **Build friend find** (approved by Diya, against my recommendation to skip it) | Diya's call: 1 and 2 merged well before the ~01:00 cutoff promised on #38. Built so it cannot hurt the M2 build: on its own branch, PR held until main reopens, every interface method defaults to off | Skipping it (my recommendation: about 4 h across three lanes, and the feature most likely to be challenged on privacy) |
+| 19:55 Fri | Friend matching happens **only on the friend's phone**, from a 10-min rotating HMAC tag; pairing code is **6 digits**; an invite is accepted only from the peer whose code was confirmed | No search is ever broadcast, so relays and bystanders learn nothing about who looks for whom - the answer to "never track individuals". 4 digits is 1 in 10,000. Binding the invite to the confirmed key stops a third phone slipping in its own secret | A broadcast "where is X" query (tells everyone who is searching); a static tag (linkable all day); accepting any invite (impersonation) |
+| 19:56 Fri | Beacon tags use JDK `HmacSHA256`; the friend book is encrypted with Tink AES-256-GCM under the Keystore | The friend secret must be shared as raw bytes inside a sealed invite, which a JDK HMAC takes directly; Tink stays responsible for everything at rest (AEAD API checked in Context7) | A Tink MAC keyset (would mean shipping serialized secret keysets between phones); storing friends in plain prefs (a backup or rooted phone would leak who your people are) |
