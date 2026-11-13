@@ -16,9 +16,9 @@ object TrustModule {
      * Simulation ON = `FakeTrustEngine`, which signs with "SIM" and base64s instead of encrypting - dev only.
      */
     fun createTrust(context: Context, simulation: Boolean): TrustEngine =
-        // STABLE until the #38 interface change lets the pipeline recognise a previous session's key and node id.
-        // Switching to PER_SESSION before that would drop a guardian's found-notices after an app restart.
-        if (simulation) FakeTrustEngine() else TinkTrustEngine(context, KeyRotation.STABLE)
+        // Fresh identity per app session, so a node id cannot follow one phone around (#38). The pipeline asks
+        // trust.ownsKey / ownsNodeId, so a guardian's restart mid-search still receives the finder's notices.
+        if (simulation) FakeTrustEngine() else TinkTrustEngine(context, KeyRotation.PER_SESSION)
 
     /**
      * Real OSM dataset, always - there is no simulated variant. 524 Mauritius help points parsed from
