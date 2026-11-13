@@ -122,6 +122,8 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
   4. 09:00 Sat: run the video pre-flight; 09:30 film per "Backup demo video plan" above.
   5. README MESH section is DONE (PR #47). Update its numbers if M2 or the video shows anything new (e.g. a longer chain, outdoor range).
 - **Follow-up (from #24):** after a peer app restart, its old per-launch node id stays `direct=true` on the other phone (new id shows as indirect). Check that `onDisconnected` fires and clears the old endpoint; stable ids (#19) remove most of it.
+- **Roles (#55/#69), on lane/mesh only:** waiting for 👍 from UI + TRUST on #69, then a PR once the lead reopens main. TRUST to add role-phone mode (STABLE keys) + pass loading; UI to set `MeshBeaconInfo.rolePass` and show `peers.filter { it.role != null }`.
+- **Team rule until main reopens (#68):** no PRs into main, no installs on demo devices (lead installs one build).
 - **Ask UI (not yet filed):** add a dev-sheet toggle for `MeshDemoControls.acoustic` if we want the acoustic fallback on stage.
 - **Device testing:** `bash mesh/tools/mesh_device_test.sh health|setup|ids|allow <serial> <ids|*>|ping <serial>|acoustic <serial> on|off|chirp <serial>|logs [n]|cleanup`.
   Installs side by side as `mu.proxima.app.meshtest` (needs `-Pmeshtest` from the machine-local init script), only
@@ -157,6 +159,8 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 19:10 Fri | PR #44 merged (restart fix + ultrasonic acoustic). README MESH section + AI-disclosure row merged (PR #47), #23 answered |
 | 19:15 Fri | Validated #51 on its branch (whole project green), found + fixed the restart/LOST-report gap (PR #54 merged), 👍 #51 with "no mid-session rotation before freeze", told TRUST on #19 that MESH is ready for the found-notice test |
 | 19:30 Fri | Found (no phones) and fixed store flooding by 10 s finder position updates: newest SEALED per (finder, guardian) only (PR #59; merged before CI by a script slip, CI on PR and on main both passed afterwards). 36/36 tests |
+| 20:05 Fri | Pulled main fb20894 (all lanes merged), whole project green, confirmed on #68. Main frozen for M2; no installs on demo devices |
+|  Fri | #55 verified roles wired on lane/mesh: core Beacon.role + Peer.role/roleLabel (63339e1, interface-change #69), mesh verification + 5 tests (f299143), 41/41. PR after main reopens + 👍 UI/TRUST |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -184,3 +188,4 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:50 Fri | Acoustic tones moved to near-ultrasound 18.0/18.7 kHz | Chanum: 4–5 kHz was piercing and disturbed other hackathon teams; ultrasound is inaudible to most adults. 19.5 kHz was too high for the S23+ speaker → S26+ mic path | 4/5 kHz (works both ways, too loud); 1/1.5 kHz (pleasant, did not decode once); 18.5/19.5 kHz (one-way only) |
 | 19:13 Fri | After an app restart the mesh replays its stored INCIDENT/SEALED packets (≤ 30 min) once into this phone's own pipeline | Found while validating #51: the pipeline keeps incidents in memory, and the mesh drops a re-forwarded copy of the guardian's own LOST report as already seen, so after a restart the finder's notice was refused. Fixed in `:mesh`, no core change | Forget seen ids on restart (would re-relay everything); persist incidents in core (core change near freeze) |
 | 19:39 Fri | Store-and-forward keeps only the newest SEALED packet per (finder, guardian) | A finder shares its position every 10 s as CRITICAL; 180 per 30 min filled the 200-slot store (the original SOS was evicted first) and flooded newly met phones with stale positions, oldest first | Bigger store (still floods); evict lowest severity (notices are CRITICAL too); fewer updates (LOCATE's radar needs them) |
+| 20:17 Fri | Verified roles (#55): the mesh verifies the pass on receipt (`trust.verifyRoleClaim` with the signed BEACON packet) and exposes only `Peer.role/roleLabel` to UI | TRUST requires a pass to be checked with the packet it arrived in; doing it in the mesh keeps crypto out of UI and gives every screen the same answer. Extra guard: the beacon must name its own signer | Hand UI the raw beacon packets (crypto spread over UI); skip roles (Chanum chose to do it) |
