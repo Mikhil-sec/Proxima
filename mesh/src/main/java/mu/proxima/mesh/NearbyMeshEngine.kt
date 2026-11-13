@@ -386,6 +386,7 @@ class NearbyMeshEngine(
                 if (code != ConnectionsStatusCodes.STATUS_ALREADY_CONNECTED_TO_ENDPOINT) {
                     Log.w(TAG, "requestConnection $endpointId failed: ${e.message}")
                 }
+                scope.launch(serial) { clearInFlight() } // free the radio for the next candidate
             }
     }
 
@@ -404,19 +405,30 @@ class NearbyMeshEngine(
         publishPeers()
     }
 
-    /** Called every second on [serial]: (re)connect to known neighbours whose backoff has elapsed. */
+    /** A connection handshake (ours or incoming) is in progress until this time: never start a second one. */
+    private var inFlightUntilMs = 0L
+
+    private fun clearInFlight() { inFlightUntilMs = 0L }
+
+    /** Called every second on [serial]: (re)connect to ONE known neighbour whose backoff has elapsed. */
     private fun reconnectDue() {
         val now = clock()
-        endpoints.forEach { (id, ep) ->
-            if (ReconnectPolicy.isDue(ep.connected, MeshDemoControls.allows(ep.nodeId), ep.nextAttemptMs, now)) {
-                if (ep.attempts > 0) Log.i(TAG, "reconnect ${ep.nodeId} attempt ${ep.attempts + 1}")
-                endpoints[id] = ep.copy(
-                    attempts = ep.attempts + 1,
-                    nextAttemptMs = now + ReconnectPolicy.backoffMs(ep.attempts + 1) + Random.nextLong(0, 1_000),
-                )
-                connect(id)
-            }
+        // Forget ghosts (e.g. the previous run of a restarted phone); discovery re-adds real phones.
+        endpoints.entries.removeAll { (_, ep) ->
+            (!ep.connected && ep.attempts >= ReconnectPolicy.MAX_ATTEMPTS).also { if (it) Log.i(TAG, "forget ${ep.nodeId} after ${ep.attempts} attempts") }
         }
+        val candidates = endpoints.map { (id, ep) ->
+            ReconnectPolicy.Candidate(id, ep.connected, MeshDemoControls.allows(ep.nodeId), ep.nextAttemptMs, ep.attempts)
+        }
+        val id = ReconnectPolicy.pickNext(candidates, now, inFlightUntilMs) ?: return
+        val ep = endpoints.getValue(id)
+        if (ep.attempts > 0) Log.i(TAG, "reconnect ${ep.nodeId} attempt ${ep.attempts + 1}")
+        endpoints[id] = ep.copy(
+            attempts = ep.attempts + 1,
+            nextAttemptMs = now + ReconnectPolicy.backoffMs(ep.attempts + 1) + Random.nextLong(0, 1_000),
+        )
+        inFlightUntilMs = now + ReconnectPolicy.CONNECT_TIMEOUT_MS
+        connect(id)
     }
 
     private val discovery = object : EndpointDiscoveryCallback() {
@@ -428,6 +440,8 @@ class NearbyMeshEngine(
                 Log.i(TAG, "found $nodeId ($tier) ep=$endpointId")
                 val existing = endpoints[endpointId]
                 if (existing?.connected == true) return@launch
+                // Same phone re-found under a new endpoint id: drop the stale id so we don't dial a ghost.
+                endpoints.entries.removeAll { (id, ep) -> id != endpointId && ep.nodeId == nodeId && !ep.connected }
                 // Tie-break so both phones don't request at once; the reconnect loop does the actual request.
                 endpoints[endpointId] = Endpoint(nodeId, tier, connected = false, lastSeenMs = clock(),
                     nextAttemptMs = ReconnectPolicy.firstAttemptAt(selfNodeId, nodeId, clock()))
@@ -450,6 +464,7 @@ class NearbyMeshEngine(
                 return
             }
             scope.launch(serial) {
+                inFlightUntilMs = clock() + ReconnectPolicy.CONNECT_TIMEOUT_MS // incoming handshake uses the radio too
                 val prev = endpoints[endpointId]
                 endpoints[endpointId] = Endpoint(nodeId, tier, connected = false, lastSeenMs = clock(),
                     attempts = prev?.attempts ?: 0,
@@ -460,6 +475,7 @@ class NearbyMeshEngine(
 
         override fun onConnectionResult(endpointId: String, resolution: ConnectionResolution) {
             scope.launch(serial) {
+                clearInFlight()
                 val ep = endpoints[endpointId] ?: return@launch
                 if (resolution.status.statusCode == ConnectionsStatusCodes.STATUS_OK) {
                     Log.i(TAG, "connected ${ep.nodeId}")

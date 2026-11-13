@@ -16,13 +16,13 @@ _`[x]` = verified on phones · `[~]` = coded + unit-tested, not yet verified on 
 - [x] Permissions per API level declared in the mesh manifest + exposed in `requiredPermissions`
       (BLE scan/advertise/connect, NEARBY_WIFI_DEVICES, location for older APIs).
 - [x] Payload = `ProximaJson` `MeshPacket` as BYTES. Log tag `Proxima`.
-- [~] Relay (dedup + deliver verified on 2 phones; forwarding needs 3): receive → drop if `packetId` already seen (Room table) → deliver to `inbound` →
+- [x] Relay (verified 3 phones, 16:46): receive → drop if `packetId` already seen (Room table) → deliver to `inbound` →
       if `ttl > 1` forward to all other endpoints with `ttl-1`, `hopCount+1`, `path + selfNodeId` → emit `HopEvent`s.
-- [~] Foreground service (connectedDevice type) so relaying continues with the screen off / in airplane mode with BT+Wi-Fi on.
+- [x] Foreground service (connectedDevice type) so relaying continues with the screen off / in airplane mode with BT+Wi-Fi on.
 **P1 (M2 23:00)**
-- [~] Store-and-forward (Room, unit-tested): keep live packets in Room ~30 min; on a new connection, flush them, CRITICAL first.
+- [x] Store-and-forward (Room; restart flush seen on device): keep live packets in Room ~30 min; on a new connection, flush them, CRITICAL first.
 - [~] Beacons every ~10 s (`PacketKind.BEACON`, `Beacon` payload, coarse location) → `peers` includes indirect nodes (`direct=false`).
-- [~] **Demo multi-hop control:** neighbour allow-list so phones in one room form a chain A→B→C. Expose e.g.
+- [x] **Demo multi-hop control:** neighbour allow-list so phones in one room form a chain A→B→C. Expose e.g.
       `object MeshDemoControls { val allowedNeighbours: MutableStateFlow<Set<String>?> }` and tell UI via a `request` issue.
 - [~] `selfNodeId` must equal `trust.identity.nodeId`.
 **P2**
@@ -65,6 +65,7 @@ Nearby has per-device connection limits, so the cluster may not be a full mesh: 
 | 15:48 Fri | ✅ **Device check passed** (S947B API 37 + S23+ API 36): Nearby connect ~6 s, beacons + PING both ways. Fixed: location needed on API 37, discovery retry |
 | 15:57 Fri | Store-and-forward persisted in Room (survives restart) + 5 more JVM tests (10/10); "how my part works" written |
 | 16:10 Fri | Reconnect loop with backoff (2→30 s + jitter); 3 more JVM tests (13/13) | Device log showed a dropped link that never came back |
+| 16:46 Fri | ✅ **3-phone test** (S947B, Honor X8b relay, S23+): forced chain via allow-list, PING relayed hops=1 in 0.09–0.17 s (was 7–10 s before one-at-a-time connects); reconnect after 15 s radio-off in 31 s; relay with Honor screen off ~80 s (Doze); stored packets flushed after restart |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -78,4 +79,5 @@ Nearby has per-device connection limits, so the cluster may not be a full mesh: 
 | 15:46 Fri | `requiredPermissions` lists coarse+fine location on every API level | Seen on device: API 37 Nearby discovery fails 8034 without it | Location only ≤ API 32 (per older docs) |
 | 15:47 Fri | Retry advertising/discovery every 10 s while running | Phone locked at start = location denied → discovery never recovered | Fail once and wait for app restart |
 | 16:08 Fri | Keep endpoints after disconnect; 1 s loop retries with exponential backoff 2→30 s + 0–1 s jitter; forget after 10 min unseen | Device log: link dropped at 15:48 and Nearby never re-reported the phone as found → link stays dead | Remove on disconnect and wait for rediscovery (never comes); fixed-interval retry (both phones collide) |
+| 16:40 Fri | One connection attempt in flight at a time (15 s timeout), fewest-attempts first; forget endpoints after 8 failed attempts; drop stale endpoint ids of a re-found node | Honor X8b log: parallel requestConnection → 8007/8012 errors + radio busy; relay latency 7–10 s → 0.1 s after fix | Parallel attempts with backoff only (still collide); never forgetting ghosts |
 | 15:25 Fri | Debug-only adb PING sends CONTROL/`ping`, not an INCIDENT | Tests multi-hop with no UI and no fake incidents in the pipeline (real-data rule) | Fake INCIDENT packets |

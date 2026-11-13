@@ -25,4 +25,24 @@ object ReconnectPolicy {
     /** Ready to try now? `nextAttemptMs == null` means "don't retry" (e.g. dropped by the demo allow-list). */
     fun isDue(connected: Boolean, allowed: Boolean, nextAttemptMs: Long?, nowMs: Long): Boolean =
         !connected && allowed && nextAttemptMs != null && nowMs >= nextAttemptMs
+
+    /**
+     * Seen on a Honor X8b: several requestConnection calls in parallel all fail (8007 RADIO_ERROR / 8012 IO_ERROR)
+     * and keep the radio busy, which also slowed relaying to 7–10 s. So: ONE attempt in flight at a time.
+     */
+    const val CONNECT_TIMEOUT_MS = 15_000L
+
+    /** After this many failed attempts an endpoint is forgotten (ghost from a restarted phone); discovery re-adds real ones. */
+    const val MAX_ATTEMPTS = 8
+
+    data class Candidate(val id: String, val connected: Boolean, val allowed: Boolean, val nextAttemptMs: Long?, val attempts: Int)
+
+    /** The single endpoint to try now, or null. Fewest attempts first (fresh phones before likely ghosts). */
+    fun pickNext(candidates: Collection<Candidate>, nowMs: Long, inFlightUntilMs: Long): String? {
+        if (nowMs < inFlightUntilMs) return null
+        return candidates
+            .filter { isDue(it.connected, it.allowed, it.nextAttemptMs, nowMs) }
+            .minWithOrNull(compareBy<Candidate> { it.attempts }.thenBy { it.nextAttemptMs })
+            ?.id
+    }
 }
