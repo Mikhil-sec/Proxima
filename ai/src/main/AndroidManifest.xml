@@ -14,4 +14,11 @@
             <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
     </queries>
+
+    <application>
+        <!-- LiteRT-LM GPU backend (Gemma): the vendor OpenCL libraries must be declared or GPU init fails
+             on Android 12+ and the engine falls back to CPU. Optional: phones without them still run on CPU. -->
+        <uses-native-library android:name="libvndksupport.so" android:required="false" />
+        <uses-native-library android:name="libOpenCL.so" android:required="false" />
+    </application>
 </manifest>
