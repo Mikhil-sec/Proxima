@@ -118,8 +118,8 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
   Boot, Dev sheet. Command Center built but **not yet reviewed on the tablet**.
 - `lane/ui` contains `iface/lost-found` (PR #15, waiting 👍 MESH + TRUST on #14). Do not merge lane/ui to main before #15.
 - Open asks: #8 MESH multi-hop control, #9 AI voice level, #10 report(raw, triaged), #16 AI hint must not downgrade critical.
-- Next: tablet review of Command Center; guided-response card (help point with km + no arrow > 2 km, protocol read aloud);
-  130% font + TalkBack pass; then pitch screenshots.
+- Next: tablet review of Command Center; wire MESH `MeshDemoControls.allowedNeighbours` (#8) into the Dev sheet once
+  lane/mesh is on main; 130% font + TalkBack pass; then pitch screenshots. Protocol cards wait on TRUST protocols.json.
 
 ## Progress log
 | Time | What |
@@ -129,7 +129,8 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 | 14:55 Fri | First full UI pass compiles: Home/SOS, Report, Feed, Command Center, Boot, Dev sheet, Wristbands, Finder. Requests #7 TRUST, #8 MESH, #9 AI, interface-change #10 |
 | 15:05 Fri | On-device review (Honor): SOS hold → voice ring → review → auto-send → "Alert sent, passed to 3 phones" works. Fixed: SOS label, truncated links, "Lost child" titles, duplicate kicker, Sending label |
 | 15:30 Fri | SOS arms only after a steady 0.6 s hold (arming arc); verified a swipe + tap no longer fires it |
-| 15:45 Fri | Wristband dropped (#14, PR #15). New: Finder picks the lost alert ("I'm with them") → sealed location; guardian banner, full-screen Found alert, Radar (sweep, blip, haptic ticks). Verified on Honor in SIM |
+| 15:50 Fri | Nearest-help component on real OSM data: km distances, turning arrow only within 2 km, amber note when help is far (#11); "read steps aloud" when a protocol card exists |
+| 15:35 Fri | Wristband dropped (#14, PR #15). New: Finder picks the lost alert ("I'm with them") → sealed location; guardian banner, full-screen Found alert, Radar (sweep, blip, haptic ticks). Verified on Honor in SIM |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -141,5 +142,5 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 | 14:52 Fri | Tier 1 = RAM ≥ 7 GB **and** flagship SoC (SM8xxx / Exynos 2xxx / Tensor) or UWB | Honor X8b reports 7.5 GB RAM but has SM6225, would have tried to run the LLM | RAM-only threshold; raising RAM to 10 GB (would demote the S23+) |
 | 15:30 Fri | SOS ring needs a 0.6 s steady hold, aborts on movement past touch slop | Brushing/scrolling across the ring triggered it | Instant press; double-tap; confirm dialog |
 | 15:35 Fri | Drop QR wristband; finder answers the guardian's lost alert, location sealed to the reporter key | No hardware; same privacy property; one fewer module (camera) | QR wristband + scanner; NFC |
-| 15:45 Fri | Radar = terminal register (sweep, rings, mono distance); found alert = civilian register in green | Good news must read instantly; the radar is a tool, can be dense | Map view (needs tiles, offline) |
+| 15:35 Fri | Radar = terminal register (sweep, rings, mono distance); found alert = civilian register in green | Good news must read instantly; the radar is a tool, can be dense | Map view (needs tiles, offline) |
 | 14:55 Fri | Show the AI result for 3 s, auto-send unless cancelled; proposed `report(raw, triaged)` (#10) | User can catch a wrong triage; what you see is what is sent | Send instantly (no human check), require a confirm tap (slower in panic) |

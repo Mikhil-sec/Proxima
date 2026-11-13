@@ -50,6 +50,7 @@ import mu.proxima.app.ui.ageLabel
 import mu.proxima.app.ui.components.BackButton
 import mu.proxima.app.ui.components.Glyph
 import mu.proxima.app.ui.components.GlyphIcon
+import mu.proxima.app.ui.components.NearestHelp
 import mu.proxima.app.ui.components.PrimaryAction
 import mu.proxima.app.ui.components.Rail
 import mu.proxima.app.ui.components.SimBadge
@@ -66,7 +67,6 @@ import mu.proxima.core.model.GeoPoint
 import mu.proxima.core.model.IncidentRecord
 import mu.proxima.core.model.IncidentType
 import mu.proxima.core.model.ProtocolCard
-import mu.proxima.core.model.RankedHelpPoint
 
 /** Ticks once a second so relative ages ("45s") stay true without each row running its own timer. */
 @Composable
@@ -192,11 +192,8 @@ fun IncidentSheet(
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     var protocol by remember { mutableStateOf<ProtocolCard?>(null) }
-    var help by remember { mutableStateOf<List<RankedHelpPoint>>(emptyList()) }
     LaunchedEffect(i.id) {
         protocol = (i.protocolId?.let { graph.protocols.byId(it) }) ?: graph.protocols.bestFor(i.type, i.subtype)
-        val from = me ?: i.location
-        if (from != null) help = graph.helpPoints.nearest(from, i.type.helpCategories, 2)
     }
 
     ModalBottomSheet(
@@ -236,19 +233,8 @@ fun IncidentSheet(
                 Text("Source: ${card.source}", style = grotesk(13, FontWeight.Medium, Px.Dim))
             }
 
-            if (help.isNotEmpty()) {
-                Spacer(Modifier.height(20.dp))
-                Text("Nearest help", style = grotesk(20))
-                help.forEach { h ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(h.point.name, style = grotesk(17, FontWeight.Medium))
-                            Text(h.point.source, style = grotesk(12, FontWeight.Medium, Px.Dim))
-                        }
-                        Text(distanceLabel(h.distanceM), style = mono(15, FontWeight.Bold, Px.Text))
-                    }
-                }
-            }
+            Spacer(Modifier.height(20.dp))
+            NearestHelp(graph, me ?: i.location, i.type.helpCategories)
 
             Spacer(Modifier.height(24.dp))
             if (onWithThem != null) {

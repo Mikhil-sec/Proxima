@@ -2,6 +2,7 @@ package mu.proxima.app.ui
 
 import mu.proxima.core.model.DeviceTier
 import mu.proxima.core.model.FixSource
+import mu.proxima.core.model.HelpCategory
 import mu.proxima.core.model.IncidentType
 import mu.proxima.core.model.Severity
 import mu.proxima.core.model.TriageSource
@@ -61,6 +62,21 @@ fun TriageSource.label(): String = when (this) {
     TriageSource.OFFLOADED_LLM -> "AI on a nearby phone"
     TriageSource.RULES -> "Keyword rules"
     TriageSource.MANUAL -> "Reported by hand"
+}
+
+fun HelpCategory.label(): String = when (this) {
+    HelpCategory.HOSPITAL -> "Hospital"
+    HelpCategory.HEALTH_CENTRE -> "Health centre"
+    HelpCategory.FIRST_AID_POST -> "First aid post"
+    HelpCategory.PHARMACY -> "Pharmacy"
+    HelpCategory.POLICE -> "Police"
+    HelpCategory.FIRE_STATION -> "Fire station"
+    HelpCategory.AMBULANCE -> "Ambulance"
+    HelpCategory.ASSEMBLY_POINT -> "Assembly point"
+    HelpCategory.MEETING_POINT -> "Meeting point"
+    HelpCategory.DEFIBRILLATOR -> "Defibrillator"
+    HelpCategory.WATER -> "Drinking water"
+    HelpCategory.TOILETS -> "Toilets"
 }
 
 fun DeviceTier.label(): String = when (this) {

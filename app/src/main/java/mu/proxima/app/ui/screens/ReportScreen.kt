@@ -55,6 +55,7 @@ import mu.proxima.app.ui.VoiceCapture
 import mu.proxima.app.ui.components.BackButton
 import mu.proxima.app.ui.components.Glyph
 import mu.proxima.app.ui.components.GlyphIcon
+import mu.proxima.app.ui.components.NearestHelp
 import mu.proxima.app.ui.components.PrimaryAction
 import mu.proxima.app.ui.components.QuietAction
 import mu.proxima.app.ui.components.Rail
@@ -361,6 +362,8 @@ private fun androidx.compose.foundation.layout.ColumnScope.SentView(
                 Text(incident.summary, style = grotesk(15, FontWeight.Medium, Px.Dim))
             }
         }
+        Spacer(Modifier.height(28.dp))
+        NearestHelp(graph, incident.location ?: graph.locate.selfLocation.value, incident.type.helpCategories)
         protocol?.let { card ->
             Spacer(Modifier.height(28.dp))
             Text("What to do now", style = grotesk(22))
@@ -372,6 +375,9 @@ private fun androidx.compose.foundation.layout.ColumnScope.SentView(
                 }
             }
             Text("Source: ${card.source}", style = grotesk(13, FontWeight.Medium, Px.Dim))
+            QuietAction("Read the steps aloud", {
+                graph.scope.launch { graph.voice.speak(card.steps.joinToString(". ") { it.text }) }
+            })
         }
     }
     PrimaryAction("Done", onDone)
