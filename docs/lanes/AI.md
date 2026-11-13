@@ -38,7 +38,11 @@ Steps come from TRUST's cited protocol cards.
 - **18:04 Fri: Gemini Nano does NOT download on the S26+ (SM-S947B, Exynos/SLSI AICore)**: `DOWNLOAD_ERROR ... Feature SAPI Open Prompt
   Stable Fast Mode with SLSI ... Task was cancelled`, twice, on validated Wi-Fi. Not fixable in our code. Next: try Nano on Diya's
   S24 Ultra (Snapdragon AICore); if that fails too → Gemma 3 1B `.litertlm` via LiteRT-LM (`LlmBackend` swap, probe supports it).
-- **B hands-free guide (code + 16 JVM tests, not yet device-tested):** `ai/.../guide/` (`HandsFreeGuide`, `GuideCommands`,
+- **B hands-free guide: DEVICE-TESTED 18:25 on Diya's S24 Ultra, offline (on-device en-GB):** next / repeat / "he's breathing" (CPR→recovery) /
+  "he stop breathing" (recovery→CPR) / stop all correct; background chatter caused no false commands.
+  **Demo-phone checklist:** offline speech pack installed (the app requests en-GB once; add fr-FR for French), media volume up,
+  mic allowed. Guide pauses other audio while it talks/listens (audio focus).
+- B code: `ai/.../guide/` (`HandsFreeGuide`, `GuideCommands`,
   `GuideIntentClassifier`, temp `GuideContract.kt` until #30 lands in core). `AiModule.createGuide(voice, protocols, caps, scope)`.
   Device test: allow mic in Proxima, then `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez guide true [--es card cpr-adult]`.
 - **D crowd-crush warning:** not started (design in #30).
@@ -79,6 +83,7 @@ Steps come from TRUST's cited protocol cards.
 | 15:56 Fri | Bus: #16 + #9 implemented with tests (42 green), #10 approved. |
 | 17:14 Fri | Tier 2 offload: TieredTriageEngine + TriageServer + LLM-ready announcements; shared sanitize/merge; 40 ai tests green. |
 | 18:04 Fri | Nano download fails on S26+ (Samsung SLSI AICore); B hands-free guide built (16 tests, 56 ai tests green); #30 opened. |
+| 18:25 Fri | B device-tested on S24U (all 5 commands). Found+fixed on device: language fallback stuck on en-MU, no offline speech pack (now requested), TTS silent under music (audio focus), "he stop breathing" ended the guide. Nano UNAVAILABLE on S24U too. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -96,4 +101,8 @@ Steps come from TRUST's cited protocol cards.
 | 17:14 Fri | Offload request carries only text + pressed button (no location); stale (>15 s) requests ignored | Requests are readable by relays; store-and-forward replays old packets to new neighbours | Sending the full RawReport; sealing to a helper key (helpers don't advertise keys) |
 | 18:04 Fri | Pivot: drop Kreol accuracy; build B hands-free guided first aid + D crowd-crush early warning (#30) | Kreol can't be made accurate without a model or native reviewer; B and D deepen AI where the hero scenarios are (CPR, Ganga Talao crush) | Description matching (A, kept as backlog); photo classification (CAMERA dropped) |
 | 18:04 Fri | Guide: navigation words match whole words only; silence never ends the guide; LLM only maps unclear speech to a closed command list | "stop" fired on "stopped breathing" in tests; CPR involves minutes of silence; AI must never author steps | Prefix matching; timeout after N silent sessions; LLM free-form guidance |
+| 18:25 Fri | Voice requests the offline speech pack once (triggerModelDownload) and walks en-MU→en-GB→en-US on the standard recognizer | Demo phones had no offline pack; venue is offline; en-MU is not a recognizer locale | Asking users to install packs manually; English-only |
+| 18:25 Fri | Guide/voice hold transient audio focus with USAGE_ASSISTANCE_NAVIGATION_GUIDANCE | On device the instructions were inaudible under music and the mic transcribed it | Ducking only; relying on media volume |
+| 18:25 Fri | Breathing status is checked before "stop"; "stop breathing" = not breathing | Recognizer wrote "stopped" as "stop" and the guide ended mid-CPR | Whole-word stop alone |
+| 18:25 Fri | Gemini Nano not usable on team phones (S26+ SLSI: download cancelled; S24U: UNAVAILABLE) | AICore eligibility is outside our control | Waiting on AICore updates |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |

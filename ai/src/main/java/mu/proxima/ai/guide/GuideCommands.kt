@@ -28,6 +28,7 @@ object GuideCommands {
 
     private val notBreathing = listOf(
         "not breathing", "isn't breathing", "isnt breathing", "is not breathing", "stopped breathing",
+        "stop breathing", "stops breathing", "stopping breathing", // recognizers often write "stopped" as "stop"
         "no breathing", "no longer breathing", "not breathing anymore", "can't feel", "no breath",
         "ne respire plus", "ne respire pas", "respire pas", "respire plus", "pa respire", "pe pa respire",
     )
@@ -52,12 +53,12 @@ object GuideCommands {
         val t = " " + text.lowercase().replace(Regex("[^\\p{L}\\p{N}' ]"), " ").replace(Regex("\\s+"), " ").trim() + " "
         if (t.isBlank()) return GuideIntent.None
 
-        if (stop.any { t.hasWholeWord(it) }) return GuideIntent.Stop
-
-        // Breathing status: the most important switch (CPR ↔ recovery position).
+        // Breathing status FIRST: "he stop breathing" (as transcribed) must switch to CPR, never end the guide.
         if (notBreathing.any { t.hasWord(it) }) {
-            return switchIfDifferent(CPR, "Not breathing", currentCardId)
+            return switchIfDifferent(CPR, "Not breathing", currentCardId) // already on CPR → None: keep going
         }
+
+        if (stop.any { t.hasWholeWord(it) }) return GuideIntent.Stop
         if (breathing.any { t.hasWord(it) } && !negatedBreathing(t)) {
             // Only meaningful while doing CPR or assessing; elsewhere "breathing" is not a reason to switch.
             if (currentCardId == CPR || currentCardId == ASSESS) return switchIfDifferent(RECOVERY, "Breathing", currentCardId)

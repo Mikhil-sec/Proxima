@@ -40,6 +40,14 @@ class GuideCommandsTest {
         assertEquals(GuideIntent.None, i("he's not breathing", CPR))
     }
 
+    @Test fun transcribedStopBreathing_switchesToCpr_neverStops_deviceTest() {
+        // Real S24 Ultra transcript, 18:21 Fri: the guide ended instead of switching.
+        assertEquals(GuideIntent.SwitchTo(CPR, "Not breathing"), i("He's breathing he stop breathing srivall stop", RECOVERY))
+        assertEquals(GuideIntent.SwitchTo(CPR, "Not breathing"), i("he stop breathing", RECOVERY))
+        assertEquals(GuideIntent.None, i("he stop breathing", CPR)) // already doing CPR: keep going, don't stop
+        assertEquals(GuideIntent.Stop, i("stop")) // plain "stop" still ends the guide
+    }
+
     @Test fun negatedBreathingDoesNotSwitchToRecovery() {
         assertEquals(GuideIntent.None, i("he's not really breathing", CPR))
     }
