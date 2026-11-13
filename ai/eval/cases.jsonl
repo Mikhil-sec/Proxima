@@ -30,3 +30,15 @@
 {"id":"btn03","lang":"en","hint":"HAZARD","text":"smoke everywhere near the kitchen tent","types":["HAZARD"],"severities":["HIGH","CRITICAL"],"subtypes":["FIRE"]}
 {"id":"amb01","lang":"en","text":"false alarm, the child we reported has been found by her dad","types":["ALL_CLEAR","FOUND"],"severities":["LOW","MEDIUM","HIGH"],"subtypes":[]}
 {"id":"amb02","lang":"en","text":"someone fainted from the heat but is awake and talking now","types":["MEDICAL"],"severities":["MEDIUM","HIGH"],"subtypes":["HEAT_EXHAUSTION","UNCONSCIOUS"]}
+{"id":"ho01","lang":"en","text":"please help, my little boy is gone, I turned around and he wasn't there","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"ho02","lang":"en","text":"can't find my granddaughter anywhere, she's 8","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"ho03","lang":"en","text":"the crowd at the front is surging and people are falling over each other","types":["HAZARD"],"severities":["CRITICAL"],"subtypes":["CROWD_CRUSH"]}
+{"id":"ho04","lang":"en","text":"one of the food stalls has caught fire","types":["HAZARD"],"severities":["HIGH","CRITICAL"],"subtypes":["FIRE"]}
+{"id":"ho05","lang":"fr","text":"Mon fils est perdu, il porte un t-shirt bleu","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"ho06","lang":"fr","text":"Quelqu'un est inconscient près des toilettes","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["UNCONSCIOUS","CARDIAC_ARREST"]}
+{"id":"ho07","lang":"mfe","text":"Enn madam pe gagn kriz, li pe tranble partou","types":["MEDICAL"],"severities":["HIGH","CRITICAL"],"subtypes":["SEIZURE"]}
+{"id":"ho08","lang":"mfe","text":"Mo tifi inn perdi dan lafoul","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"ho09","lang":"en","hint":"MEDICAL","text":"my daughter has disappeared in the crowd","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"ho10","lang":"en","hint":"HAZARD","text":"a man is lying there not breathing","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["CARDIAC_ARREST"]}
+{"id":"ho11","lang":"en","text":"a teenager cut his hand badly on broken glass, lots of blood","types":["MEDICAL"],"severities":["HIGH","CRITICAL"],"subtypes":["BLEEDING"]}
+{"id":"ho12","lang":"en","text":"an elderly lady seems lost and confused, sitting alone at the bus stop","types":["SIGHTING","FOUND","LOST_PERSON"],"severities":["MEDIUM","HIGH"],"subtypes":["ELDERLY"]}
