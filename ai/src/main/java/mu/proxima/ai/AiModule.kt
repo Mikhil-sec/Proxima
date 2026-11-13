@@ -49,6 +49,9 @@ object AiModule {
         }
     }
 
+    /** Debug probe only: the SAME shared instance triage uses (never a second 2.6 GB copy). */
+    internal fun debugLlm(context: Context, scope: CoroutineScope): LlmBackend = llm(context, scope)
+
     /** Resolves the shared LLM at call time, so createGuide works whichever factory runs first. */
     private object SharedLlm : LlmBackend {
         override val name get() = sharedLlm?.name ?: "none"

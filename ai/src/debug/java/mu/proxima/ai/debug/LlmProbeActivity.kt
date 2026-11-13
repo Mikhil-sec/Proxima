@@ -26,7 +26,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import mu.proxima.ai.triage.LiteRtLmBackend
 import mu.proxima.ai.triage.TriagePrompt
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
@@ -183,7 +182,9 @@ class LlmProbeActivity : Activity() {
         log("=== EVAL ${prompts.size} prompts · ${android.os.Build.MODEL} · sdk ${android.os.Build.VERSION.SDK_INT} ===")
         mem("baseline")
         val t0 = SystemClock.elapsedRealtime()
-        val backend = LiteRtLmBackend(File(getExternalFilesDir(null), "models"), cacheDir, scope, log = ::log)
+        // The app process already started loading the shared model at startup; reuse it (what triage uses).
+        val backend = mu.proxima.ai.AiModule.debugLlm(this, scope)
+        log("EVAL backend=${backend.name}")
         val ready = withTimeoutOrNull(180_000) { while (!backend.isReady()) delay(200); true } ?: false
         if (!ready) { log("EVAL model not ready after ${SystemClock.elapsedRealtime() - t0} ms; see llm: lines above"); return }
         log("EVAL ready_ms=${SystemClock.elapsedRealtime() - t0}")
