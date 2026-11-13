@@ -46,28 +46,33 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 
 
 ## NEXT_SESSION_HANDOFF
-_Saved 20:17 Fri 13 Nov. `lane/trust` = main `fb20894` + README update (d6d6d30). 88/88 trust tests on main's code,
-whole project green. **main is FROZEN for the M2 run (#53/#68) - do not open or merge PRs into main until the lead
-posts on #1/#53 that it is reopened.** Diya (19:12): when main IS open, merge interface changes without waiting for
-👍 but inform the lanes; stop and ask her only for key decisions._
+_Saved 20:49 Fri 13 Nov. `lane/trust` == main (e6cb2ed). 101/101 trust tests, whole project green. **main is OPEN**
+(lead reopened 20:25, #53). Diya (19:12): merge interface changes without waiting for 👍 but inform the lanes; stop and
+ask her only for key decisions. **Still in force: never install onto demo devices** (Honor, S24 Ultra, S23+, S26+,
+tablet run the lead's build); adb file pushes are fine, `installDebug` is not._
 
-### State
-| Item | Where | Status |
-|---|---|---|
-| TinkTrustEngine (Ed25519 + HPKE, Keystore) | main | Done. 22/22 on S24 Ultra (19:47, built from main), 21/21 on Honor LLY-LX2 |
-| Per-session identity (#38 item 1) | main (#50, #52) | Live. Fresh id per launch, previous keys 24 h / max 10, pipeline uses `ownsKey/ownsNodeId` |
-| Verified roles (#38 item 2) | main (#55, #56, #57) | TRUST side done. Organiser PUBLIC key in `trust/src/main/assets/data/organiser_public.json`; PRIVATE key at `~/.proxima/organiser_private.json` on Diya's laptop, **outside the repo, never commit/post** (verified to match the shipped key 20:45). **Role mode merged (#72)**: `role/` folder -> stable identity + `holder_key.txt`; laptop `./gradlew :trust:issueRolePass -Prole= -Plabel= -Pholder=` -> `~/.proxima/pass.json`; adb push -> `TrustModule.loadRolePass`. MESH wired beacons (#69, 👍 given, merges after their PR); UI needs one line in ProximaGraph (posted on #55) |
-| Friend find (#38 item 3) | main (#62, merged 20:36), interface #61 | TRUST side done, 11 tests. MESH wired it on `lane/mesh-friends` (👍 given 20:43); UI (Mikhil) builds pairing + match card |
-| README | main (#70, merged 20:37) | Updated to match main. MESH + LOCATE sections in; **UI + AI still owed (#23)** |
+### State - everything TRUST built is on main
+| Item | Status |
+|---|---|
+| TinkTrustEngine (Ed25519 + HPKE, Keystore) | Done. 22/22 S24 Ultra (19:47, from main), 21/21 Honor |
+| Per-session identity (#52) | Live. MESH #54 replays stored alerts (<= 30 min) after restart, which makes guardian-restart work on the real mesh |
+| Verified roles (#55, #56, #57, #72) | TRUST side complete incl. **role mode**: `files/role/` folder -> stable identity + `holder_key.txt`; laptop signs with `./gradlew :trust:issueRolePass -Prole=MEDIC -Plabel="Medic tent 2" -Pholder=<file>` -> `~/.proxima/pass.json` (self-checks against the shipped public key); adb push -> `TrustModule.loadRolePass`. Organiser PRIVATE key `~/.proxima/organiser_private.json`: **never commit/post; Diya to back it up**. MESH beacon wiring #69 (👍 given) merges from `lane/mesh`; UI needs the one line posted on #55 |
+| Friend find (#61, #62) | TRUST side on main. MESH wiring on `lane/mesh-friends` (👍 given); UI (Mikhil) builds pairing + match card |
+| README | On main (#70). Claims only what is on main + tested; roles / friend find NOT claimed until on screen |
 
 ### THE ONE THING THAT MATTERS NEXT
-**Main reopened 20:25; #62 and #70 merged.** Remaining:
-1. **S24 device run of the friend storage** (Keystore AES-GCM key has only run on the JVM). The S24 is now a DEMO
-   device on the lead's build and the lead's rule says don't install onto demo devices. `connectedDebugAndroidTest`
-   installs only the separate test package, not the app, but ask the lead on #53 first (or run it on a non-demo phone).
-2. Record the M2 lost & found result (on #1 as `[M2] ...`) in the README status block.
-3. Chase #23 (UI + AI README sections) and #45 (AI proof-read of protocols.json, needed before the demo).
-4. ~10:00 Sat: decision shortlist (AI's draft in docs/lanes/AI.md); remove the README assembly comment block before 12:30.
+1. **Watch #1 for `[M2]` results** (lead's logic run on the shared build). Fix anything TRUST first (lead rule: M2 fixes
+   before features). Write the lost & found result into the README status block (top comment).
+2. **If someone sends a role phone's `holder_key.txt`:** run the issueRolePass command above, hand back `~/.proxima/pass.json`
+   (public, safe to share), delete it after.
+3. **Friend-storage device run** (Keystore AES-GCM key only ran on the JVM): S24 is a demo device, so ask the lead on #53
+   before `ANDROID_SERIAL=R5CXA2VDYMY ./gradlew :trust:connectedDebugAndroidTest` (test package only), or use a
+   non-demo phone. Read results with `adb logcat -d -s TestRunner:*`.
+4. Once MESH #69 / `lane/mesh-friends` and UI's wiring land: check roles + friend find on screen, then decide whether
+   the README claims them.
+5. Chase #23 (only UI owes README sections). #45 proof-read is queued by AI (due 08:00).
+6. ~10:00 Sat: team picks decisions from AI's draft (docs/lanes/AI.md) -> README `## Key decisions` with AI.
+   Before 12:30: remove the README assembly comment block. Freeze 08:00; submit 12:30.
 
 ### Gotchas learned this session
 - Connected tests print no per-test lines; read `adb logcat -d -s TestRunner:*`. The Honor has logcat OFF entirely:
@@ -178,7 +183,8 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 20:28 Fri | Main still frozen, no M2 results yet. **MESH #54 fixed a gap my #52 restart test missed**: `LostAndFoundTest`'s LoopMesh does not dedup, so it passed, but the real mesh dropped the re-forwarded lost report as already seen. MESH now replays stored INCIDENT/SEALED packets (<= 30 min) into the phone's own pipeline on start. README restart claim narrowed to that 30-min window. |
 | 20:38 Fri | Main reopened (20:25). **Friend find merged (#62), README merged (#70).** 99/99, project green. Informed #61, #38, #1. No phone connected for the friend-storage device run. |
 | 20:43 Fri | No M2 results posted yet (README result pending). AI delivered its README sections; only UI owes #23. 👍 on MESH #69 (roles in beacons) and #61 (friend tag in beacons) after checking both against the TRUST rules. |
-| 20:50 Fri | **Role mode merged (#72)**: stable identity for role phones, laptop pass issuer with a check against the shipped public key (smoke run proved the key pair matches), adb delivery. 101/101. Wiring line + adb steps on #55. |
+| 20:47 Fri | **Role mode merged (#72)**: stable identity for role phones, laptop pass issuer with a check against the shipped public key (smoke run proved the key pair matches), adb delivery. 101/101. Wiring line + adb steps on #55. |
+| 20:49 Fri | Saving protocol. No M2 results posted yet. Corrected two log times that had been written ahead of the clock. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
