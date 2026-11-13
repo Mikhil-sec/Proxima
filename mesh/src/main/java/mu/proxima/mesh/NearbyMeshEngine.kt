@@ -343,7 +343,11 @@ class NearbyMeshEngine(
 
     private fun sendBeacon() {
         if (endpoints.values.none { it.connected }) return
-        val beacon = Beacon(selfNodeId, capabilities.tier, capabilities.hasUwb, llmReady = false, location = null)
+        val beacon = Beacon(
+            nodeId = selfNodeId, tier = capabilities.tier, hasUwb = capabilities.hasUwb,
+            llmReady = MeshBeaconInfo.llmReady.value,
+            location = MeshBeaconInfo.location.value?.let { MeshBeaconInfo.coarse(it) }, // anonymous 25 m cell only
+        )
         val packet = packets.create(PacketKind.BEACON, ProximaJson.encodeToString(Beacon.serializer(), beacon), Severity.LOW)
         scope.launch(serial) {
             seen.markFirstSeen(packet.packetId)
@@ -364,7 +368,8 @@ class NearbyMeshEngine(
     private fun publishPeers() {
         val direct = endpoints.values.filter { it.connected }.map {
             Peer(nodeId = it.nodeId, shortCode = shortCode(it.nodeId), tier = it.tier, transport = Transport.NEARBY_AUTO,
-                lastSeenMs = it.lastSeenMs, hasUwb = indirect[it.nodeId]?.hasUwb ?: false,
+                lastSeenMs = it.lastSeenMs, location = indirect[it.nodeId]?.location,
+                hasUwb = indirect[it.nodeId]?.hasUwb ?: false,
                 llmReady = indirect[it.nodeId]?.llmReady ?: false, direct = true)
         }
         val directIds = direct.map { it.nodeId }.toSet()
