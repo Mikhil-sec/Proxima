@@ -5,10 +5,14 @@ import android.speech.SpeechRecognizer
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import mu.proxima.core.engine.MeshEngine
+import mu.proxima.core.engine.ProtocolRepository
 import mu.proxima.core.engine.TriageEngine
 import mu.proxima.core.engine.TrustEngine
 import mu.proxima.core.engine.VoiceIo
 import mu.proxima.core.fake.FakeVoiceIo
+import mu.proxima.ai.guide.GuideEngine
+import mu.proxima.ai.guide.GuideIntentClassifier
+import mu.proxima.ai.guide.HandsFreeGuide
 import mu.proxima.ai.offload.TieredTriageEngine
 import mu.proxima.ai.offload.TriageServer
 import mu.proxima.ai.triage.GeminiNanoBackend
@@ -42,6 +46,21 @@ object AiModule {
             }
         } else null
         return TieredTriageEngine(local, mesh, trust, packets, scope, log = log)
+    }
+
+    /**
+     * Hands-free guided first aid (#30). Rules understand the commands; on Tier 1 the on-device LLM
+     * also maps free speech onto the same closed command list.
+     */
+    fun createGuide(
+        voice: VoiceIo,
+        protocols: ProtocolRepository,
+        capabilities: DeviceCapabilities,
+        scope: CoroutineScope,
+    ): GuideEngine {
+        val log: (String) -> Unit = { Log.i("Proxima", it) }
+        val llm = if (capabilities.tier == DeviceTier.TIER1_COMPUTE) GeminiNanoBackend() else null
+        return HandsFreeGuide(voice, protocols, scope, classifier = GuideIntentClassifier(llm, log = log), log = log)
     }
 
     fun createVoice(context: Context, simulation: Boolean): VoiceIo {

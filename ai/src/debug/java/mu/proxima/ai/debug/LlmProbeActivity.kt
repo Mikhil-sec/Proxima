@@ -39,6 +39,7 @@ import java.io.File
  *           --es backend cpu|gpu     LiteRT-LM backend (default gpu, falls back to cpu)
  *           --ez voice true          voice check only: speak a sentence, then listen once (mic permission needed)
  *           --es lang en-MU|fr-MU|mfe  language for the voice check
+ *           --ez guide true          hands-free guide on the real protocols.json; --es card cpr-adult (default)
  * LiteRT-LM runs only if a *.litertlm file is in /sdcard/Android/data/mu.proxima.app/files/models/
  * Results:  adb logcat -d -s Proxima:*
  */
@@ -59,6 +60,10 @@ class LlmProbeActivity : Activity() {
 
         val allowNanoDownload = intent.getBooleanExtra("nanoDownload", false)
         val backend = intent.getStringExtra("backend") ?: "gpu"
+        if (intent.getBooleanExtra("guide", false)) {
+            scope.launch { runCatching { probeGuide(intent.getStringExtra("card") ?: "cpr-adult") }.onFailure { log("GUIDE error: ${it.javaClass.simpleName}: ${it.message}") } }
+            return
+        }
         if (intent.getBooleanExtra("voice", false)) {
             scope.launch { runCatching { probeVoice(intent.getStringExtra("lang") ?: "en-MU") }.onFailure { log("VOICE error: ${it.javaClass.simpleName}: ${it.message}") } }
             return
@@ -72,7 +77,7 @@ class LlmProbeActivity : Activity() {
         }
     }
 
-    override fun onDestroy() { scope.cancel(); super.onDestroy() }
+    override fun onDestroy() { guide?.stop(); scope.cancel(); super.onDestroy() }
 
     // ---------- Gemini Nano (ML Kit GenAI Prompt API, runs inside AICore) ----------
     private suspend fun probeGeminiNano(allowDownload: Boolean) {
@@ -155,6 +160,31 @@ class LlmProbeActivity : Activity() {
         } finally {
             engine.close()
         }
+    }
+
+    // ---------- Hands-free guide check ----------
+    @kotlinx.serialization.Serializable
+    private data class ProtocolFile(val cards: List<mu.proxima.core.model.ProtocolCard>)
+
+    private var guide: mu.proxima.ai.guide.GuideEngine? = null
+
+    private suspend fun probeGuide(cardId: String) {
+        val json = assets.open("data/protocols.json").bufferedReader().use { it.readText() }
+        val cards = mu.proxima.core.pipeline.ProximaJson.decodeFromString(ProtocolFile.serializer(), json).cards
+        val repo = object : mu.proxima.core.engine.ProtocolRepository {
+            override suspend fun all() = cards
+            override suspend fun byId(id: String) = cards.firstOrNull { it.id == id }
+            override suspend fun bestFor(type: mu.proxima.core.model.IncidentType, subtype: String?) = null
+        }
+        val card = repo.byId(cardId) ?: run { log("GUIDE no card $cardId (have ${cards.map { it.id }})"); return }
+        val caps = mu.proxima.core.model.DeviceCapabilities(mu.proxima.core.model.DeviceTier.TIER1_COMPUTE, android.os.Build.MODEL, false, false, 0.0, false)
+        val voice = mu.proxima.ai.voice.AndroidVoiceIo(this, log = { log(it) })
+        val g = mu.proxima.ai.AiModule.createGuide(voice, repo, caps, scope).also { guide = it }
+        log("=== GUIDE probe start · ${card.id} · ${cards.size} cards ===")
+        scope.launch {
+            g.state.collect { s -> if (s.active) log("GUIDE [${s.cardId} ${s.stepIndex + 1}/${s.stepCount}] listening=${s.listening} heard=${s.heard} notice=${s.notice}") }
+        }
+        g.start(card)
     }
 
     // ---------- VoiceIo check ----------

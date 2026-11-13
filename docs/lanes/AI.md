@@ -35,6 +35,14 @@ Steps come from TRUST's cited protocol cards.
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 
 ## NEXT_SESSION_HANDOFF
+- **18:04 Fri: Gemini Nano does NOT download on the S26+ (SM-S947B, Exynos/SLSI AICore)**: `DOWNLOAD_ERROR ... Feature SAPI Open Prompt
+  Stable Fast Mode with SLSI ... Task was cancelled`, twice, on validated Wi-Fi. Not fixable in our code. Next: try Nano on Diya's
+  S24 Ultra (Snapdragon AICore); if that fails too → Gemma 3 1B `.litertlm` via LiteRT-LM (`LlmBackend` swap, probe supports it).
+- **B hands-free guide (code + 16 JVM tests, not yet device-tested):** `ai/.../guide/` (`HandsFreeGuide`, `GuideCommands`,
+  `GuideIntentClassifier`, temp `GuideContract.kt` until #30 lands in core). `AiModule.createGuide(voice, protocols, caps, scope)`.
+  Device test: allow mic in Proxima, then `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez guide true [--es card cpr-adult]`.
+- **D crowd-crush warning:** not started (design in #30).
+- The S26+ used today was **Chanum's** phone: it now has the AI-lane build (my debug key). He must `adb uninstall mu.proxima.app` before installing his.
 - **Works (JVM-tested):** `ai/.../triage/` — `LlmBackend` interface, `GeminiNanoBackend` (ML Kit Prompt API),
   `TriagePrompt` (prompt + strict validator), `LlmTriageEngine` (6 s budget, rules fallback, severity safety net).
   `AiModule.createTriage` returns it on TIER1_COMPUTE, `RuleTriageEngine` otherwise. Capability = RULES_ONLY until Nano is on the phone
@@ -70,6 +78,7 @@ Steps come from TRUST's cited protocol cards.
 | 15:53 Fri | AndroidVoiceIo (offline-first STT + TTS) wired into AiModule; probe gains `--ez voice true`; 25 ai tests green. |
 | 15:56 Fri | Bus: #16 + #9 implemented with tests (42 green), #10 approved. |
 | 17:14 Fri | Tier 2 offload: TieredTriageEngine + TriageServer + LLM-ready announcements; shared sanitize/merge; 40 ai tests green. |
+| 18:04 Fri | Nano download fails on S26+ (Samsung SLSI AICore); B hands-free guide built (16 tests, 56 ai tests green); #30 opened. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -85,4 +94,6 @@ Steps come from TRUST's cited protocol cards.
 | 17:14 Fri | Helpers advertise LLM readiness via signed CONTROL/"ai" packets every 20 s, not `Beacon.llmReady` | Works today with zero contract change; MESH beacons hard-code llmReady=false and wiring it needs an interface change + MESH work | Interface change on MeshEngine; asking every Tier 1 peer blindly (5 s wasted when none is ready) |
 | 17:14 Fri | Peer triage results are untrusted: signature checked, re-sanitised, protocolId dropped, rules safety net applied | A relay or malicious node could forge a low-severity answer or point at a wrong protocol card | Trusting a signed answer as-is |
 | 17:14 Fri | Offload request carries only text + pressed button (no location); stale (>15 s) requests ignored | Requests are readable by relays; store-and-forward replays old packets to new neighbours | Sending the full RawReport; sealing to a helper key (helpers don't advertise keys) |
+| 18:04 Fri | Pivot: drop Kreol accuracy; build B hands-free guided first aid + D crowd-crush early warning (#30) | Kreol can't be made accurate without a model or native reviewer; B and D deepen AI where the hero scenarios are (CPR, Ganga Talao crush) | Description matching (A, kept as backlog); photo classification (CAMERA dropped) |
+| 18:04 Fri | Guide: navigation words match whole words only; silence never ends the guide; LLM only maps unclear speech to a closed command list | "stop" fired on "stopped breathing" in tests; CPR involves minutes of silence; AI must never author steps | Prefix matching; timeout after N silent sessions; LLM free-form guidance |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |
