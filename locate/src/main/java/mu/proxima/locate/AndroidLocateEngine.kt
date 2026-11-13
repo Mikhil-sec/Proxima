@@ -178,7 +178,14 @@ class AndroidLocateEngine(
         val targetFix = AtomicReference<Pair<GeoPoint, Long>?>(null)
         val uwbFix = AtomicReference<UwbReading?>(null)
         launch { target.locations.collect { targetFix.set(it to System.currentTimeMillis()) } }
-        uwb?.let { ranger -> launch { ranger.range(target.nodeId).collect { uwbFix.set(it) } } }
+        uwb?.let { ranger ->
+            val azimuth = UwbAzimuthFilter() // one per tracking session; cleans AoA spikes before the arrow sees them
+            launch {
+                ranger.range(target.nodeId).collect { r ->
+                    uwbFix.set(r.copy(azimuthDeg = azimuth.update(r.azimuthDeg, r.distanceM, r.atMs)))
+                }
+            }
+        }
 
         while (isActive) {
             val now = System.currentTimeMillis()
