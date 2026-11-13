@@ -64,6 +64,24 @@ class StoreAndForwardTest {
         assertEquals(listOf("lost-report", "notice"), MeshRelay.replayAfterRestart(stored, now, storeMs).map { it.packetId })
     }
 
+    @Test fun finderPositionUpdatesReplaceEachOtherButNothingElse() {
+        fun notice(id: String, age: Long, origin: String = "F", to: String = "G") =
+            p(id, Severity.CRITICAL, age).copy(kind = PacketKind.SEALED, originNodeId = origin, recipientKey = to)
+        val sos = p("sos", Severity.CRITICAL, 60_000)
+        val old1 = notice("n1", 30_000); val old2 = notice("n2", 20_000)
+        val otherFinder = notice("n-other", 20_000, origin = "F2")
+        val otherGuardian = notice("n-otherG", 20_000, to = "G2")
+        val stored = listOf(sos, old1, old2, otherFinder, otherGuardian)
+
+        val newest = notice("n3", 10_000)
+        assertEquals(setOf("n1", "n2"), MeshRelay.supersededBy(newest, stored).map { it.packetId }.toSet())
+        assertTrue(MeshRelay.supersededBy(sos, stored).isEmpty())          // incidents never replace anything
+        assertTrue(MeshRelay.supersededBy(old1, listOf(newest)).isEmpty()) // an older one never replaces a newer one
+        // 180 updates in 30 min from one finder now cost one slot, so the SOS is never evicted by them.
+        val flood = (1..180).map { notice("u$it", (181 - it) * 10_000L) }
+        assertEquals(179, MeshRelay.supersededBy(flood.last(), flood).size)
+    }
+
     @Test fun neighbourAlreadyOnPathGetsNothing() {
         val stored = listOf(p("x", Severity.HIGH, 1_000, path = listOf("A", "B")))
         assertTrue(MeshRelay.flushOrder(stored, "B", now, storeMs).isEmpty())

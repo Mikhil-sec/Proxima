@@ -44,6 +44,9 @@ interface StoredPacketDao {
     @Query("SELECT * FROM stored_packets WHERE createdAtMs >= :sinceMs ORDER BY createdAtMs")
     suspend fun since(sinceMs: Long): List<StoredPacket>
 
+    @Query("DELETE FROM stored_packets WHERE packetId IN (:ids)")
+    suspend fun delete(ids: List<String>): Int
+
     @Query("DELETE FROM stored_packets WHERE createdAtMs < :olderThanMs")
     suspend fun pruneOlderThan(olderThanMs: Long): Int
 }
