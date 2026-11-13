@@ -36,6 +36,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import mu.proxima.app.ProximaGraph
 import mu.proxima.app.ui.LostFound
@@ -129,8 +130,15 @@ private fun rangeFor(d: Double): Double =
 @Composable
 fun RadarScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav, lostId: String) {
     val notice = lostFound.notices[lostId] ?: run { LaunchedEffect(Unit) { nav.back() }; return }
-    val haptics = LocalHapticFeedback.current
     val fixes = remember(lostId) { graph.locate.track(graph.pipeline.trackFinder(notice, "Your child")) }
+    RadarView("Finding your child", fixes, notice.landmark, "We're together", onDone = { reunite(graph, nav, lostId) }, onBack = nav::back)
+}
+
+/** The radar itself, shared by lost & found (the finder's sealed positions) and My people (a friend's last-heard cell). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RadarView(title: String, fixes: Flow<RadarFix>, note: String?, doneLabel: String, onDone: () -> Unit, onBack: () -> Unit) {
+    val haptics = LocalHapticFeedback.current
     val fix by fixes.collectAsStateWithLifecycle(initialValue = null)
 
     val proximity = fix?.proximity
@@ -145,8 +153,8 @@ fun RadarScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav, lostId: Str
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Finding your child") },
-                navigationIcon = { BackIcon(nav::back) },
+                title = { Text(title) },
+                navigationIcon = { BackIcon(onBack) },
                 actions = {
                     fix?.let {
                         if (it.source == FixSource.SIMULATED) StateLabel("Simulated")
@@ -176,12 +184,12 @@ fun RadarScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav, lostId: Str
                 style = MaterialTheme.typography.headlineSmall,
                 color = if (fix?.proximity == Proximity.HERE) MaterialTheme.semantic.safe else MaterialTheme.colorScheme.onSurface,
             )
-            notice.landmark?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            note?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             if (fix != null && fix?.relativeBearingDeg == null && fix?.bearingDeg != null) {
                 Text("No compass on this phone: the map is north-up.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.semantic.caution)
             }
             Spacer(Modifier.weight(1f))
-            LargeButton("We're together", { reunite(graph, nav, lostId) }, sym = Sym.Done)
+            LargeButton(doneLabel, onDone, sym = Sym.Done)
             Spacer(Modifier.height(MaterialTheme.spacing.lg))
         }
     }
