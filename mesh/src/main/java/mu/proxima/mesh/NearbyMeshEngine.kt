@@ -443,6 +443,7 @@ class NearbyMeshEngine(
             nodeId = selfNodeId, tier = capabilities.tier, hasUwb = capabilities.hasUwb,
             llmReady = MeshBeaconInfo.llmReady.value,
             location = MeshBeaconInfo.location.value?.let { MeshBeaconInfo.coarse(it) }, // anonymous 25 m cell only
+            role = MeshBeaconInfo.rolePass.value, // role phones only (#69); verified by receivers with this signed packet
         )
         val packet = packets.create(PacketKind.BEACON, ProximaJson.encodeToString(Beacon.serializer(), beacon), Severity.LOW)
         scope.launch(serial) {
@@ -454,9 +455,12 @@ class NearbyMeshEngine(
     private fun onBeacon(packet: MeshPacket) {
         val b = runCatching { ProximaJson.decodeFromString(Beacon.serializer(), packet.payload) }.getOrNull() ?: return
         if (b.nodeId == selfNodeId) return
+        val verified = MeshBeaconInfo.verifiedRole(b, packet, clock(), trust::verifyRoleClaim)
+        if (verified != null && indirect[b.nodeId]?.role == null) Log.i(TAG, "verified ${verified.first} \"${verified.second}\" = ${b.nodeId}")
         indirect[b.nodeId] = Peer(
             nodeId = b.nodeId, shortCode = shortCode(b.nodeId), tier = b.tier, transport = Transport.NEARBY_AUTO,
             lastSeenMs = clock(), location = b.location, hasUwb = b.hasUwb, llmReady = b.llmReady, direct = false,
+            role = verified?.first, roleLabel = verified?.second,
         )
         publishPeers()
     }
@@ -466,7 +470,8 @@ class NearbyMeshEngine(
             Peer(nodeId = it.nodeId, shortCode = shortCode(it.nodeId), tier = it.tier, transport = Transport.NEARBY_AUTO,
                 lastSeenMs = it.lastSeenMs, location = indirect[it.nodeId]?.location,
                 hasUwb = indirect[it.nodeId]?.hasUwb ?: false,
-                llmReady = indirect[it.nodeId]?.llmReady ?: false, direct = true)
+                llmReady = indirect[it.nodeId]?.llmReady ?: false, direct = true,
+                role = indirect[it.nodeId]?.role, roleLabel = indirect[it.nodeId]?.roleLabel)
         }
         val directIds = direct.map { it.nodeId }.toSet()
         _peers.value = direct + indirect.values.filter { it.nodeId !in directIds }

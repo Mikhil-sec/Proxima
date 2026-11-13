@@ -77,6 +77,9 @@ class StoreAndForwardTest {
         assertEquals(setOf("n1", "n2"), MeshRelay.supersededBy(newest, stored).map { it.packetId }.toSet())
         assertTrue(MeshRelay.supersededBy(sos, stored).isEmpty())          // incidents never replace anything
         assertTrue(MeshRelay.supersededBy(old1, listOf(newest)).isEmpty()) // an older one never replaces a newer one
+        val invite = notice("inv", 5_000).copy(channel = "friend")        // #61: other channel, same two phones
+        assertTrue(MeshRelay.supersededBy(invite, stored + newest).isEmpty())
+        assertTrue(MeshRelay.supersededBy(notice("n4", 1_000), listOf(invite)).isEmpty())
         // 180 updates in 30 min from one finder now cost one slot, so the SOS is never evicted by them.
         val flood = (1..180).map { notice("u$it", (181 - it) * 10_000L) }
         assertEquals(179, MeshRelay.supersededBy(flood.last(), flood).size)

@@ -26,7 +26,7 @@ _`[x]` = verified on phones · `[~]` = coded + unit-tested, not yet verified on 
       `object MeshDemoControls { val allowedNeighbours: MutableStateFlow<Set<String>?> }` and tell UI via a `request` issue.
 - [x] `selfNodeId` must equal `trust.identity.nodeId` (stable ids pending TRUST #19).
 **P2**
-- [~] (FskModem + 16-byte SOS + engine wiring, off by default; 16 JVM tests on synthetic audio; phone check pending) Acoustic FSK chirp fallback (AudioTrack/AudioRecord) for a tiny SOS packet when RF is unavailable.
+- [~] (18 kHz near-ultrasound, off by default; phones: S26+ → S23+ 2/2, reverse 0/2) Acoustic FSK chirp fallback (AudioTrack/AudioRecord) for a tiny SOS packet when RF is unavailable.
 - [ ] Film the backup demo video (09:30 Sat, outdoors).
 
 ## Gotchas
@@ -86,55 +86,63 @@ Same story as the stage demo, but lost & found follows #14 (lost-person alert, "
 Upload unlisted and post the link on #1 and #23.
 
 ## NEXT_SESSION_HANDOFF
-_Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, the CONTROL no-store fix and the video plan are on `lane/mesh` (PR to main pending)._
-- **Works (verified on real phones, simulation off, no internet):** `NearbyMeshEngine` on Nearby P2P_CLUSTER:
-  - 2 phones: connect ~6 s, packets both ways ~0.2 s.
-  - 3 phones, chain S947B → Honor X8b (Tier 2) → S23+ forced by allow-list: relay hops=1 in 0.09–0.17 s.
-  - Reconnect after 15 s radio-off: 31 s. Relay with the relay phone's screen off (Doze ~80 s). Stored packets re-sent after restart.
-- **Design:** `MeshRelay` (pure relay/flush rules), `ReconnectPolicy` (backoff 2→30 s, ONE connect attempt in flight,
-  forget ghosts after 8 tries), Room `seen_packets` dedup + `stored_packets` store-and-forward (30 min, CRITICAL first),
-  beacons every 10 s → indirect peers, `MeshDemoControls.allowedNeighbours` (#8), `MeshBeaconInfo` (anonymous 25 m cell
-  location + llmReady in beacons), `MeshService` connectedDevice FGS. CONTROL packets (UWB #24) relay live but are never
-  stored (`MeshRelay.isStorable`). 33/33 mesh JVM tests.
-- **Acoustic fallback (P2), JVM-tested + partly verified on phones (18:51 Fri, S26+ ↔ S23+ ~table distance):** `mesh/.../acoustic/`.
-  - `FskModem`: BFSK at **18.0/18.7 kHz (near-ultrasound, inaudible to most adults)**, 50 bit/s, preamble + sync 0x2DD4 + length + CRC-16, Goertzel demodulation over 8 phases.
-  - `AcousticSos`: 16-byte frame (type, severity, 4-byte node id, lat/lon ×1e4, nonce), 3.7 s on air.
-  - `AcousticReceiver`: rolling window + 60 s dedup. `AcousticLink`: AudioTrack on the alarm stream, plays the frame twice;
-    AudioRecord on UNPROCESSED or MIC (VOICE_RECOGNITION broke decoding on the S23+), NS/AGC/AEC disabled.
-  - **OFF by default** (`MeshDemoControls.acoustic`). When ON with no Nearby link, HIGH/CRITICAL sends are also chirped and
-    the mic listens (app must be on screen). A heard SOS enters the mesh as an unsigned INCIDENT, which the pipeline shows
-    as unverified, and store-and-forward re-sends it over RF later.
-  - adb: `mesh_device_test.sh acoustic <serial> on|off` (also drops/restores RF links) and `chirp <serial>`.
-  - **Phone results:** 4/5 kHz decoded both ways once MIC was used, but it was piercing and disturbed other teams. 18.0/18.7 kHz decodes
-    S26+ → S23+ 2/2, but S23+ → S26+ 0/2: the S23+ speaker is weaker up there (heard ~10–15 dB lower). The restart fix was
-    checked once: Nearby reported the disconnect in 2 s and reconnected under the new id in 7 s (Yorvan's silent case not reproduced).
-    Watch out: Bixby popping up on the S26+ put our app in the background, and the mic was silenced.
-- **Coded, NOT yet verified on phones:** beacon location/llmReady (#28, wired by UI).
-- **Waiting on others:** #19 TRUST `TinkTrustEngine` by M2 23:00 → stable 8-hex node ids (until then phones show `SELF-xxxx`
-  that change per launch; UI's dev sheet does tap-to-allow from `mesh.peers`, so no stopgap needed). #8 stays open until
-  UI's dev-sheet allow-list ships. App still lacks a runtime-permission prompt (UI); location is foreground-only.
-- **Exact next steps, in order:**
-  1. PR `lane/mesh` → main once CI is green (acoustic is off by default, so it's safe for the demo).
-  2. Acoustic: decide with Chanum whether to keep ultrasonic (silent, one-way with the S23+ as sender) or lower it to ~17 kHz
-     and test again; otherwise drop it from the demo (it is off by default, so nothing breaks).
-  3. When phones are free: verify beacon location (#28) on 2–3 phones; 2-phone UWB radar with LOCATE (#24);
-     after #19 lands, re-test the allow-list with stable ids.
-  4. 09:00 Sat: run the video pre-flight; 09:30 film per "Backup demo video plan" above.
-  5. README MESH section is DONE (PR #47). Update its numbers if M2 or the video shows anything new (e.g. a longer chain, outdoor range).
-- **Follow-up (from #24):** after a peer app restart, its old per-launch node id stays `direct=true` on the other phone (new id shows as indirect). Check that `onDisconnected` fires and clears the old endpoint; stable ids (#19) remove most of it.
-- **Ask UI (not yet filed):** add a dev-sheet toggle for `MeshDemoControls.acoustic` if we want the acoustic fallback on stage.
-- **Device testing:** `bash mesh/tools/mesh_device_test.sh health|setup|ids|allow <serial> <ids|*>|ping <serial>|acoustic <serial> on|off|chirp <serial>|logs [n]|cleanup`.
-  Installs side by side as `mu.proxima.app.meshtest` (needs `-Pmeshtest` from the machine-local init script), only
-  force-stops teammates' `mu.proxima.app`, `cleanup` uninstalls only the test build. Safety routine: health first
-  (battery, temp < 40 °C, storage), note BT/Wi-Fi state and restore it after, keep screens unlocked, `cleanup` at the end.
-  Honor hides app logs: `adb -s <serial> shell setprop log.tag.Proxima V` (reset with `""`). TRUST (19:00) saw the Honor LLY-LX2 return 0 logcat lines even so: if it looks dead, check with `dumpsys activity` or the other phones' logs, not logcat. Samsung Secure Folder → always `--user 0`.
-  USB hub dropped phones twice: prefer direct cables/powered hub for the stage.
-- **Machine notes (Chanum's laptop):** JDK = Android Studio JBR; `~/.gradle/init.d/proxima-builddir-outside-onedrive.gradle.kts`
-  puts build output in `C:/dev/proxima-build` (OneDrive locks `build/`) and adds `-Pmeshtest` suffix; no Python installed;
-  `gh` at `C:/Program Files/GitHub CLI/gh.exe`, adb at `%LOCALAPPDATA%/Android/Sdk/platform-tools/adb.exe`.
-- **Files:** `mesh/src/main/AndroidManifest.xml`; `mesh/src/main/java/mu/proxima/mesh/{NearbyMeshEngine,MeshRelay,ReconnectPolicy,SeenStore,MeshService,MeshDemoControls,MeshBeaconInfo,MeshModule}.kt`;
-  `mesh/src/main/java/mu/proxima/mesh/acoustic/{FskModem,AcousticSos,AcousticReceiver,AcousticLink}.kt`;
-  `mesh/src/test/java/mu/proxima/mesh/{MeshRelayTest,StoreAndForwardTest,ReconnectPolicyTest,MeshBeaconInfoTest,AcousticModemTest}.kt`; `mesh/tools/mesh_device_test.sh`.
+_Saved 20:40 Fri (saving protocol). **Main = `fb20894`, frozen for M2 (#68)**: no PRs into main, no installs on demo devices (the lead installs one build). `lane/mesh` = main + roles (#69) + channel fix + docs. `lane/mesh-friends` = lane/mesh + TRUST #62 + friend find._
+
+**On main and verified on real phones** (simulation off, no internet):
+- `NearbyMeshEngine` on Nearby P2P_CLUSTER: connect ~6 s, packets ~0.2 s.
+- Chain S26+ → Honor X8b → S23+ (forced allow-list, #8 now in UI's dev sheet "Demo chain"): relay 0.09–0.17 s.
+- Recovery: radio off 15 s → back in 31 s; peer app restart → reconnect under the new id in 7 s.
+- Screen-off relay works. Store-and-forward re-sends after a restart.
+- UWB CONTROL handshake over the mesh, verified by LOCATE (#24, closed).
+
+**On main, coded + unit-tested, NOT yet seen on phones. Watch these in the M2 run:**
+- **#54:** after a restart, stored INCIDENT/SEALED packets (≤ 30 min) are replayed once into this phone's pipeline. The guardian's lost report comes back and the finder's notice is still accepted.
+- **#59:** only the newest SEALED per (finder, guardian) is stored; 10 s position updates no longer flood the store.
+- **From #24:** an unrelayed beacon renames its link (peer restarted); a link silent > 90 s is dropped and re-dialled.
+- Beacon cell location/llmReady (#28, wired by UI).
+
+**Acoustic fallback (P2, `mesh/.../acoustic/`)**, OFF by default (dev sheet "Sound fallback" or adb):
+- BFSK 18.0/18.7 kHz near-ultrasound, 16-byte unsigned SOS, 3.7 s on air.
+- MIC source with NS/AGC/AEC off. VOICE_RECOGNITION broke decoding on the S23+.
+- Phones: S26+ → S23+ decoded 2/2; S23+ → S26+ 0/2 (weak S23+ speaker). Bixby popping up silences our mic.
+- The video plan has an optional silent shot 7 (S26+ → S23+, the Honor films).
+
+**Per-session ids are live (#51/#52):** every app launch = new node id. Re-tap the Demo chain after any app restart.
+Timed mid-session rotation: asked TRUST not to do it before the freeze.
+
+**Waiting / not on main yet:**
+- **Roles (#55 → #69), on `lane/mesh`:**
+  - Done: `Beacon.role`, `Peer.role/roleLabel` (core 63339e1), and receivers verify with `trust.verifyRoleClaim(pass, beaconPacket)` (mesh f299143).
+  - Needs 👍 from UI + TRUST on #69.
+  - TRUST: role-phone mode (STABLE keys) + pass loading. UI: set `MeshBeaconInfo.rolePass` and show `peers.filter { it.role != null }`.
+- **Friend find (#61), on `lane/mesh-friends`:**
+  - Done: `Beacon.friendTag`, `Peer.publicKey/friendLabel` (core fc8a646), mesh wiring (3236274).
+  - Mikhil builds the pairing UI; invite = SEALED with `channel = "friend"` (snippets on #61).
+- **Merge order once main reopens:** #62 → `lane/mesh` → `lane/mesh-friends`, each with CI green. **Wait for CI before merging** (PR #59 was merged early by a script slip; CI passed afterwards).
+
+**Exact next steps, in order:**
+1. Bus check (#68, #53, #69, #61, #55). If M2 finds a mesh bug, fix it on `lane/mesh` first.
+2. M2 run (the lead drives over adb): SOS A → B → tablet, lost & found. Check the #54, #59 and silent-link items above. Optional: beacon cell on the heatmap.
+3. When main reopens: the PRs in the merge order above.
+4. Before sleeping: charge the S26+ (video camera). 09:00 Sat pre-flight, 09:30 film per "Backup demo video plan".
+5. README MESH section is on main (PR #47). Update its numbers if M2 or the video shows more (longer chain, outdoor range, roles/friends in the demo).
+
+**Device testing (own phones only while main is frozen):**
+- Script: `bash mesh/tools/mesh_device_test.sh health|setup|ids|allow <serial> <ids|*>|ping <serial>|acoustic <serial> on|off|chirp <serial>|logs [n]|cleanup`.
+- It installs side by side as `mu.proxima.app.meshtest`, only force-stops `mu.proxima.app`, and `cleanup` uninstalls only the test build.
+- Safety routine: health first (battery, temperature < 40 °C, storage), restore BT/Wi-Fi/volume afterwards, keep the app on screen.
+- Honor: no logcat at all; check it from the other phones. Samsung: `--user 0`. Prefer direct cables to the USB hub.
+- After a reinstall, wait for "mesh start" before sending adb broadcasts (the S23+ missed one sent too early).
+
+**Machine notes (Chanum's laptop):**
+- JDK = Android Studio JBR. Build output goes to `C:/dev/proxima-build` (init script, adds `-Pmeshtest`). No Python.
+- `gh` at `C:/Program Files/GitHub CLI/gh.exe` (add to PATH in bash); adb at `%LOCALAPPDATA%/Android/Sdk/platform-tools/adb.exe`.
+
+**Files:**
+- `mesh/src/main/java/mu/proxima/mesh/{NearbyMeshEngine,MeshRelay,ReconnectPolicy,SeenStore,MeshService,MeshDemoControls,MeshBeaconInfo,MeshModule}.kt`
+- `mesh/.../acoustic/{FskModem,AcousticSos,AcousticReceiver,AcousticLink}.kt`
+- Tests: `{MeshRelay,StoreAndForward,ReconnectPolicy,MeshBeaconInfo,AcousticModem,MeshRoles}Test.kt` (+ `MeshFriendsTest` on lane/mesh-friends). 41 tests on lane/mesh, 44 on lane/mesh-friends.
+- `mesh/tools/mesh_device_test.sh`; core: `core/.../model/Mesh.kt` (Beacon/Peer).
 
 ## Progress log
 | Time | What |
@@ -157,6 +165,9 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 19:10 Fri | PR #44 merged (restart fix + ultrasonic acoustic). README MESH section + AI-disclosure row merged (PR #47), #23 answered |
 | 19:15 Fri | Validated #51 on its branch (whole project green), found + fixed the restart/LOST-report gap (PR #54 merged), 👍 #51 with "no mid-session rotation before freeze", told TRUST on #19 that MESH is ready for the found-notice test |
 | 19:30 Fri | Found (no phones) and fixed store flooding by 10 s finder position updates: newest SEALED per (finder, guardian) only (PR #59; merged before CI by a script slip, CI on PR and on main both passed afterwards). 36/36 tests |
+| 20:05 Fri | Pulled main fb20894 (all lanes merged), whole project green, confirmed on #68. Main frozen for M2; no installs on demo devices |
+| 20:17 Fri | #55 verified roles wired on lane/mesh: core Beacon.role + Peer.role/roleLabel (63339e1, interface-change #69), mesh verification + 5 tests (f299143), 41/41. PR after main reopens + 👍 UI/TRUST |
+| 20:50 Fri | Main reopened 20:25 (#53) with #62 in. Merged main 91dfd87 into lane/mesh (9fa25b6) and lane/mesh-friends; both green (mesh 41 / 44, trust 99, ai 96, locate 20), pushed. lane/mesh PR waits for 👍 UI + TRUST on #69. No M2 mesh bug reported yet; no phones attached |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -184,3 +195,7 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:50 Fri | Acoustic tones moved to near-ultrasound 18.0/18.7 kHz | Chanum: 4–5 kHz was piercing and disturbed other hackathon teams; ultrasound is inaudible to most adults. 19.5 kHz was too high for the S23+ speaker → S26+ mic path | 4/5 kHz (works both ways, too loud); 1/1.5 kHz (pleasant, did not decode once); 18.5/19.5 kHz (one-way only) |
 | 19:13 Fri | After an app restart the mesh replays its stored INCIDENT/SEALED packets (≤ 30 min) once into this phone's own pipeline | Found while validating #51: the pipeline keeps incidents in memory, and the mesh drops a re-forwarded copy of the guardian's own LOST report as already seen, so after a restart the finder's notice was refused. Fixed in `:mesh`, no core change | Forget seen ids on restart (would re-relay everything); persist incidents in core (core change near freeze) |
 | 19:39 Fri | Store-and-forward keeps only the newest SEALED packet per (finder, guardian) | A finder shares its position every 10 s as CRITICAL; 180 per 30 min filled the 200-slot store (the original SOS was evicted first) and flooded newly met phones with stale positions, oldest first | Bigger store (still floods); evict lowest severity (notices are CRITICAL too); fewer updates (LOCATE's radar needs them) |
+| 20:17 Fri | Verified roles (#55): the mesh verifies the pass on receipt (`trust.verifyRoleClaim` with the signed BEACON packet) and exposes only `Peer.role/roleLabel` to UI | TRUST requires a pass to be checked with the packet it arrived in; doing it in the mesh keeps crypto out of UI and gives every screen the same answer. Extra guard: the beacon must name its own signer | Hand UI the raw beacon packets (crypto spread over UI); skip roles (Chanum chose to do it) |
+| 20:20 Fri | Friend find (#61) on a separate branch `lane/mesh-friends` built on #62; MESH also exposes `Peer.publicKey` (beacon signer) | #62 is held until main reopens, and keeping it off `lane/mesh` lets roles (#69) merge on their own. Pairing needs the peer's key, which only the mesh sees (beacon originKey) | Wait for #62 on main (loses hours); merge #62 into lane/mesh (couples roles to friend find); UI fetching keys some other way (no source) |
+| 20:20 Fri | Store superseding also keyed by `channel` | A friend invite (channel "friend") and found notices between the same two phones must not replace each other | Separate packet kind (core change, more surface) |
+| 20:50 Fri | Do not open the lane/mesh PR (roles) until UI and TRUST give 👍 on #69, even though main reopened; keep both lane branches merged with main and green meanwhile | CLAUDE.md §1: a core change needs 👍 from the affected lanes before its PR. Keeping the branches current means the PR is a fast merge once they reply | Open the PR now and ask for review on it (skips the contract rule); wait without merging main (merge conflicts later, near the freeze) |

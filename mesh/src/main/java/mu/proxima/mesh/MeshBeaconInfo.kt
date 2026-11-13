@@ -1,8 +1,12 @@
 package mu.proxima.mesh
 
 import kotlinx.coroutines.flow.MutableStateFlow
+import mu.proxima.core.model.Beacon
 import mu.proxima.core.model.GeoMath
 import mu.proxima.core.model.GeoPoint
+import mu.proxima.core.model.MeshPacket
+import mu.proxima.core.model.Role
+import mu.proxima.core.model.RolePass
 import kotlin.math.cos
 
 /**
@@ -18,6 +22,29 @@ import kotlin.math.cos
 object MeshBeaconInfo {
     val location: MutableStateFlow<GeoPoint?> = MutableStateFlow(null)
     val llmReady: MutableStateFlow<Boolean> = MutableStateFlow(false)
+
+    /**
+     * Role phones only (#55, #69): the organiser-signed pass this phone carries in every beacon. Set by the app
+     * once TRUST has delivered the pass (TRUST role-phone mode, stable identity). Null on every ordinary phone.
+     */
+    val rolePass: MutableStateFlow<RolePass?> = MutableStateFlow(null)
+
+    /**
+     * The role a receiving phone may show for a beacon, or null. A pass alone proves nothing (it travels in the
+     * clear and can be replayed), so it counts only if [verify] (= `trust.verifyRoleClaim`) accepts it together
+     * with the signed BEACON [packet] it arrived in. Any failure, including a throwing verifier, means "no role".
+     */
+    fun verifiedRole(
+        beacon: Beacon,
+        packet: MeshPacket,
+        nowMs: Long,
+        verify: (RolePass, MeshPacket, Long) -> Boolean,
+    ): Pair<Role, String>? {
+        val pass = beacon.role ?: return null
+        if (beacon.nodeId != packet.originNodeId) return null // the role must belong to the node that signed it
+        if (pass.expiresAtMs <= nowMs) return null
+        return if (runCatching { verify(pass, packet, nowMs) }.getOrDefault(false)) pass.role to pass.label else null
+    }
 
     const val CELL_M = 25.0
     private const val EARTH_RADIUS_M = 6_371_000.0
