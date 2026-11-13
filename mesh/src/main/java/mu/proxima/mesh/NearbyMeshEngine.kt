@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.proxima.core.engine.MeshEngine
@@ -410,6 +412,13 @@ class NearbyMeshEngine(
         }
         while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
         if (restored.isNotEmpty()) Log.i(TAG, "restored ${restored.size} stored packets")
+        // Rebuild this phone's own incident list (the pipeline keeps it in memory only), #51.
+        val replay = MeshRelay.replayAfterRestart(restored, clock(), STORE_MS)
+        if (replay.isNotEmpty()) {
+            withTimeoutOrNull(5_000) { _inbound.subscriptionCount.first { it > 0 } } // pipeline listening first
+            replay.forEach { _inbound.emit(it) }
+            Log.i(TAG, "replayed ${replay.size} stored incidents/notices to this phone's pipeline")
+        }
     }
 
     private fun flushTo(endpointId: String) {

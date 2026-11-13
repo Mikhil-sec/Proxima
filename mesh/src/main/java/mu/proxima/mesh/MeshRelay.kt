@@ -60,6 +60,17 @@ object MeshRelay {
 
     fun isSilent(lastSeenMs: Long, nowMs: Long): Boolean = nowMs - lastSeenMs > SILENT_LINK_MS
 
+    /**
+     * After an app restart, which stored packets are handed once more to THIS phone's pipeline (its incident list
+     * lives in memory). Without this the guardian's own LOST report is gone, and when a neighbour re-forwards it the
+     * mesh drops it as already seen, so the finder's sealed notice is refused (#51). Only incidents and sealed
+     * notices: replaying triage requests would make the AI redo work.
+     */
+    fun replayAfterRestart(stored: Collection<MeshPacket>, nowMs: Long, storeMs: Long): List<MeshPacket> =
+        stored.filter {
+            (it.kind == PacketKind.INCIDENT || it.kind == PacketKind.SEALED) && nowMs - it.createdAtMs <= storeMs
+        }.sortedBy { it.createdAtMs }
+
     /** The node that handed us this packet (for HopEvents). */
     fun lastHop(packet: MeshPacket): String = packet.path.lastOrNull() ?: packet.originNodeId
 }

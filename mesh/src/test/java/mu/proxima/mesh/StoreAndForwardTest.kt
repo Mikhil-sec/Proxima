@@ -54,6 +54,16 @@ class StoreAndForwardTest {
         assertTrue(MeshRelay.isSilent(lastSeenMs = 0, nowMs = 91_000))
     }
 
+    @Test fun afterRestartOnlyLiveIncidentsAndSealedNoticesAreReplayedOldestFirst() {
+        val stored = listOf(
+            p("lost-report", Severity.HIGH, 5_000),
+            p("notice", Severity.CRITICAL, 1_000).copy(kind = PacketKind.SEALED),
+            p("triage", Severity.HIGH, 2_000).copy(kind = PacketKind.TRIAGE_REQUEST), // AI must not redo it
+            p("expired", Severity.CRITICAL, storeMs + 1),
+        )
+        assertEquals(listOf("lost-report", "notice"), MeshRelay.replayAfterRestart(stored, now, storeMs).map { it.packetId })
+    }
+
     @Test fun neighbourAlreadyOnPathGetsNothing() {
         val stored = listOf(p("x", Severity.HIGH, 1_000, path = listOf("A", "B")))
         assertTrue(MeshRelay.flushOrder(stored, "B", now, storeMs).isEmpty())
