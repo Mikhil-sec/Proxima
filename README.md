@@ -136,8 +136,20 @@ cards already cover.
 ## Tech stack
 
 Kotlin · Jetpack Compose · Google Nearby Connections · Room · androidx UWB · Fused Location ·
-Google Tink (Ed25519 signing, HPKE sealing) · on-device LLM (runtime: *AI lane to confirm*) ·
-Android SpeechRecognizer / TextToSpeech
+Google Tink (Ed25519 signing, HPKE sealing) · on-device LLM: **Gemma 4 E2B on Google LiteRT-LM** (model file
+sideloaded, GPU with CPU fallback; Gemini Nano through ML Kit where Android AICore offers it) ·
+Android SpeechRecognizer / TextToSpeech (offline recognizer)
+
+**How triage falls back.** Every SOS goes through three tiers and never waits more than 6 s:
+(1) the phone's own LLM, if loaded → (2) a nearby phone's LLM over the mesh (the request carries only the words
+and the pressed button, never a location; the answer is signature-checked and re-validated) →
+(3) `RuleTriageEngine` keywords, which work on every phone with no model. Whatever a model says, its output must
+match a fixed schema or it is discarded; keyword rules can **raise** severity but never lower it (under-triage is
+the dangerous error); and the protocol card is always chosen locally from the cited set. Gemini Nano was our
+first choice, but Android AICore would not provide it on any team phone (download cancelled on the Galaxy S26+,
+unavailable on the S24 Ultra), so on Fri 18:48 we switched to Gemma 4 E2B.
+<!-- AI: after the phone test, add measured load time / latency / RAM and the ai/eval/REPORT.md accuracy line.
+     Until then do NOT claim on-device LLM results: what is device-tested today is offline voice + the guide. -->
 
 Six Gradle modules, one per developer (`core`, `app`, `mesh`, `ai`, `locate`, `trust`), wired by manual DI
 through one factory per lane, so five people worked in parallel without merge conflicts.
@@ -151,7 +163,8 @@ AGP 9.5.1 · Kotlin 2.4.21 · Gradle 9.9.1 · minSdk 26 · compileSdk 37.
 | Claude Code — TRUST lane | Wrote the OSM tag-mapping and ranking code, the protocol-selection logic and all 22 unit tests; drove the Overpass fetch. The IFRC protocol steps were **transcribed by hand from the published PDF**, deliberately not generated — and no medical step was written by a model. |
 | Claude Code — LOCATE lane | Wrote the radar engine (GPS, compass heading, UWB session over the mesh), the arrow filter and all LOCATE unit tests, plus the adb device-test tools. Every claim in the radar table above comes from logs on real phones, not from the model; the member placed the phones and judged the arrow direction. |
 | Claude Code — MESH lane | Wrote the Nearby mesh engine (relay, dedup, reconnect backoff, store-and-forward, beacons, allow-list), the acoustic modem and all 34 MESH unit tests (including synthetic-audio tests for noise, echo and clock drift), plus the adb device-test script. The member ran every phone test, chose to install test builds side by side so teammates' phones kept their data, and moved the acoustic tones to near-ultrasound after the audible version disturbed other teams. Every number in the mesh table comes from phone logs. |
-<!-- UI / AI: add your row -->
+| Claude Code — AI lane | Wrote the triage engine (Gemini Nano and Gemma/LiteRT-LM backends, prompt, strict output validator, rules safety net), the mesh offload, offline voice in/out, the hands-free guide, the crowd-crush risk model, their unit tests and the accuracy-eval harness. The member chose the runtime and the pivot to the guide and crowd warning, ran every phone test and spoke every voice command. The eval's expected answers were fixed before any model was run. No medical text is generated: the model only picks a type and subtype, and steps come from TRUST's cited cards. |
+<!-- UI: add your row -->
 
 ## Key decisions
 
