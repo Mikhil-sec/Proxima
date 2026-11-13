@@ -60,7 +60,7 @@ _Diya 19:12: time is short - merge interface changes WITHOUT waiting for 👍, b
   **outside the repo - never commit, never post it**. Push to the organiser phone per `RolePasses.ORGANISER_PRIVATE_FILE` doc.
   The task refuses to overwrite the key (that would void issued passes). MESH/UI wiring asked as OPTIONAL on #55.
   Not built: role-phone mode (`KeyRotation.STABLE`) and pass delivery - only if MESH/UI say they'll wire the rest.
-- **3. Friend find - TRUST side DONE 20:00 (approved by Diya), interface #61, PR #62 HELD until main reopens (#53).**
+- **3. Friend find - TRUST side DONE 19:53 (approved by Diya), interface #61, PR #62 HELD until main reopens (#53).**
   Branch `iface/friend-find`. 11 tests, 99/99. When the lead reopens main: merge main into the branch, build, merge #62,
   run `:trust:connectedDebugAndroidTest` on the S24 (the Keystore AES-GCM friend key has only run on the JVM).
 
@@ -163,7 +163,7 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 19:20 Fri | **Verified roles** core + TRUST merged (#55, PR #56): 9 tests (replay, forgery, edits, expiry, no key). |
 | 19:30 Fri | Organiser keypair generated on the laptop (public shipped, private off-repo), issuer for the organiser phone, guard test that the shipped key is public-only. PR #57. 88/88. MESH/UI asked on #55 to wire it, optional. |
 | 19:47 Fri | Everything merged before the 19:45 cutoff (#58); 👍 on #53. **M2 step 3 PASS: 22/22 on the S24 Ultra** with per-session identity under the real Keystore, built from main. Paused until main reopens. |
-| 20:00 Fri | **Friend find built** on `iface/friend-find` (11 tests, 99/99): rotating HMAC beacon tags, 6-digit pairing code, sealed invites bound to the confirmed peer, friend book AES-GCM under the Keystore. Interface #61, PR #62 held until main reopens. |
+| 19:53 Fri | **Friend find built** on `iface/friend-find` (11 tests, 99/99): rotating HMAC beacon tags, 6-digit pairing code, sealed invites bound to the confirmed peer, friend book AES-GCM under the Keystore. Interface #61, PR #62 held until main reopens. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
