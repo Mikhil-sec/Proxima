@@ -119,7 +119,7 @@ object CrowdRiskModel {
             } ?: return@mapNotNull null
 
             val reason = buildList {
-                if (phonesNear > 0) add("$phonesNear phones within 40 m" + if (rising) " (up from $was)" else "")
+                if (phonesNear > 0) add("$phonesNear phone" + (if (phonesNear > 1) "s" else "") + " within 40 m" + if (rising) " (up from $was)" else "")
                 if (crowdNear > 0) add("$crowdNear crowd report" + if (crowdNear > 1) "s" else "")
                 if (faintsNear > 0) add("$faintsNear fainting/heat case" + if (faintsNear > 1) "s" else "")
             }.joinToString(" · ")
