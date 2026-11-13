@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -363,7 +364,8 @@ private fun androidx.compose.foundation.layout.ColumnScope.SentView(
             }
         }
         Spacer(Modifier.height(28.dp))
-        NearestHelp(graph, incident.location ?: graph.locate.selfLocation.value, incident.type.helpCategories)
+        val me by graph.locate.selfLocation.collectAsStateWithLifecycle()
+        NearestHelp(graph, incident.location ?: me, incident.type.helpCategories)
         protocol?.let { card ->
             Spacer(Modifier.height(28.dp))
             Text("What to do now", style = grotesk(22))

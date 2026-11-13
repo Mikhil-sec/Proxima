@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- OLED black from the first frame: no white flash before Compose draws. -->
-    <style name="Theme.Proxima" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/proxima_black</item>
-        <item name="android:colorBackground">@color/proxima_black</item>
+    <!-- First frame matches the Compose surface (ui/theme/Color.kt LightColors.surface): no flash. -->
+    <style name="Theme.Proxima" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/proxima_surface</item>
+        <item name="android:colorBackground">@color/proxima_surface</item>
     </style>
-    <color name="proxima_black">#FF05070A</color>
+    <color name="proxima_surface">#FFF4FBFA</color>
 </resources>
