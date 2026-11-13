@@ -61,6 +61,20 @@ object MeshRelay {
     fun isSilent(lastSeenMs: Long, nowMs: Long): Boolean = nowMs - lastSeenMs > SILENT_LINK_MS
 
     /**
+     * Stored packets that [newer] replaces. A finder shares its position with the guardian every 10 s as SEALED
+     * CRITICAL packets; keeping all of them would fill the store (200 max, oldest evicted, so the original SOS goes
+     * first) and flood a newly met phone with stale positions. Only the newest SEALED packet per
+     * (origin, recipient) is worth carrying. SEALED is used only for found notices.
+     */
+    fun supersededBy(newer: MeshPacket, stored: Collection<MeshPacket>): List<MeshPacket> =
+        if (newer.kind != PacketKind.SEALED || newer.recipientKey == null) emptyList()
+        else stored.filter {
+            it.kind == PacketKind.SEALED && it.packetId != newer.packetId &&
+                it.originNodeId == newer.originNodeId && it.recipientKey == newer.recipientKey &&
+                it.createdAtMs <= newer.createdAtMs
+        }
+
+    /**
      * After an app restart, which stored packets are handed once more to THIS phone's pipeline (its incident list
      * lives in memory). Without this the guardian's own LOST report is gone, and when a neighbour re-forwards it the
      * mesh drops it as already seen, so the finder's sealed notice is refused (#51). Only incidents and sealed

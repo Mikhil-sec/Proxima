@@ -393,6 +393,13 @@ class NearbyMeshEngine(
     /** Store-and-forward: keep live packets (memory + Room) so new neighbours get them, even after a restart. */
     private fun remember(packet: MeshPacket) {
         if (!MeshRelay.isStorable(packet)) return
+        // A finder's newer position replaces its older ones (stops 10 s updates filling the store).
+        if (outbox.any { MeshRelay.supersededBy(it, listOf(packet)).isNotEmpty() }) return // an even newer one is kept
+        val old = MeshRelay.supersededBy(packet, outbox).map { it.packetId }.toSet()
+        if (old.isNotEmpty()) {
+            outbox.removeAll { it.packetId in old }
+            scope.launch { runCatching { stored.delete(old.toList()) } }
+        }
         outbox.removeAll { it.packetId == packet.packetId }
         outbox.addLast(packet)
         while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
