@@ -56,6 +56,8 @@ data class Beacon(
     val location: GeoPoint? = null,
     /** Organiser-signed pass of a role phone (#55, #69). Public by design; it only counts together with this beacon's signature. */
     val role: RolePass? = null,
+    /** trust.beaconTag(now): HMAC tag rotating every 10 min (#61); null when this phone has no friends feature. */
+    val friendTag: String? = null,
 )
 
 data class Peer(
@@ -74,6 +76,10 @@ data class Peer(
     val role: Role? = null,
     /** The pass's post label, e.g. "Medic tent 2" (never a person). */
     val roleLabel: String? = null,
+    /** Signing key of this peer's beacons (#61): what pairingCode / friendInvite / acceptFriend need. */
+    val publicKey: String? = null,
+    /** Local label from trust.matchFriend(tag) on THIS phone (#61); never sent anywhere. */
+    val friendLabel: String? = null,
 )
 
 /** One packet crossing one link — drives the live hop visualizer. */
