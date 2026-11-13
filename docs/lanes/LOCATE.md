@@ -93,6 +93,7 @@ Chanum's S26+ (SM-S947B, API 37) has UWB + AoA support flag; comma-decimal local
 | 18:40 Fri | PR #39 merged (CI green). Asked UI in #40 (help-point arrow + wire `MeshBeaconInfo.location`). README radar section + AI-disclosure row written (#23) |
 | 18:53 Fri | Reviewed #14/#15 for LOCATE: 👍 + non-blocking `trackFinder` fix (newest `atMs`, same finder). Saving protocol |
 | 19:00 Fri | New session: merged main (#41), build + locate tests green, **PR #42 merged** (README radar + lane doc). Reviewed UI's RadarScreen (lane/ui) against `RadarFix`: compatible; posted ±0 m accuracy-label nit on #40 |
+| 19:13 Fri | **Smoothed UWB arrow verified on phones** (S23+ guardian → Chanum S26+, normal `mu.proxima.app` reinstalled on both at user request, sim OFF, mesh connect 3 s). 313 fixes ~3 Hz: ahead ≈ 352–358° at 1.8 m, right ≈ +52…+62°, left ≈ −23…−38° (at ~0.5 m); arrow follows a turn in ~1 s; at ≥0.4 m no visible step >30° (raw had ±40° spikes). Only jumps (35–89°) at 0.30–0.34 m, mostly across hidden gaps. Arrow hidden <0.3 m as designed |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
