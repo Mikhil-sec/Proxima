@@ -26,7 +26,7 @@ Implement `TriageEngine` + `VoiceIo` and return them from `AiModule`. The `TRIAG
 - [~] Kreol keywords (10 `RuleTriageEngineTest` cases pin current EN/FR/Kreol behaviour; native-speaker check still TODO): a Mauritian teammate verifies and extends the list in `RuleTriageEngine`. Add unit tests (`./gradlew :core:test`).
 **Pivot (#30, 17:40 Fri)**
 - [x] B hands-free guided first aid: device-tested on S24U.
-- [~] D crowd-crush early warning: code + tests; needs UI wiring + multi-phone test.
+- [~] D crowd-crush early warning: code + tests, UI wired by Mikhil (#46), contract in core (#49); needs multi-phone test.
 - [~] On-device LLM: Gemma 4 E2B (Nano unusable on team phones). `LiteRtLmBackend` + 7 JVM tests done 18:48; model downloaded; device test pending a phone.
 **P2**
 - [ ] Kreol/French voice input; hazard photo classification (multimodal model) if time allows.
@@ -88,6 +88,9 @@ _Saved 18:40 Fri by Seeya's session. Branch `lane/ai`, pushed, clean. Last AI me
 | 18:40 Fri | Saving protocol: handoff rewritten; #35 answered (fix on lane/ai). |
 | 18:46 Fri | PR #41 merged to main (offload, B, D, voice fix); #35 + #1 notified. Gemma 4 E2B model downloaded (2,588,147,712 bytes, size matches HF). |
 | 18:48 Fri | `LiteRtLmBackend` (Gemma via LiteRT-LM, shared engine) + `FirstReadyBackend` (Gemma → Nano) wired in AiModule; GPU native libs declared; 7 new JVM tests green. |
+| 18:55 Fri | Fix: timed-out Gemma call no longer blocks the next SOS (streaming + cancelProcess, +1 test). Pinged Mikhil on #30. |
+| 19:00 Fri | Triage accuracy eval (`ai/eval/`, 32 cases, rules vs model vs shipped). Laptop run blocked by Windows Application Control (WinError 4551) → added on-phone eval mode to the probe. |
+| 19:10 Fri | #30 approved by all lanes → PR #49 merged: guide + crowd contract in `core/`, deprecated aliases in `ai/`. README tech stack + AI disclosure row written (#23), no LLM results claimed yet. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -114,4 +117,8 @@ _Saved 18:40 Fri by Seeya's session. Branch `lane/ai`, pushed, clean. Last AI me
 | 18:44 Fri | Merge lane/ai → main now (PR #41), before Gemma work | #35 (Honor voice) was blocked on it; B/D/offload need integration time before the 08:00 freeze; a Gemma change shouldn't hold back tested work | Waiting to merge everything together with Gemma |
 | 18:48 Fri | **On-device LLM = Gemma 4 E2B via LiteRT-LM** (`gemma-4-E2B-it.litertlm`, Apache 2.0, sideloaded), Gemini Nano kept as second choice via `FirstReadyBackend` | Nano unusable on all team phones; Gemma is not gated, runs on any Android GPU/CPU, Google reports 0.3 s TTFT / ~52 tok/s GPU on S26 Ultra | Qwen3-1.7B (fallback if Gemma fails on device); rules + offload only; the `-gpu.litertlm` file (it is the Web build) |
 | 18:48 Fri | One LLM engine per process, loaded once in the background at startup, shared by triage + guide behind a mutex; `isReady` false while loading | 2.6 GB can't be loaded twice; load takes up to ~10 s and must never block an SOS (rules answer meanwhile) | Lazy load on first SOS (first report would hit the timeout); one engine per feature |
+| 18:55 Fri | Gemma generation streams and is cancelled on timeout (`sendMessageAsync` + `cancelProcess`) | Blocking `sendMessage` kept the shared engine busy after the 6 s timeout, so the next SOS or guide command would queue behind it | Blocking call + separate engine per feature (2× RAM) |
+| 19:00 Fri | Accuracy eval scores the **shipped** path (real prompt, parser, sanitize, rules safety net, 6 s budget) with labels fixed before any run | Judges and we need a number that reflects what the app does, not the raw model; fixing labels first prevents tuning to results | Scoring raw model output; eyeballing a few examples |
+| 19:00 Fri | Do not bypass Windows Application Control to run the eval on the laptop; run it on the phone instead | Security policy on the machine; the phone run also gives real latency/RAM | Disabling Smart App Control (irreversible without reset) |
+| 19:05 Fri | Contract move to `core/` keeps deprecated typealiases at the old `ai/` names | UI had already merged code importing the `ai/` names (#46); aliases avoid breaking `app/` (UI-owned) near the freeze | Moving and breaking imports in the same hour |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |
