@@ -35,11 +35,20 @@ Steps come from TRUST's cited protocol cards.
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 
 ## NEXT_SESSION_HANDOFF
-- Not started. First step: device check (LLM runtime) on the S24 Ultra.
+- Device spike in progress on Galaxy S26+ (SM-S947B, Android 17, 11.4 GB). Probe: `ai/src/debug/.../LlmProbeActivity.kt`
+  (debug builds only). Run: `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity [--ez nanoDownload true] [--es backend cpu|gpu]`,
+  read `adb logcat -d -s Proxima:*`.
+- Gemini Nano (ML Kit `genai-prompt` 1.0.0-beta5) status = DOWNLOADABLE. Download requested 15:24 but not started:
+  phone had no Wi-Fi (mobile data + hotspot only). Next: phone on Wi-Fi + charging, rerun probe with `--ez nanoDownload true`, record latency/JSON validity.
+- LiteRT-LM (0.19.1) wired in the probe but untested: no `.litertlm` sideloaded (Gemma only if Nano disappoints).
+- Context7 note: MediaPipe's current Android packages no longer list `tasks-genai`; LLM generation now goes through LiteRT-LM. Treat `mediapipe-tasks-genai` as legacy.
+- Phone lent to MESH/LOCATE for testing 15:27 Fri.
 
 ## Progress log
 | Time | What |
 |---|---|
+| 15:05 Fri | Onboarded on S26+; wiring check runs (TIER1_COMPUTE, uwb=true). |
+| 15:18 Fri | LLM probe built and run: Gemini Nano DOWNLOADABLE on S26+, AICore prod build present. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |

@@ -21,5 +21,9 @@ dependencies {
     // implementation(libs.litertlm.android)
     // implementation(libs.mediapipe.tasks.genai)
 
+    // Device spike only (src/debug/ LlmProbeActivity). Debug builds only; remove after the runtime is picked.
+    debugImplementation(libs.mlkit.genai.prompt)
+    debugImplementation(libs.litertlm.android)
+
     testImplementation(libs.junit)
 }
