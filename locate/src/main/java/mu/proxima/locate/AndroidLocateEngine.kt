@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.proxima.core.engine.LocateEngine
@@ -181,6 +182,9 @@ class AndroidLocateEngine(
         uwb?.let { ranger ->
             val azimuth = UwbAzimuthFilter() // one per tracking session; cleans AoA spikes before the arrow sees them
             launch {
+                // Only phones that advertise UWB in their mesh beacon can answer. Waiting here keeps us from
+                // flooding the mesh with REQUESTs every 3 s for help points, non-UWB phones or nodes not in range yet.
+                mesh.peers.first { peers -> peers.any { it.nodeId == target.nodeId && it.hasUwb } }
                 ranger.range(target.nodeId).collect { r ->
                     uwbFix.set(r.copy(azimuthDeg = azimuth.update(r.azimuthDeg, r.distanceM, r.atMs)))
                 }
