@@ -1,8 +1,13 @@
 package mu.proxima.mesh
 
 import mu.proxima.core.model.GeoPoint
+import mu.proxima.core.model.Incident
 import mu.proxima.core.model.IncidentType
+import mu.proxima.core.model.MeshPacket
+import mu.proxima.core.model.PacketKind
 import mu.proxima.core.model.Severity
+import mu.proxima.core.pipeline.ProximaJson
+import mu.proxima.mesh.acoustic.AcousticReceiver
 import mu.proxima.mesh.acoustic.AcousticSos
 import mu.proxima.mesh.acoustic.FskModem
 import org.junit.Assert.assertArrayEquals
@@ -130,6 +135,49 @@ class AcousticModemTest {
 
     @Test fun pureNoiseNeverDecodes() {
         for (seed in 1..5) assertTrue(modem.demodulate(noise(sr * 10, 0.3, seed)).isEmpty())
+    }
+
+    // ------------------------------------------------------------------ streaming receiver + mesh mapping
+
+    @Test fun receiverReportsEachChirpOnceAcrossChunksAndRepeats() {
+        var now = 0L
+        val rx = AcousticReceiver(modem, clock = { now })
+        val one = modem.modulate(sos.encode())
+        // Sender repeats twice with a 1 s gap; mic delivers 100 ms chunks with noise.
+        val audio = mix(silence(700) + one + silence(1000) + one + silence(2500), noise(sr * 12, 0.01))
+        val heard = mutableListOf<ByteArray>()
+        val chunk = sr / 10
+        var i = 0
+        while (i < audio.size) {
+            val c = audio.copyOfRange(i, minOf(i + chunk, audio.size))
+            heard += rx.feed(c)
+            i += chunk; now += 100
+        }
+        assertEquals(1, heard.size)
+        assertArrayEquals(sos.encode(), heard[0])
+    }
+
+    @Test fun outgoingCriticalIncidentBecomesChirpAndHeardChirpBecomesUnsignedIncidentPacket() {
+        val incident = Incident("i1", IncidentType.MEDICAL, Severity.CRITICAL, summary = "collapsed", location = ganga,
+            createdAtMs = 0L, reporterNodeId = "3fa9c01b")
+        val out = MeshPacket("p1", PacketKind.INCIDENT, "3fa9c01b", "key", 0L, Severity.CRITICAL, ttl = 10,
+            path = listOf("3fa9c01b"), payload = ProximaJson.encodeToString(Incident.serializer(), incident))
+        val chirp = AcousticSos.fromPacket(out)!!
+        assertEquals(IncidentType.MEDICAL, chirp.type)
+
+        val heard = AcousticSos.decode(modem.demodulate(modem.modulate(chirp.encode())).single())!!.toPacket(5_000L)
+        assertEquals(PacketKind.INCIDENT, heard.kind)
+        assertNull(heard.signature)                         // pipeline marks it unverified
+        assertEquals(listOf("3fa9c01b"), heard.path)        // one hop from its origin
+        val back = ProximaJson.decodeFromString(Incident.serializer(), heard.payload)
+        assertEquals(heard.packetId, back.id)               // same chirp again → same id → dedup
+        assertEquals(Severity.CRITICAL, back.severity)
+    }
+
+    @Test fun lowSeverityAndNonIncidentPacketsAreNotChirped() {
+        val ping = MeshPacket("p2", PacketKind.CONTROL, "a", "k", 0L, Severity.HIGH, ttl = 3, payload = "ping")
+        assertNull(AcousticSos.fromPacket(ping))
+        assertNull(AcousticSos.fromPacket(ping.copy(kind = PacketKind.INCIDENT, severity = Severity.MEDIUM)))
     }
 
     @Test fun corruptedSymbolIsRejectedByCrc() {

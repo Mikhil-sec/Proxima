@@ -3,8 +3,11 @@ package mu.proxima.mesh.acoustic
 import mu.proxima.core.model.GeoPoint
 import mu.proxima.core.model.Incident
 import mu.proxima.core.model.IncidentType
+import mu.proxima.core.model.MeshPacket
+import mu.proxima.core.model.PacketKind
 import mu.proxima.core.model.Severity
 import mu.proxima.core.model.TriageSource
+import mu.proxima.core.pipeline.ProximaJson
 import kotlin.math.roundToInt
 
 /**
@@ -53,7 +56,34 @@ data class AcousticSos(
         triagedBy = TriageSource.MANUAL,
     )
 
+    /**
+     * What the hearing phone injects into its own mesh, exactly as if it had arrived over RF: an unsigned
+     * INCIDENT (the pipeline shows it as unverified), one hop from its origin. packetId = incident id, so hearing
+     * the same chirp again is dropped by the normal dedup; store-and-forward re-sends it once RF is back.
+     */
+    fun toPacket(nowMs: Long): MeshPacket {
+        val incident = toIncident(nowMs)
+        return MeshPacket(
+            packetId = incident.id, kind = PacketKind.INCIDENT, originNodeId = originNodeId, originKey = "",
+            createdAtMs = nowMs, severity = severity, ttl = severity.hopBudget - 1, hopCount = 1,
+            path = listOf(originNodeId), payload = ProximaJson.encodeToString(Incident.serializer(), incident),
+        )
+    }
+
     companion object {
+        /** Only urgent incidents are worth 3.7 s of speaker time. */
+        fun worthChirping(packet: MeshPacket): Boolean =
+            packet.kind == PacketKind.INCIDENT && packet.severity >= Severity.HIGH
+
+        /** The SOS for an outgoing INCIDENT packet, or null if it isn't one / can't be read. */
+        fun fromPacket(packet: MeshPacket): AcousticSos? {
+            if (!worthChirping(packet)) return null
+            val incident = runCatching { ProximaJson.decodeFromString(Incident.serializer(), packet.payload) }.getOrNull()
+                ?: return null
+            return AcousticSos(incident.type, incident.severity, packet.originNodeId, incident.location,
+                nonce = packet.packetId.hashCode() and 0xFFFF)
+        }
+
         const val SIZE = 16
         const val VERSION = 1
         private const val SCALE = 1e4
