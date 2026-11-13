@@ -12,11 +12,14 @@
 #
 # GUARD/TARGET are adb serials (`adb devices`). Demo guardian = S23+ (it has UWB angle-of-arrival).
 # Needs: screens UNLOCKED, UWB ON (Settings → Connections → More connection settings → Ultra-Wideband), airplane OFF,
-# Bluetooth + Wi-Fi + Location ON. Replaces any teammate build of mu.proxima.app with ours (same package).
+# Bluetooth + Wi-Fi + Location ON. Installs a side-by-side build `mu.proxima.app.locatetest` (locatetest.init.gradle):
+# teammates' own mu.proxima.app is only force-stopped during the test, never replaced or uninstalled.
+#   bash locate/tools/radar_test.sh cleanup                # uninstall the test build from every phone
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-PKG="${PKG:-mu.proxima.app}"
+PKG="${PKG:-mu.proxima.app.locatetest}"
+TEAM_PKG=mu.proxima.app
 ADB="${ADB:-/c/Users/$USERNAME/AppData/Local/Android/Sdk/platform-tools/adb.exe}"
 [ -x "$ADB" ] || ADB=adb
 export JAVA_HOME="${JAVA_HOME:-C:/Program Files/Android/Android Studio/jbr}"
@@ -36,12 +39,13 @@ set_sim() {  # set_sim <serial> true|false
 case "${1:-}" in
   setup)
     [ -n "$(serials)" ] || { echo "No phone visible to adb (USB debugging on? prompt accepted?)"; exit 1; }
-    ./gradlew :app:assembleDebug --console=plain -q
+    ./gradlew -I locate/tools/locatetest.init.gradle :app:assembleDebug --console=plain -q
     for s in $(serials); do
       echo "== $s ($(model "$s"))"
       "$ADB" -s "$s" install -r --user 0 "$APK" | tr -d '\r' | tail -1
       # Samsung Device Care ("sleeping apps") suspends idle debug apps → launch shows a "paused" screen instead.
       sh_ "$s" pm unsuspend --user 0 "$PKG" >/dev/null || true
+      sh_ "$s" am force-stop "$TEAM_PKG" || true   # their own build must not join this test mesh (not uninstalled)
       for p in BLUETOOTH_SCAN BLUETOOTH_ADVERTISE BLUETOOTH_CONNECT NEARBY_WIFI_DEVICES POST_NOTIFICATIONS \
                ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION UWB_RANGING RECORD_AUDIO; do
         "$ADB" -s "$s" shell pm grant "$PKG" "android.permission.$p" 2>/dev/null || true
@@ -92,5 +96,11 @@ case "${1:-}" in
   simon)
     for s in $(serials); do set_sim "$s" true; echo "$s: simulation back ON (app stopped; reopen it)"; done
     ;;
-  *) echo "usage: $0 setup|status|track <guard> <target> [gps]|fixes [n]|stop|simon"; exit 2 ;;
+  cleanup)
+    for s in $(serials); do
+      sh_ "$s" am force-stop "$PKG" || true
+      "$ADB" -s "$s" uninstall --user 0 "$PKG" 2>/dev/null | tr -d '\r' | sed "s/^/$s: uninstall test build: /" || true
+    done
+    ;;
+  *) echo "usage: $0 setup|status|track <guard> <target> [gps]|fixes [n]|stop|simon|cleanup"; exit 2 ;;
 esac

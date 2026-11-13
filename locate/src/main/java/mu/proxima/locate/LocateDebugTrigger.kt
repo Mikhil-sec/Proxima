@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.util.Log
+import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.emptyFlow
@@ -31,6 +32,7 @@ import mu.proxima.core.model.TrackTarget
  *       → logs `locate fix src=… d=… rel=… brg=… prox=… acc=…`
  *   adb shell am broadcast -a mu.proxima.locate.STOP -p mu.proxima.app
  *
+ * Numbers are always logged with Locale.US (a comma-decimal phone would otherwise print "-20,28,57,39").
  * Only exists when simulation is OFF (it hangs off [AndroidLocateEngine]). Never logs anything personal:
  * node ids are random mesh ids, positions are this test phone's own.
  */
@@ -114,8 +116,8 @@ internal class LocateDebugTrigger(
         val me = engine.selfLocation.value
         Log.i(
             TAG,
-            "locate status self=${me?.let { "%.6f,%.6f ±%s m".format(it.lat, it.lon, it.accuracyM?.let { a -> "%.0f".format(a) } ?: "?") } ?: "none"}" +
-                " heading=${engine.headingDeg.value?.let { "%.0f°".format(it) } ?: "none"} uwbAvailable=${engine.uwbAvailable}" +
+            "locate status self=${me?.let { "%.6f,%.6f ±%s m".format(Locale.US, it.lat, it.lon, it.accuracyM?.let { a -> "%.0f".format(Locale.US, a) } ?: "?") } ?: "none"}" +
+                " heading=${engine.headingDeg.value?.let { "%.0f°".format(Locale.US, it) } ?: "none"} uwbAvailable=${engine.uwbAvailable}" +
                 " tracking=${tracking?.isActive == true}",
         )
         val peers = mesh.peers.value
@@ -135,10 +137,10 @@ internal class LocateDebugTrigger(
 
         /** Pure, unit-tested: one grep-able line per fix. */
         internal fun format(fix: RadarFix, n: Int): String =
-            "locate fix #$n src=${fix.source} d=${fix.distanceM?.let { "%.2f".format(it) } ?: "-"}" +
-                " rel=${fix.relativeBearingDeg?.let { "%.0f".format(it) } ?: "-"}" +
-                " brg=${fix.bearingDeg?.let { "%.0f".format(it) } ?: "-"}" +
-                " prox=${fix.proximity} acc=${fix.accuracyM?.let { "%.1f".format(it) } ?: "-"}"
+            "locate fix #$n src=${fix.source} d=${fix.distanceM?.let { "%.2f".format(Locale.US, it) } ?: "-"}" +
+                " rel=${fix.relativeBearingDeg?.let { "%.0f".format(Locale.US, it) } ?: "-"}" +
+                " brg=${fix.bearingDeg?.let { "%.0f".format(Locale.US, it) } ?: "-"}" +
+                " prox=${fix.proximity} acc=${fix.accuracyM?.let { "%.1f".format(Locale.US, it) } ?: "-"}"
 
         internal fun parsePoint(lat: String?, lon: String?): GeoPoint? {
             val la = lat?.trim()?.toDoubleOrNull() ?: return null

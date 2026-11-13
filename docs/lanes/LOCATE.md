@@ -96,6 +96,7 @@ mismatch → uninstall first, tell them to reinstall).
 | 17:50 Fri | Merged latest main (MESH real engine, TRUST, AI), resolved TEAM_ROLES conflict, full build+tests green, **PR #26 merged** |
 | 17:56 Fri | Saving protocol: handoff + how-my-part-works written |
 | 18:20 Fri | Debug adb radar trigger (TRACK/STOP/STATUS) + `locate/tools/radar_test.sh`; build + tests green, merged latest main |
+| 18:10 Fri | **UWB radar proven on phones, simulation OFF** (S23+ guardian → S26+ target over the real mesh): TRACK → first `src=UWB` fix in 0.5 s, aoa=true, ~3 Hz, d 0.21–0.31 m side by side; arrow hidden <0.3 m as designed. CONTROL "uwb" delivered by NearbyMeshEngine (#24 satisfied) |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -112,3 +113,4 @@ mismatch → uninstall first, tell them to reinstall).
 | 16:15 Fri | Per-session random static-STS key sent in the signed (not sealed) CONTROL payload | TrackTarget has no recipient key to seal to; key is single-use and carries no location/personal data | Fixed key (replayable); sealing (needs contract change) |
 | 17:55 Fri | Device-test the radar via a debug-only adb trigger instead of waiting for the UI radar screen | Lets M1 "engine real" be proven today; same pattern MESH used | Waiting for UI's radar screen |
 | 18:15 Fri | Trigger is a receiver registered by `AndroidLocateEngine.start()`, runtime-gated on FLAG_DEBUGGABLE | Has the live engine instance with no static hook and no edit to UI-owned `app/`; identical to MESH's PING | Static engine hook in `LocateModule` + manifest receiver in `src/debug`; asking UI to expose the graph |
+| 18:08 Fri | Device tests install a side-by-side `mu.proxima.app.locatetest` (Gradle `-I locate/tools/locatetest.init.gradle`) | Teammates' builds are signed with other debug keys: installing over them fails, and uninstalling wipes their data | Uninstalling teammates' app; editing UI-owned `app/build.gradle.kts` |

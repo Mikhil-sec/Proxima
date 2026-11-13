@@ -12,7 +12,7 @@ class LocateDebugTriggerTest {
 
     @Test
     fun formatsFullUwbFix() {
-        Locale.setDefault(Locale.US)
+        Locale.setDefault(Locale.FRANCE) // comma-decimal locale must not leak into the log
         val fix = RadarFix("SELF-AB12", 2.134, 45.0, -15.4, FixSource.UWB, Proximity.CLOSE, 0.3, 0L)
         assertEquals(
             "locate fix #7 src=UWB d=2.13 rel=-15 brg=45 prox=CLOSE acc=0.3",
@@ -22,7 +22,7 @@ class LocateDebugTriggerTest {
 
     @Test
     fun formatsRssiFixWithDashes() {
-        Locale.setDefault(Locale.US)
+        Locale.setDefault(Locale.FRANCE) // comma-decimal locale must not leak into the log
         val fix = RadarFix("SELF-AB12", null, null, null, FixSource.RSSI, Proximity.NEAR, null, 0L)
         assertEquals("locate fix #1 src=RSSI d=- rel=- brg=- prox=NEAR acc=-", LocateDebugTrigger.format(fix, 1))
     }
