@@ -113,12 +113,25 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 
 ## NEXT_SESSION_HANDOFF
-- Not started. First step: theme + boot screen on the Honor, then the Command Center skeleton on the tablet.
+- Built (compiles, on `lane/ui`): theme/fonts, Home (SOS hold-to-talk ring, quick report row, alerts strip), Report flow
+  (listen → preview → 3 s auto-send → sent), Feed + incident sheet, Command Center map/panel, Boot (permissions),
+  hidden Dev sheet (long-press wordmark: sim toggle + restart, switch phone/CC view), Wristbands (mint/list), Finder frame.
+- Waiting on: TRUST #7 (QR bitmap + scanner), MESH #8 (force multi-hop), AI #9 (Level 12 Hz), interface-change #10.
+- Next: screenshot review on the Honor against the checklists, then tablet Command Center, then P1 guardian FOUND alert + radar.
 
 ## Progress log
 | Time | What |
 |---|---|
+| 14:40 Fri | Onboarded: build OK, `lane/ui` pushed, M0 wiring check runs on Honor X8b (sim=true, 6 peers) |
+| 14:45 Fri | Design plan + anti-slop checklist + mobile UI guidelines written (this file) |
+| 14:55 Fri | First full UI pass compiles: Home/SOS, Report, Feed, Command Center, Boot, Dev sheet, Wristbands, Finder. Requests #7 TRUST, #8 MESH, #9 AI, interface-change #10 |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
 |---|---|---|---|
+| 14:45 Fri | Two visual registers: calm civilian phone screens, terminal look only on Command Center/radar | A panicking parent needs a public-safety sign, not a hacker toy; the terminal look is the stage wow on the tablet | One terminal style everywhere (reads as generic AI "hacker" UI, hurts usability) |
+| 14:45 Fri | Green means meaning only (verified / connected); neutral buttons are white, SOS crimson | Colour has to carry state reliably under stress | Green as the brand/primary colour |
+| 14:48 Fri | Hand-drawn Canvas glyphs, no icon library or emoji | material-icons is not a dependency; one stroke grammar looks crafted | material-icons-extended (+MBs, stock look), emoji |
+| 14:50 Fri | Plain state back stack instead of navigation-compose | ~7 screens; type-safe routes need the serialization plugin in `:app` | navigation-compose with string routes / serializable routes |
+| 14:52 Fri | Tier 1 = RAM ≥ 7 GB **and** flagship SoC (SM8xxx / Exynos 2xxx / Tensor) or UWB | Honor X8b reports 7.5 GB RAM but has SM6225, would have tried to run the LLM | RAM-only threshold; raising RAM to 10 GB (would demote the S23+) |
+| 14:55 Fri | Show the AI result for 3 s, auto-send unless cancelled; proposed `report(raw, triaged)` (#10) | User can catch a wrong triage; what you see is what is sent | Send instantly (no human check), require a confirm tap (slower in panic) |
