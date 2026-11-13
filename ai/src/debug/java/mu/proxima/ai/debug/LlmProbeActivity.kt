@@ -166,7 +166,7 @@ class LlmProbeActivity : Activity() {
     @kotlinx.serialization.Serializable
     private data class ProtocolFile(val cards: List<mu.proxima.core.model.ProtocolCard>)
 
-    private var guide: mu.proxima.ai.guide.GuideEngine? = null
+    private var guide: mu.proxima.core.engine.GuideEngine? = null
 
     private suspend fun probeGuide(cardId: String) {
         val json = assets.open("data/protocols.json").bufferedReader().use { it.readText() }

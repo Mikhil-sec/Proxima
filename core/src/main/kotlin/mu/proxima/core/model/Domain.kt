@@ -154,3 +154,37 @@ data class ProtocolCard(
     /** Citation of the authoritative source the steps were taken from. */
     val source: String,
 )
+
+// ---- #30: hands-free guided first aid (AI lane) ----
+
+/** What the hands-free guide is doing right now. Steps always come from a vetted [ProtocolCard]. */
+data class GuideState(
+    val active: Boolean = false,
+    val cardId: String? = null,
+    val cardTitle: String? = null,
+    val source: String? = null,
+    val stepIndex: Int = 0,
+    val stepCount: Int = 0,
+    val stepText: String? = null,
+    val listening: Boolean = false,
+    /** Caption of what the user just said. */
+    val heard: String? = null,
+    /** Shown when a voice command changed the card, e.g. "Breathing → recovery position". */
+    val notice: String? = null,
+)
+
+// ---- #30: crowd-crush early warning (AI lane) ----
+
+enum class CrowdRiskLevel { WATCH, WARNING, DANGER }
+
+/** Risk for one anonymous ~25 m grid cell. No individual is identified or tracked. */
+data class CrowdRisk(
+    val cellCentre: GeoPoint,
+    val level: CrowdRiskLevel,
+    /** Phones seen within ~40 m (3×3 grid cells). App users only: a lower bound on the real crowd. */
+    val phonesInArea: Int,
+    /** Crowd reports within 75 m in the last 10 min (merged reports count each reporter). */
+    val crowdReports: Int,
+    /** Plain-language reason, e.g. "9 phones within 40 m (up from 3) · 2 crowd reports". */
+    val reason: String,
+)
