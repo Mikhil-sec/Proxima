@@ -10,6 +10,11 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import mu.proxima.core.model.WristbandTag
 
 /**
+ * UNUSED since 15:35 Fri. The team dropped the QR wristband (#14) because there is no wristband
+ * hardware or printing; lost & found now works off the reporter's key instead. Kept because it is
+ * small, self-contained and round-trip tested, so it costs nothing to leave in and is here if the
+ * surprise card wants a printable wristband. **Nothing in the demo flow calls it.**
+ *
  * The child's wristband QR.
  *
  * The payload is [WristbandTag.toQrPayload] - `PRX1:<tagId>:<guardianKey>:<createdAtMs>` - and carries
