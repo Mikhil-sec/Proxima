@@ -55,6 +55,27 @@ tasks.register<JavaExec>("generateOrganiserKey") {
     )
 }
 
+// Organiser's laptop: sign a verified-role pass for one role phone (#55). See RolePhone.kt for the adb flow.
+// ./gradlew :trust:issueRolePass -Prole=MEDIC -Plabel="Medic tent 2" -Pholder=path/to/holder_key.txt [-Phours=12]
+tasks.register<JavaExec>("issueRolePass") {
+    group = "proxima"
+    description = "Signs a role pass with the organiser key in ~/.proxima. Output: ~/.proxima/pass.json"
+    val unitTest = tasks.named<Test>("testDebugUnitTest")
+    dependsOn(unitTest.map { it.taskDependencies })
+    classpath = files(unitTest.map { it.classpath })
+    mainClass.set("mu.proxima.trust.tools.IssueRolePassKt")
+    val home = File(System.getProperty("user.home"), ".proxima")
+    args(
+        File(home, "organiser_private.json").absolutePath,
+        providers.gradleProperty("holder").getOrElse(File(home, "holder_key.txt").absolutePath),
+        providers.gradleProperty("role").getOrElse("MEDIC"),
+        providers.gradleProperty("label").getOrElse("Medic tent"),
+        providers.gradleProperty("hours").getOrElse("12"),
+        File(home, "pass.json").absolutePath,
+        file("src/main/assets/data/organiser_public.json").absolutePath,
+    )
+}
+
 // Print each test result: `build/` is deny-listed for the agents, so the console is the only report we read.
 tasks.withType<Test>().configureEach {
     testLogging {
