@@ -13,6 +13,12 @@ import mu.proxima.core.model.WristbandTag
 interface KeysetStore {
     /** Returns the keyset called [name], generating it from [template] and persisting it the first time. */
     fun getOrCreate(name: String, template: KeyTemplate): KeysetHandle
+
+    /** Names of every stored keyset, so retired sessions can be found and pruned. */
+    fun names(): Set<String>
+
+    /** Destroys the keyset called [name]. A no-op if it does not exist. */
+    fun delete(name: String)
 }
 
 /** Persists the wristband tags this phone minted, so a guardian still recognises them after a restart. */
@@ -36,6 +42,9 @@ class AndroidKeystoreKeysetStore(
 ) : KeysetStore {
     private val appContext = context.applicationContext
 
+    /** The same file AndroidKeysetManager writes to: one entry per keyset name, nothing else. */
+    private val prefs get() = appContext.getSharedPreferences(prefFile, Context.MODE_PRIVATE)
+
     override fun getOrCreate(name: String, template: KeyTemplate): KeysetHandle =
         AndroidKeysetManager.Builder()
             .withSharedPref(appContext, name, prefFile)
@@ -43,6 +52,12 @@ class AndroidKeystoreKeysetStore(
             .withMasterKeyUri("android-keystore://$masterKeyAlias")
             .build()
             .keysetHandle
+
+    override fun names(): Set<String> = prefs.all.keys.toSet()
+
+    override fun delete(name: String) {
+        prefs.edit().remove(name).commit()
+    }
 }
 
 /** Tags are stored as their own QR payload strings, one per line - the format already has a tested parser. */

@@ -13,8 +13,9 @@ Ganesh Chaturthi, Père Laval, concerts, political rallies and university campus
    (type, severity, landmark). It travels phone to phone with no network, over Bluetooth/Wi-Fi in several hops.
 2. **Guided response.** Vetted protocol steps (with cited sources) are read aloud, plus the **nearest real help point**
    (health centre, police, fire station) from the Mauritian dataset, with distance and direction.
-3. **Lost & found with privacy.** The child wears a QR wristband with no personal data. The finder scans it, an
-   encrypted location goes to the guardian only, and the guardian's radar points the way (UWB precision on flagships).
+3. **Lost & found with privacy, no extra hardware.** The guardian reports "lost child" with a short description
+   (age, clothes, no name, no photo). Someone who is with the child taps "I'm with them" on that alert; their location
+   goes **encrypted to the guardian's phone only**, and the guardian's radar points the way (UWB precision on flagships).
 4. **Command Center** (tablet at a police or first-aid post): a live incident heatmap, the mesh topology, and
    merged incident counts ("Fire — 15 reports").
 
@@ -31,7 +32,7 @@ Ganesh Chaturthi, Père Laval, concerts, political rallies and university campus
 | Multi-hop mesh incident bus (hop limit, dedup, store-and-forward) | Anonymous crowd-density heatmap |
 | SOS with voice, on-device AI, structured incident; tiered fallback | Acoustic chirp fallback (FSK) |
 | Guided response: protocol card + nearest help point from the dataset | Hazard photo classification on device |
-| Wristband QR, sealed FoundNotice, guardian radar (UWB, GPS, RSSI) | Full Kreol/French voice input |
+| Lost-child alert → I'm with them → sealed FoundNotice → guardian radar (UWB, GPS, RSSI) | Full Kreol/French voice input |
 | Tablet Command Center: heatmap, topology, merged incidents | |
 
 Cut on purpose: duress PIN and decoy calculator, cyber-warfare branding, LLM "SitRep" chatbot.
@@ -49,6 +50,6 @@ Cut on purpose: duress PIN and decoy calculator, cyber-warfare branding, LLM "Si
 2. The S24 Ultra holds SOS: "a man collapsed near the food stalls, he's not breathing". It becomes a CRITICAL card
    (by: on-device AI), hops A→B→C on the tablet's topology view, and CPR steps are read aloud with the nearest health centre.
 3. The A56 (Tier 2) reports the same event, and the AI work is offloaded. The tablet shows "2 reports", merged.
-4. Lost child: the guardian has already minted a wristband. A "finder" scans the child's wristband, and the guardian's
-   phone gets a sealed alert and a radar. Two UWB phones show the arrow and distance to the centimetre.
+4. Lost child: the guardian reports "girl, about 6, red dress". A "finder" who is with her opens the alert and taps
+   "I'm with them"; the guardian's phone gets a sealed alert and a radar. Two UWB phones show the arrow and distance.
 5. Tablet: heatmap plus incident list, then the closing line.

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -39,7 +40,8 @@ import java.util.UUID
  *
  *   report(raw) → TriageEngine → Incident → sign → MeshEngine.send
  *   MeshEngine.inbound → verify → decode → IncidentMerger → incidents (StateFlow for UI)
- *   finder scans wristband → FoundNotice sealed to guardian → guardian's foundNotices → radar
+ *   finder picks the LOST_PERSON alert they are with → FoundNotice sealed to that reporter's key
+ *     → guardian's foundNotices → radar   (wristband tags remain supported but are optional)
  */
 class IncidentPipeline(
     private val mesh: MeshEngine,
@@ -111,19 +113,28 @@ class IncidentPipeline(
         )
     }
 
-    /** Finder side: scanned a wristband. Sends one sealed notice to the guardian. */
-    suspend fun reportFound(tag: WristbandTag, landmark: String? = null, note: String? = null) {
-        val notice = FoundNotice(
-            tagId = tag.tagId,
-            finderNodeId = mesh.selfNodeId,
-            location = locate.selfLocation.value,
-            landmark = landmark,
-            note = note,
-            atMs = clock(),
-        )
-        val sealed = trust.seal(ProximaJson.encodeToString(FoundNotice.serializer(), notice).encodeToByteArray(), tag.guardianKey)
-        mesh.send(packets.create(PacketKind.SEALED, sealed, Severity.CRITICAL, recipientKey = tag.guardianKey))
+    /**
+     * Finder side, no hardware: "I am with the person in this LOST_PERSON alert."
+     * Sends one FoundNotice (tagId = the lost incident's id) sealed to the phone that reported it.
+     * Returns false if the alert carries no reporter key (e.g. it reached us unsigned).
+     */
+    suspend fun reportFound(lost: IncidentRecord, landmark: String? = null, note: String? = null): Boolean {
+        val guardianKey = lost.originKey ?: return false
+        sendFoundNotice(lost.incident.id, guardianKey, landmark, note)
+        return true
     }
+
+    /** Finder side: keep the guardian's radar updated until cancelled. */
+    fun shareLocationWithGuardian(lost: IncidentRecord, everyMs: Long = 10_000L): Job = scope.launch {
+        while (isActive) {
+            if (!reportFound(lost)) return@launch
+            delay(everyMs)
+        }
+    }
+
+    /** Finder side: scanned a wristband. Sends one sealed notice to the guardian. */
+    suspend fun reportFound(tag: WristbandTag, landmark: String? = null, note: String? = null) =
+        sendFoundNotice(tag.tagId, tag.guardianKey, landmark, note)
 
     /** Finder side: keep the guardian's radar updated until cancelled. */
     fun shareLocationWithGuardian(tag: WristbandTag, everyMs: Long = 10_000L): Job = scope.launch {
@@ -133,16 +144,37 @@ class IncidentPipeline(
         }
     }
 
+    private suspend fun sendFoundNotice(tagId: String, guardianKey: String, landmark: String?, note: String?) {
+        val notice = FoundNotice(
+            tagId = tagId,
+            finderNodeId = mesh.selfNodeId,
+            location = locate.selfLocation.value,
+            landmark = landmark,
+            note = note,
+            atMs = clock(),
+        )
+        val sealed = trust.seal(ProximaJson.encodeToString(FoundNotice.serializer(), notice).encodeToByteArray(), guardianKey)
+        mesh.send(packets.create(PacketKind.SEALED, sealed, Severity.CRITICAL, recipientKey = guardianKey))
+    }
+
     /** Guardian side: radar target that follows the finder's sealed location updates. */
     fun trackFinder(notice: FoundNotice, label: String = "Finder"): TrackTarget {
-        val locations: Flow<GeoPoint> = foundNotices
-            .filter { it.tagId == notice.tagId }
-            .mapNotNull { it.location }
+        // Only this finder, and only newer positions: store-and-forward can flush older notices late, and a second
+        // person answering the same alert must not move this radar (LOCATE review on #14).
+        val locations: Flow<GeoPoint> = flow {
+            var newest = Long.MIN_VALUE
+            foundNotices.collect { n ->
+                if (n.tagId == notice.tagId && n.finderNodeId == notice.finderNodeId && n.atMs > newest) {
+                    newest = n.atMs
+                    n.location?.let { emit(it) }
+                }
+            }
+        }
         return TrackTarget(nodeId = notice.finderNodeId, label = label, locations = locations)
     }
 
     private suspend fun broadcast(incident: Incident) {
-        accept(incident, signatureValid = true, hops = 0)
+        accept(incident, signatureValid = true, hops = 0, originKey = trust.identity.publicKey)
         val payload = ProximaJson.encodeToString(Incident.serializer(), incident)
         mesh.send(packets.create(PacketKind.INCIDENT, payload, incident.severity))
     }
@@ -152,7 +184,7 @@ class IncidentPipeline(
         when (packet.kind) {
             PacketKind.INCIDENT -> runCatching {
                 ProximaJson.decodeFromString(Incident.serializer(), packet.payload)
-            }.onSuccess { accept(it, valid, packet.hopCount) }
+            }.onSuccess { accept(it, valid, packet.hopCount, packet.originKey) }
 
             PacketKind.SEALED -> {
                 if (!valid || packet.recipientKey != trust.identity.publicKey) return
@@ -160,7 +192,11 @@ class IncidentPipeline(
                 val notice = runCatching {
                     ProximaJson.decodeFromString(FoundNotice.serializer(), bytes.decodeToString())
                 }.getOrNull() ?: return
-                if (trust.myWristbands().any { it.tagId == notice.tagId }) _foundNotices.tryEmit(notice)
+                val mineLost = _incidents.value.any {
+                    it.incident.id == notice.tagId && it.incident.type == IncidentType.LOST_PERSON &&
+                        it.incident.reporterNodeId == mesh.selfNodeId
+                }
+                if (mineLost || trust.myWristbands().any { it.tagId == notice.tagId }) _foundNotices.tryEmit(notice)
             }
 
             // Handled inside the AI / LOCATE / MESH engines themselves.
@@ -168,7 +204,7 @@ class IncidentPipeline(
         }
     }
 
-    private fun accept(incident: Incident, signatureValid: Boolean, hops: Int) {
-        _incidents.update { merger.apply(it, incident, signatureValid, hops, clock()) }
+    private fun accept(incident: Incident, signatureValid: Boolean, hops: Int, originKey: String? = null) {
+        _incidents.update { merger.apply(it, incident, signatureValid, hops, clock(), originKey) }
     }
 }

@@ -1,43 +1,23 @@
 package mu.proxima.app
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.activity.enableEdgeToEdge
+import mu.proxima.app.ui.ProximaRoot
+import mu.proxima.app.ui.theme.ProximaTheme
 
-/**
- * UI lane: this is a bare wiring check, NOT the design. Replace with the real
- * design system + screens (see docs/lanes/UI.md).
- */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Edge-to-edge; bar icons follow the system light/dark theme, like the app.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val graph = (application as ProximaApp).graph
-        setContent { WiringCheck(graph) }
-    }
-}
-
-@Composable
-private fun WiringCheck(graph: ProximaGraph) {
-    LaunchedEffect(Unit) {
-        graph.pipeline.start()
-        graph.mesh.start()
-        graph.locate.start()
-    }
-    val peers by graph.mesh.peers.collectAsStateWithLifecycle()
-    val incidents by graph.pipeline.incidents.collectAsStateWithLifecycle()
-    Column(Modifier.padding(24.dp)) {
-        Text("Proxima wiring check — sim=${graph.simulation}")
-        Text("tier=${graph.capabilities.tier} uwb=${graph.capabilities.hasUwb} ram=${"%.1f".format(graph.capabilities.totalRamGb)}GB")
-        Text("peers=${peers.size} incidents=${incidents.size}")
-        incidents.take(5).forEach { Text("• ${it.incident.type} ${it.incident.severity}: ${it.incident.summary}") }
+        // The manifest handles config changes in place (dark mode at sunset, keyboard, tablet rotation): the back stack
+        // lives in Compose memory, so a recreation would throw a half-written report away.
+        // Phones are portrait-locked (one-handed, panicking user); the tablet Command Center rotates freely.
+        if (!graph.capabilities.isLargeScreen) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        setContent { ProximaTheme { ProximaRoot(graph) } }
     }
 }

@@ -45,6 +45,15 @@ class StoreAndForwardTest {
         assertEquals(listOf("sos"), MeshRelay.flushOrder(listOf(uwb, beacon, sos), "C", now, storeMs).map { it.packetId })
     }
 
+    @Test fun unrelayedBeaconNamesTheNodeAtTheOtherEndOfTheLink() {
+        val beacon = p("b", Severity.LOW, 0).copy(kind = PacketKind.BEACON, originNodeId = "newid01")
+        assertEquals("newid01", MeshRelay.directSenderOf(beacon))
+        assertEquals(null, MeshRelay.directSenderOf(beacon.copy(hopCount = 1)))  // relayed: origin is further away
+        assertEquals(null, MeshRelay.directSenderOf(p("i", Severity.HIGH, 0)))    // incidents prove nothing
+        assertFalse(MeshRelay.isSilent(lastSeenMs = 0, nowMs = 85_000))           // ~8 missed beacons: keep (Doze)
+        assertTrue(MeshRelay.isSilent(lastSeenMs = 0, nowMs = 91_000))
+    }
+
     @Test fun neighbourAlreadyOnPathGetsNothing() {
         val stored = listOf(p("x", Severity.HIGH, 1_000, path = listOf("A", "B")))
         assertTrue(MeshRelay.flushOrder(stored, "B", now, storeMs).isEmpty())

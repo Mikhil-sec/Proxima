@@ -16,7 +16,7 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
       Optionally cross-check health facilities with data.govmu.org.
 - [x] `AssetHelpPointRepository`: parse OSM → `HelpPoint` (amenity/emergency → `HelpCategory`, source "OpenStreetMap (ODbL)"),
       `nearest()` with `GeoMath`. Unit test with a known location.
-- [x] `TinkTrustEngine` (**Context7: Tink**) **DONE 18:10 Fri** - JVM-verified, not yet run on a phone: Ed25519 sign/verify of `MeshPacket.signingBytes()`; HPKE (X25519) hybrid seal/open;
+- [x] `TinkTrustEngine` (**Context7: Tink**) **DONE 18:10 Fri** - 21/21 on JVM and on the S24 Ultra Keystore (18:36): Ed25519 sign/verify of `MeshPacket.signingBytes()`; HPKE (X25519) hybrid seal/open;
       keysets persisted with the Android Keystore. `identity.publicKey` must carry both public keys (e.g. `sigB64.encB64`);
       `nodeId` = first 8 hex chars of SHA-256(publicKey). Tell MESH it must use this nodeId.
 **P1 (M2/M3)**
@@ -69,10 +69,14 @@ Method names are underscored because D8 rejects spaces in names below DEX 040 (m
 as the old handoff claimed.
 
 ### THE ONE THING THAT MATTERS NEXT
-**Run it on a phone.** Plug in the S24, then `./gradlew :trust:connectedDebugAndroidTest`. Nothing in this lane
-has ever run on a device, and the Keystore path is only compiled, not executed. Then one two-phone found-notice
-with simulation OFF (needs MESH). README has a "check before submitting" note tied to this.
-After that: chase #23 (README sections due 10:30 Sat), and get `protocols.json` proof-read (gap 3 below).
+**On-device: done for the Keystore.** 18:36 Fri, `./gradlew :trust:connectedDebugAndroidTest` on the Galaxy S24 Ultra
+(SM-S928B, Android 17): **21 tests, 0 failed**. 18:50: also **21/21 on the Honor LLY-LX2 (X8b family, Android 14)**,
+run via `adb -s <serial> shell am instrument -w -r mu.proxima.trust.test/androidx.test.runner.AndroidJUnitRunner`
+because that phone has logcat switched off entirely (0 lines), so the TestRunner-tag method shows nothing there. Gradle prints no per-test lines for connected tests and `build/` is
+deny-listed, so read results with `adb logcat -d -s TestRunner:* | grep -E "started:|failed:|run finished"`.
+Remaining: one two-phone sealed found-notice with simulation OFF (needs MESH, asked on #19) - after everyone is on one build.
+**Committed on #38 (19:05):** per-session identity by ~21:30, then verified roles by ~00:30, friend find only if both merge by ~01:00.
+Then: chase #23 (README sections due 10:30 Sat), and get `protocols.json` proof-read (gap 3 below).
 
 ### What works, merged to `main`, verified
 - **Dataset** `trust/src/main/assets/data/osm_help_points_raw.json` - 524 real Mauritius OSM features (ODbL),
@@ -97,8 +101,7 @@ After that: chase #23 (README sections due 10:30 Sat), and get `protocols.json` 
   (`ttl` / `hopCount` / `path` must stay outside `signingBytes()`).
 
 ### Known gaps, all deliberate and logged
-1. ~~Simulation-OFF is not demo-safe.~~ **Fixed 18:10 Fri** by `TinkTrustEngine`. Remaining: never run on a
-   device (see THE ONE THING). Also: two `TinkProtoKeysetFormat` calls are deprecated in Tink 1.24; Context7
+1. ~~Simulation-OFF is not demo-safe.~~ **Fixed 18:10 Fri** by `TinkTrustEngine`, device-verified 18:36. Also: two `TinkProtoKeysetFormat` calls are deprecated in Tink 1.24; Context7
    does not document the replacement, so they stay, with warnings visible, until it can be checked.
 2. **No CROWD_CRUSH / ELECTRICAL / FALLEN_BRANCH / FLOOD card - DECIDED 18:00 Fri, do not revisit.**
    Approved by Diya: we ship without them. IFRC 2020 has zero crush content and UK HSE is organiser
@@ -108,7 +111,7 @@ After that: chase #23 (README sections due 10:30 Sat), and get `protocols.json` 
    Fire and Rescue Service, or a printed Ganga Talao briefing sheet - a photo is enough and I can transcribe
    a cited card in under an hour.
 3. **`protocols.json` has NOT been proof-read by a second member.** The lane requires it before the demo.
-4. **This lane has never run on a phone.** `adb devices` was empty all session; `installDebug` untried.
+4. ~~This lane has never run on a phone.~~ Keystore contract passed on the S24 Ultra 18:36 Fri. `installDebug` of the full app still untried by this lane.
 5. OSM Mauritius has no assembly points, ambulance stations or defibrillators. `docs/PRODUCT.md` still
    wrongly claims defibrillators - not my file, flagged in PR #22.
 
@@ -161,6 +164,8 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 18:05 Fri | Context7 confirmed loaded (`resolve-library-id` / `query-docs`). Tink APIs checked there; a `javap` look at the jar was refused by the permission layer, so anything Context7 did not document was designed around rather than guessed. |
 | 18:10 Fri | **`TinkTrustEngine` done and wired** for simulation OFF. Contract moved to `src/testFixtures`, strengthened (cross-device, impersonation, key substitution, bit-flip, unusable key) and passing 21/21 on the JVM. 51/51 trust tests; whole project green. Instrumented test compiles; no device to run it. |
 | 18:12 Fri | Found + fixed two build traps on the way: AGP 7.2+ forbids sharing one test dir between `test` and `androidTest` (-> test fixtures), and D8 rejects backtick test names below DEX 040 (-> underscores). Test logging now prints failure messages. |
+| 18:36 Fri | **First on-device run of this lane.** `:trust:connectedDebugAndroidTest` on the S24 Ultra (Android 17): 21/21 pass under the real Android Keystore, incl. `simulationOffUsesTheRealEngine`. Read via the `TestRunner` logcat tag since Gradle prints no per-test lines for connected tests. |
+| 18:50 Fri | Keystore contract **21/21 on the Honor LLY-LX2** (Android 14) too, via `am instrument` since that phone logs nothing to logcat. Found that the app classes it **TIER1** (7.47 GiB >= 7.0), so neither test phone is Tier 2 - reported to UI. Two-phone mesh test deferred until all lanes are on one build. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -197,3 +202,4 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 18:08 Fri | Put key storage behind a `KeysetStore` seam and run the full security contract on the **JVM**, with the Keystore covered by a separate instrumented test | No phone has ever been connected to this laptop, so an instrumented-only spec would mean shipping crypto whose security properties were never executed. The JVM run still re-serializes keysets on every load, so "restart" is real | Instrumented-only tests (would have run zero times before the freeze); Robolectric (new dependency, and its Keystore is a shadow, so it proves nothing more) |
 | 18:10 Fri | Delete `FakeTrustEngineSecurityTest` even though it still passes | It constructed the fake directly, so it could never have flipped to failing when Tink landed, which was its whole purpose. Its real job (catching simulation-OFF handing out the fake) now belongs to `simulationOffUsesTheRealEngine` | Keeping it (its header would then be false); rewriting it (it would only re-prove a dev-only fake is insecure) |
 | 18:10 Fri | Keep two deprecated `TinkProtoKeysetFormat` calls, warnings visible | Context7 documents the methods but not their 1.24 replacement. Guessing a crypto API to silence a warning is the exact failure section 3 exists to prevent | Suppressing the warning (hides it from whoever can fix it); guessing a replacement |
+| 19:05 Fri | **#38: commit to per-session identity + verified roles tonight; friend find only if both merge by ~01:00** (approved by Diya) | Per-session ids fix a real tracking hole (stable nodeId + 25 m beacon cell). Roles close the 8.5 km help gap with real, signed data and are this lane's P2 anyway. Friend find is the biggest (~4h), depends on per-session ids, and is the feature most likely to be challenged against "never track individuals". Design constraints posted: retired encryption keys kept 24h so lost & found survives a restart; role phones keep a stable key; a role claim must also be signed by `holderKey` | All three (~8h, no slack before the 08:00 freeze); only the privacy fix (leaves the 8.5 km gap open); per-launch keys with no retired-key window (a guardian's restart would silently lose the finder's notices) |

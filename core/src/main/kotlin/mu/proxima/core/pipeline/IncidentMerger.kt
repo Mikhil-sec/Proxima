@@ -23,6 +23,7 @@ class IncidentMerger(
         signatureValid: Boolean,
         hops: Int,
         nowMs: Long,
+        originKey: String? = null,
     ): List<IncidentRecord> {
         // Closing events
         if (incoming.type == IncidentType.ALL_CLEAR || incoming.type == IncidentType.FOUND) {
@@ -31,7 +32,7 @@ class IncidentMerger(
                 if (it.incident.id == target) it.copy(resolved = true, lastUpdatedMs = nowMs) else it
             }
             return if (incoming.type == IncidentType.FOUND) {
-                listOf(IncidentRecord(incoming, signatureValid, hops, nowMs)) + closed
+                listOf(IncidentRecord(incoming, signatureValid, hops, nowMs, originKey = originKey)) + closed
             } else closed
         }
 
@@ -63,7 +64,7 @@ class IncidentMerger(
             }
         }
 
-        return listOf(IncidentRecord(incoming, signatureValid, hops, nowMs)) + current
+        return listOf(IncidentRecord(incoming, signatureValid, hops, nowMs, originKey = originKey)) + current
     }
 
     private fun isSameEvent(a: Incident, b: Incident): Boolean {
