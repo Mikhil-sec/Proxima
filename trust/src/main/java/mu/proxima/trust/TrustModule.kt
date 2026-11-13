@@ -4,6 +4,7 @@ import android.content.Context
 import mu.proxima.core.engine.HelpPointRepository
 import mu.proxima.core.engine.ProtocolRepository
 import mu.proxima.core.engine.TrustEngine
+import mu.proxima.core.model.RolePass
 import mu.proxima.core.fake.FakeTrustEngine
 
 /**
@@ -18,7 +19,19 @@ object TrustModule {
     fun createTrust(context: Context, simulation: Boolean): TrustEngine =
         // Fresh identity per app session, so a node id cannot follow one phone around (#38). The pipeline asks
         // trust.ownsKey / ownsNodeId, so a guardian's restart mid-search still receives the finder's notices.
-        if (simulation) FakeTrustEngine() else TinkTrustEngine(context, KeyRotation.PER_SESSION)
+        // A role phone (medic tent, steward) keeps a STABLE identity, because its organiser pass binds to its key.
+        when {
+            simulation -> FakeTrustEngine()
+            RolePhone.enabled(context) ->
+                TinkTrustEngine(context, KeyRotation.STABLE).also { RolePhone.publishHolderKey(context, it) }
+            else -> TinkTrustEngine(context, KeyRotation.PER_SESSION)
+        }
+
+    /**
+     * Role phones only: the organiser pass pushed by adb, if it is valid for THIS phone right now, else null.
+     * App wiring (one line): `TrustModule.loadRolePass(app, trust)?.let { MeshBeaconInfo.rolePass.value = it }`.
+     */
+    fun loadRolePass(context: Context, trust: TrustEngine): RolePass? = RolePhone.loadPass(context, trust)
 
     /** Organiser phone only (holds the adb-pushed organiser key): issues verified-role passes. Null everywhere else. */
     fun createRoleIssuer(context: Context): RolePassIssuer? = RolePasses.loadIssuer(context)

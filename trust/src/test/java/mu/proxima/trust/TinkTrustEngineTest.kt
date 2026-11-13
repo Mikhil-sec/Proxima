@@ -94,7 +94,7 @@ class TinkKeyRotationTest {
         }
 
         // MAX_RETIRED previous sessions + the current one, two keysets each.
-        assertEquals((TinkTrustEngine.MAX_RETIRED + 1) * 2, phone.storedKeysets().size)
+        assertEquals((TinkTrustEngine.MAX_RETIRED + 1) * 2, phone.storedKeysets().count { it.startsWith("s") })
     }
 
     @Test
@@ -125,6 +125,7 @@ class TinkKeyRotationTest {
 internal class SimulatedPhone(private val rotation: KeyRotation, private val organiserKey: KeysetHandle? = null) {
     private val keysets = mutableMapOf<String, ByteArray>()
     private var tags = emptyList<WristbandTag>()
+    private val friendStore = InMemoryFriendStore()
     var nowMs = 1_763_000_000_000L
 
     fun storedKeysets(): Set<String> = keysets.keys.toSet()
@@ -158,5 +159,6 @@ internal class SimulatedPhone(private val rotation: KeyRotation, private val org
         rotation = rotation,
         clock = { nowMs },
         organiserKey = organiserKey,
+        friendStore = friendStore,
     )
 }

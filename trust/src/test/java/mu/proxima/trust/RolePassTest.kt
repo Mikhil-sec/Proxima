@@ -113,6 +113,32 @@ class RolePassTest {
         assertFalse(shipped.contains("ASYMMETRIC_PRIVATE"))
     }
 
+    /** Role mode: the pass pushed to a phone is used only by the phone it was issued to, only while valid. */
+    @Test
+    fun a_pushed_pass_survives_json_and_is_usable_only_by_its_own_phone() {
+        val pushed = RolePhone.parse(mu.proxima.core.pipeline.ProximaJson.encodeToString(mu.proxima.core.model.RolePass.serializer(), pass))!!
+
+        assertEquals(pass, pushed)
+        assertTrue(RolePhone.usableBy(medicTent, pushed, NOW))
+        assertFalse("a pass pushed to the wrong phone must not be used", RolePhone.usableBy(impostor, pushed, NOW))
+        assertFalse(RolePhone.usableBy(medicTent, pushed, NOW + HOUR))
+        assertEquals(null, RolePhone.parse("{not json"))
+    }
+
+    /** A role phone keeps its key across restarts, so its pass stays valid; an ordinary phone's would not. */
+    @Test
+    fun a_role_phone_restart_keeps_its_pass_valid() {
+        val rolePhone = SimulatedPhone(KeyRotation.STABLE, organiserPublic)
+        val before = rolePhone.boot()
+        val issued = issuer.issue(Role.STEWARD, before.identity.publicKey, "Gate 3", HOUR)
+
+        assertTrue(RolePhone.usableBy(rolePhone.boot(), issued, NOW))
+
+        val ordinary = SimulatedPhone(KeyRotation.PER_SESSION, organiserPublic)
+        val passForOldSession = issuer.issue(Role.STEWARD, ordinary.boot().identity.publicKey, "Gate 3", HOUR)
+        assertFalse(RolePhone.usableBy(ordinary.boot(), passForOldSession, NOW))
+    }
+
     @Test
     fun issuer_rejects_labels_that_could_name_or_confuse() {
         val key = medicTent.identity.publicKey

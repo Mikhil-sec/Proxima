@@ -1,6 +1,7 @@
 package mu.proxima.trust
 
 import android.content.Context
+import com.google.crypto.tink.Aead
 import com.google.crypto.tink.HybridDecrypt
 import com.google.crypto.tink.HybridEncrypt
 import com.google.crypto.tink.KeyTemplates
@@ -9,6 +10,7 @@ import com.google.crypto.tink.PublicKeySign
 import com.google.crypto.tink.PublicKeyVerify
 import com.google.crypto.tink.RegistryConfiguration
 import com.google.crypto.tink.TinkProtoKeysetFormat
+import com.google.crypto.tink.aead.AeadConfig
 import com.google.crypto.tink.hybrid.HybridConfig
 import com.google.crypto.tink.signature.SignatureConfig
 import mu.proxima.core.engine.TrustEngine
@@ -58,16 +60,27 @@ class TinkTrustEngine(
     private val clock: () -> Long = System::currentTimeMillis,
     /** The event organiser's PUBLIC keyset; null = this build cannot verify roles, so it never shows any. */
     organiserKey: KeysetHandle? = null,
+    /** Encrypted friend book (#38 item 3). Default keeps it in memory only - the app passes a persistent store. */
+    friendStore: FriendStore = InMemoryFriendStore(),
 ) : TrustEngine {
 
     /** The app's constructor: keysets encrypted under an Android Keystore master key, tags in private prefs. */
     constructor(context: Context, rotation: KeyRotation = KeyRotation.PER_SESSION) : this(
         AndroidKeystoreKeysetStore(context), SharedPrefsWristbandStore(context), rotation,
         organiserKey = RolePasses.loadOrganiserKey(context),
+        friendStore = SharedPrefsFriendStore(context),
     )
 
     private val random = SecureRandom()
     private val organiser: PublicKeyVerify? = organiserKey?.let(RolePasses::verifier)
+
+    /** Survives per-session rotation on purpose: friends must still recognise you after a restart. */
+    private val friendBook = FriendBook(
+        keys.getOrCreate(FRIENDS_KEYSET, KeyTemplates.get(FRIENDS_TEMPLATE))
+            .getPrimitive(RegistryConfiguration.get(), Aead::class.java),
+        friendStore,
+        random,
+    )
 
     /** This session's keys, and (PER_SESSION only) the previous sessions' keys still inside the retention window. */
     private val current: SessionKeys
@@ -177,6 +190,40 @@ class TinkTrustEngine(
         return RolePasses.signatureValid(organiser, pass)
     }
 
+    // ---------- Friend find (#38 item 3) ----------
+
+    override fun beaconTag(atMs: Long): String = friendBook.beaconTag(atMs)
+
+    override fun matchFriend(tag: String, atMs: Long): String? = friendBook.match(tag, atMs)
+
+    override fun pairingCode(peerKey: String): String? {
+        if (NodeIds.split(peerKey) == null || peerKey == identity.publicKey) return null
+        return FriendBook.pairingCode(identity.publicKey, peerKey)
+    }
+
+    override fun friendInvite(peerKey: String): String? = try {
+        seal(FriendBook.invitePlaintext(identity.publicKey, friendBook.secret), peerKey)
+    } catch (e: IllegalArgumentException) {
+        null
+    }
+
+    override fun acceptFriend(peerKey: String, sealedInvite: String, label: String): Boolean {
+        val name = label.trim()
+        if (name.isEmpty() || name.length > MAX_FRIEND_LABEL) return false
+        val (sender, secret) = open(sealedInvite)?.let(FriendBook::parseInvite) ?: return false
+        // The invite must come from the phone whose code the user just confirmed, not from whoever else sent one.
+        if (sender != peerKey || secret.size != FriendBook.SECRET_BYTES) return false
+        friendBook.add(name, secret)
+        return true
+    }
+
+    override fun friends(): List<String> = friendBook.labels()
+
+    override fun removeFriend(label: String) = friendBook.remove(label)
+
+    /** Stop every current friend recognising this phone (e.g. a lost phone, or ending a friendship). Re-pair the rest. */
+    fun rotateFriendSecret() = friendBook.rotateMySecret()
+
     override fun createWristband(): WristbandTag {
         val tag = WristbandTag(tagId = hex(TAG_BYTES), guardianKey = identity.publicKey, createdAtMs = clock())
         synchronized(minted) {
@@ -227,6 +274,7 @@ class TinkTrustEngine(
         init {
             SignatureConfig.register()
             HybridConfig.register()
+            AeadConfig.register()
         }
 
         /** How long a previous session's keys can still open notices: one event day. */
@@ -234,6 +282,10 @@ class TinkTrustEngine(
 
         /** Cap on retained sessions, so a phone restarted all day does not try dozens of keys per notice. */
         const val MAX_RETIRED = 10
+
+        const val FRIENDS_KEYSET = "proxima_friends"
+        const val FRIENDS_TEMPLATE = "AES256_GCM"
+        const val MAX_FRIEND_LABEL = 40
 
         const val STABLE_SIGNING = "proxima_signing"
         const val STABLE_ENCRYPTION = "proxima_encryption"
