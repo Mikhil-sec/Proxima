@@ -66,6 +66,7 @@ Nearby has per-device connection limits, so the cluster may not be a full mesh: 
 | 15:57 Fri | Store-and-forward persisted in Room (survives restart) + 5 more JVM tests (10/10); "how my part works" written |
 | 16:10 Fri | Reconnect loop with backoff (2→30 s + jitter); 3 more JVM tests (13/13) | Device log showed a dropped link that never came back |
 | 16:46 Fri | ✅ **3-phone test** (S947B, Honor X8b relay, S23+): forced chain via allow-list, PING relayed hops=1 in 0.09–0.17 s (was 7–10 s before one-at-a-time connects); reconnect after 15 s radio-off in 31 s; relay with Honor screen off ~80 s (Doze); stored packets flushed after restart |
+| 17:15 Fri | PR #27 merged to main (CI green). Beacon coarse location + llmReady via `MeshBeaconInfo` (16/16 JVM tests); needs 2-line UI wiring |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -80,4 +81,5 @@ Nearby has per-device connection limits, so the cluster may not be a full mesh: 
 | 15:47 Fri | Retry advertising/discovery every 10 s while running | Phone locked at start = location denied → discovery never recovered | Fail once and wait for app restart |
 | 16:08 Fri | Keep endpoints after disconnect; 1 s loop retries with exponential backoff 2→30 s + 0–1 s jitter; forget after 10 min unseen | Device log: link dropped at 15:48 and Nearby never re-reported the phone as found → link stays dead | Remove on disconnect and wait for rediscovery (never comes); fixed-interval retry (both phones collide) |
 | 16:40 Fri | One connection attempt in flight at a time (15 s timeout), fewest-attempts first; forget endpoints after 8 failed attempts; drop stale endpoint ids of a re-found node | Honor X8b log: parallel requestConnection → 8007/8012 errors + radio busy; relay latency 7–10 s → 0.1 s after fix | Parallel attempts with backoff only (still collide); never forgetting ghosts |
+| 17:15 Fri | Beacons carry only the centre of the 25 m `GeoMath.cellKey` cell (accuracy = 25 m), set via `MeshBeaconInfo` in `:mesh` which the app wires from LOCATE/AI | Privacy rule: density = anonymous grid cells, raw GPS never leaves the phone; same cells as the heatmap; no `core/` change | Raw GeoPoint (tracks people); rounding at the Command Center (raw position already broadcast); mesh reading GPS itself (duplicates LOCATE) |
 | 15:25 Fri | Debug-only adb PING sends CONTROL/`ping`, not an INCIDENT | Tests multi-hop with no UI and no fake incidents in the pipeline (real-data rule) | Fake INCIDENT packets |
