@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- OLED black from the first frame: no white flash before Compose draws. -->
+    <style name="Theme.Proxima" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/proxima_black</item>
+        <item name="android:colorBackground">@color/proxima_black</item>
+    </style>
+    <color name="proxima_black">#FF05070A</color>
+</resources>

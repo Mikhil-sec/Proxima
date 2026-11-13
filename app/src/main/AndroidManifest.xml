@@ -7,7 +7,7 @@
         android:allowBackup="false"
         android:label="Proxima"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
+        android:theme="@style/Theme.Proxima">
         <activity
             android:name=".MainActivity"
             android:exported="true">
