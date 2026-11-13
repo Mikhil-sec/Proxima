@@ -227,6 +227,8 @@ private fun TacticalMap(
             drawScaleAndNorth(pxPerM, measurer)
         }
 
+        MapLegend(Modifier.align(Alignment.BottomEnd).padding(16.dp))
+
         if (origin == null) {
             Text(
                 "Waiting for a location fix to draw the map.",
@@ -235,14 +237,41 @@ private fun TacticalMap(
             )
         }
 
-        // Hop log: the last few link crossings, newest on top.
+        // Hop log: the last few link crossings, newest on top, named exactly as on the map.
+        val names = peers.associate { it.nodeId to it.shortCode } + (selfId to "you")
+        fun name(id: String) = names[id] ?: shortNode(id)
         Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
             log.forEachIndexed { i, h ->
                 Text(
-                    "${clockLabel(h.atMs)}  ${shortNode(h.fromNodeId)} > ${shortNode(h.toNodeId)}  ${h.kind.name.lowercase()}",
+                    "${clockLabel(h.atMs)}  ${name(h.fromNodeId).padEnd(4)} > ${name(h.toNodeId).padEnd(4)}  ${h.kind.name.lowercase()}",
                     style = mono(11, color = if (i == 0) Px.Text else Px.Dim),
                 )
             }
+        }
+    }
+}
+
+/** What the shapes and squares mean. Drawn with the same primitives as the map so it can't drift. */
+@Composable
+private fun MapLegend(modifier: Modifier) {
+    val items = listOf(
+        DeviceTier.TIER1_COMPUTE to "relay, runs AI",
+        DeviceTier.TIER2_SCOUT to "scout phone",
+        DeviceTier.COMMAND_CENTER to "command center",
+    )
+    val measurer = rememberTextMeasurer()
+    Column(modifier, horizontalAlignment = Alignment.Start) {
+        items.forEach { (tier, label) ->
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
+                Canvas(Modifier.width(20.dp).height(20.dp)) { drawNode(tier, Offset(size.width / 2, size.height / 2), "", measurer) }
+                Spacer(Modifier.width(8.dp))
+                Text(label, style = mono(11))
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
+            Box(Modifier.width(20.dp).height(14.dp).background(Px.Crimson.copy(alpha = 0.35f)))
+            Spacer(Modifier.width(8.dp))
+            Text("reports per 25 m cell", style = mono(11))
         }
     }
 }
@@ -305,7 +334,7 @@ private fun DrawScope.drawNode(tier: DeviceTier, at: Offset, code: String, measu
             drawPath(d, Px.Amber, style = stroke)
         }
     }
-    drawText(measurer, code, at + Offset(r + 5.dp.toPx(), -r - 2.dp.toPx()), mono(11, color = Px.Dim))
+    if (code.isNotEmpty()) drawText(measurer, code, at + Offset(r + 5.dp.toPx(), -r - 2.dp.toPx()), mono(11, color = Px.Dim))
 }
 
 private fun DrawScope.drawScaleAndNorth(pxPerM: Float, measurer: TextMeasurer) {
@@ -367,6 +396,7 @@ private fun SidePanel(
             Stat("ai on device", (bySource[TriageSource.ON_DEVICE_LLM] ?: 0).toString(), Px.Text, Modifier.weight(1f), small = true)
             Stat("ai offloaded", (bySource[TriageSource.OFFLOADED_LLM] ?: 0).toString(), Px.Text, Modifier.weight(1f), small = true)
             Stat("rules", (bySource[TriageSource.RULES] ?: 0).toString(), Px.Text, Modifier.weight(1f), small = true)
+            Spacer(Modifier.weight(1f))
         }
         Spacer(Modifier.height(16.dp))
         Hairline()

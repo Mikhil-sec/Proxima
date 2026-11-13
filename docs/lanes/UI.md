@@ -115,10 +115,10 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 ## NEXT_SESSION_HANDOFF
 - Works on Honor (SIM): Home/SOS (0.6 s arm), Report (listen → preview → 3 s auto-send → sent), Feed + sheet,
   lost & found without hardware (guardian banner → Found alert → Radar; Finder picks lost alert → shares sealed location),
-  Boot, Dev sheet. Command Center built but **not yet reviewed on the tablet**.
+  Boot, Dev sheet. Command Center reviewed on the Tab S6 Lite (landscape is the stage layout).
 - `lane/ui` contains `iface/lost-found` (PR #15, waiting 👍 MESH + TRUST on #14). Do not merge lane/ui to main before #15.
 - Open asks: #8 MESH multi-hop control, #9 AI voice level, #10 report(raw, triaged), #16 AI hint must not downgrade critical.
-- Next: tablet review of Command Center; wire MESH `MeshDemoControls.allowedNeighbours` (#8) into the Dev sheet once
+- Next: wire MESH `MeshDemoControls.allowedNeighbours` (#8) into the Dev sheet once
   lane/mesh is on main; 130% font + TalkBack pass; then pitch screenshots. Protocol cards wait on TRUST protocols.json.
 
 ## Progress log
@@ -129,6 +129,7 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
 | 14:55 Fri | First full UI pass compiles: Home/SOS, Report, Feed, Command Center, Boot, Dev sheet, Wristbands, Finder. Requests #7 TRUST, #8 MESH, #9 AI, interface-change #10 |
 | 15:05 Fri | On-device review (Honor): SOS hold → voice ring → review → auto-send → "Alert sent, passed to 3 phones" works. Fixed: SOS label, truncated links, "Lost child" titles, duplicate kicker, Sending label |
 | 15:30 Fri | SOS arms only after a steady 0.6 s hold (arming arc); verified a swipe + tap no longer fires it |
+| 15:47 Fri | Command Center reviewed on the Tab S6 Lite (portrait + landscape). Fixed: map legend, 4-column stats grid, hop log uses map names |
 | 15:50 Fri | Nearest-help component on real OSM data: km distances, turning arrow only within 2 km, amber note when help is far (#11); "read steps aloud" when a protocol card exists |
 | 15:35 Fri | Wristband dropped (#14, PR #15). New: Finder picks the lost alert ("I'm with them") → sealed location; guardian banner, full-screen Found alert, Radar (sweep, blip, haptic ticks). Verified on Honor in SIM |
 
