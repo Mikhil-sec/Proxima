@@ -155,6 +155,8 @@ TRUST's draft stopped at 18:05; the main change is adding the evening decisions.
 | 20:45 Fri | PR #71 merged (main reopened): Gemma backend, eval, seizure/live wire CRITICAL on main. |
 | 20:55 Fri | #45 proof-read posted: 9 cards vs IFRC 2020 PDF, no contradictions; 5 pages, 1 order fix, ABC check, 5 wording nits to TRUST. |
 | 21:00 Fri | Guide: timed steps now say "Say next to hear the next step now." (+1 test). |
+| 23:25 Fri | S24U (Diya): Gemma loaded 4.6 s after app restart, seizure SOS → Critical/Seizure on screen. S23+ (Yorvan): new build, storage full (1.2 GB) → rules + offload. S26 (Chanum): model pushed, waiting for lead's build. |
+| 23:40 Fri | Triage success now logged: `triage: ON_DEVICE_LLM TYPE/SUBTYPE/SEVERITY in N ms` (+ `before rules:` when raised). Labels only, no report text. +2 tests. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |

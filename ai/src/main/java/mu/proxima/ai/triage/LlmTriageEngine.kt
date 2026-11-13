@@ -20,6 +20,7 @@ import mu.proxima.core.model.Severity
 import mu.proxima.core.model.TriageCapability
 import mu.proxima.core.model.TriageResult
 import mu.proxima.core.pipeline.RuleTriageEngine
+import kotlin.time.TimeSource
 
 /**
  * Tier 1 triage: on-device LLM first, RuleTriageEngine whenever the model is missing, slow,
@@ -66,6 +67,7 @@ class LlmTriageEngine(
 
         // Run in the engine scope and only *await* with a timeout, so a runtime that ignores
         // cancellation still can't hold the SOS past the budget.
+        val started = TimeSource.Monotonic.markNow()
         val job = genScope.async { gate.withLock { backend.generate(TriagePrompt.SYSTEM, TriagePrompt.user(report)) } }
         val raw = try {
             withTimeoutOrNull(timeoutMs) { job.await() }
@@ -83,6 +85,12 @@ class LlmTriageEngine(
 
         val parsed = TriagePrompt.parse(raw, report)
             ?: return fallback.also { log("triage: invalid LLM output → rules: ${raw.take(200)}") }
-        return TriageMerge.merge(parsed, fallback)
+        val merged = TriageMerge.merge(parsed, fallback)
+        // Success used to be silent, so a demo phone could only be checked on screen. Labels only, never report text.
+        val raisedBy = if (label(merged) != label(parsed)) " (before rules: ${label(parsed)})" else ""
+        log("triage: ON_DEVICE_LLM ${label(merged)} in ${started.elapsedNow().inWholeMilliseconds} ms$raisedBy")
+        return merged
     }
+
+    private fun label(r: TriageResult) = "${r.type}/${r.subtype ?: "-"}/${r.severity}"
 }
