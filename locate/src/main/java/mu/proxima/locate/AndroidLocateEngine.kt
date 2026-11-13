@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.proxima.core.engine.LocateEngine
@@ -78,6 +79,8 @@ class AndroidLocateEngine(
     private var declinationFrom: GeoPoint? = null
     private val smoother = HeadingSmoother()
     private val rotation = FloatArray(9)
+    /** Debug builds only (no-op otherwise): adb TRACK/STOP/STATUS, see [LocateDebugTrigger]. */
+    private val debugTrigger = LocateDebugTrigger(appContext, this, mesh, scope)
 
     // ---------- lifecycle ----------
 
@@ -86,6 +89,7 @@ class AndroidLocateEngine(
         started = true
         startHeading()
         uwb?.startResponder() // so a guardian can range to us when we are the finder
+        debugTrigger.register()
         if (hasLocationPermission()) startLocation()
         else waitForPermission = scope.launch {
             // The UI asks for permissions once; pick location up as soon as it's granted.
@@ -98,6 +102,7 @@ class AndroidLocateEngine(
         if (!started) return
         started = false
         waitForPermission?.cancel()
+        debugTrigger.unregister()
         sensors.unregisterListener(headingListener)
         if (locationActive) fused.removeLocationUpdates(locationListener)
         locationActive = false
@@ -174,7 +179,17 @@ class AndroidLocateEngine(
         val targetFix = AtomicReference<Pair<GeoPoint, Long>?>(null)
         val uwbFix = AtomicReference<UwbReading?>(null)
         launch { target.locations.collect { targetFix.set(it to System.currentTimeMillis()) } }
-        uwb?.let { ranger -> launch { ranger.range(target.nodeId).collect { uwbFix.set(it) } } }
+        uwb?.let { ranger ->
+            val azimuth = UwbAzimuthFilter() // one per tracking session; cleans AoA spikes before the arrow sees them
+            launch {
+                // Only phones that advertise UWB in their mesh beacon can answer. Waiting here keeps us from
+                // flooding the mesh with REQUESTs every 3 s for help points, non-UWB phones or nodes not in range yet.
+                mesh.peers.first { peers -> peers.any { it.nodeId == target.nodeId && it.hasUwb } }
+                ranger.range(target.nodeId).collect { r ->
+                    uwbFix.set(r.copy(azimuthDeg = azimuth.update(r.azimuthDeg, r.distanceM, r.atMs)))
+                }
+            }
+        }
 
         while (isActive) {
             val now = System.currentTimeMillis()
