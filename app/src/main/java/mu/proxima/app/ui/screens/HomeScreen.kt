@@ -9,11 +9,11 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -48,7 +48,10 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import mu.proxima.app.ProximaGraph
 import mu.proxima.app.ui.Nav
@@ -58,7 +61,6 @@ import mu.proxima.app.ui.ageLabel
 import mu.proxima.app.ui.components.Glyph
 import mu.proxima.app.ui.components.GlyphIcon
 import mu.proxima.app.ui.components.MeshStatus
-import mu.proxima.app.ui.components.QuietAction
 import mu.proxima.app.ui.components.Rail
 import mu.proxima.app.ui.components.SimBadge
 import mu.proxima.app.ui.components.rememberReducedMotion
@@ -99,9 +101,9 @@ fun HomeScreen(graph: ProximaGraph, capture: VoiceCapture, nav: Nav, onDev: () -
         Spacer(Modifier.height(20.dp))
         AlertsStrip(open, onClick = { nav.go(Screen.Feed) })
         Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            QuietAction("I found someone", onClick = { nav.go(Screen.Finder) })
-            QuietAction("My wristbands", onClick = { nav.go(Screen.Wristbands) }, color = Px.Dim)
+        Row(Modifier.fillMaxWidth()) {
+            LinkCell(Glyph.Scan, "I found someone", Px.Text, Modifier.weight(1f)) { nav.go(Screen.Finder) }
+            LinkCell(Glyph.Wristband, "My wristbands", Px.Dim, Modifier.weight(1f)) { nav.go(Screen.Wristbands) }
         }
         Spacer(Modifier.height(8.dp))
     }
@@ -141,6 +143,9 @@ private fun SosRing(capture: VoiceCapture, onRelease: () -> Unit) {
         val t = rememberInfiniteTransition(label = "breathe")
         t.animateFloat(0f, 1f, infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart), label = "b").value
     }
+
+    val measurer = rememberTextMeasurer()
+    val sos = remember(measurer) { measurer.measure("SOS", grotesk(40, FontWeight.Bold, Px.Black).copy(letterSpacing = 2.sp)) }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Canvas(
@@ -198,13 +203,30 @@ private fun SosRing(capture: VoiceCapture, onRelease: () -> Unit) {
                 }
             }
             drawCircle(Px.Crimson, core, c)
+            drawText(sos, topLeft = Offset(c.x - sos.size.width / 2f, c.y - sos.size.height / 2f))
         }
         // Label sits under the ring rather than on it: the ring stays a clean target.
-        Box(Modifier.size(width = 236.dp, height = 0.dp))
         Text(
             if (held) "Listening. Let go when you're done." else "Hold to talk",
             style = grotesk(16, FontWeight.Medium, if (held) Px.Text else Px.Dim),
         )
+    }
+}
+
+/** Secondary destinations: glyph + one-line label, quieter than the report row, full-width halves. */
+@Composable
+private fun LinkCell(glyph: Glyph, label: String, color: androidx.compose.ui.graphics.Color, modifier: Modifier, onClick: () -> Unit) {
+    Row(
+        modifier
+            .height(56.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        GlyphIcon(glyph, color, 20.dp)
+        Spacer(Modifier.width(10.dp))
+        Text(label, style = grotesk(16, FontWeight.Medium, color), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -224,7 +246,7 @@ private fun ReportRow(onPick: (IncidentType) -> Unit) {
             .border(1.dp, Px.Line, RoundedCornerShape(20.dp)),
     ) {
         items.forEachIndexed { i, (type, glyph, label) ->
-            if (i > 0) Box(Modifier.width(1.dp).fillMaxHeight().padding(vertical = 18.dp).border(1.dp, Px.Line))
+            if (i > 0) Box(Modifier.padding(vertical = 18.dp).width(1.dp).fillMaxHeight().background(Px.Line))
             Column(
                 Modifier
                     .weight(1f)
