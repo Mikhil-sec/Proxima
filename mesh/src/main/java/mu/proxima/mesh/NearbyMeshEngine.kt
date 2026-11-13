@@ -1,0 +1,382 @@
+package mu.proxima.mesh
+
+import android.Manifest
+import android.content.Context
+import android.os.Build
+import android.util.Log
+import com.google.android.gms.nearby.Nearby
+import com.google.android.gms.nearby.connection.AdvertisingOptions
+import com.google.android.gms.nearby.connection.ConnectionInfo
+import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback
+import com.google.android.gms.nearby.connection.ConnectionResolution
+import com.google.android.gms.nearby.connection.ConnectionsClient
+import com.google.android.gms.nearby.connection.ConnectionsStatusCodes
+import com.google.android.gms.nearby.connection.DiscoveredEndpointInfo
+import com.google.android.gms.nearby.connection.DiscoveryOptions
+import com.google.android.gms.nearby.connection.EndpointDiscoveryCallback
+import com.google.android.gms.nearby.connection.Payload
+import com.google.android.gms.nearby.connection.PayloadCallback
+import com.google.android.gms.nearby.connection.PayloadTransferUpdate
+import com.google.android.gms.nearby.connection.Strategy
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import mu.proxima.core.engine.MeshEngine
+import mu.proxima.core.engine.TrustEngine
+import mu.proxima.core.model.Beacon
+import mu.proxima.core.model.DeviceCapabilities
+import mu.proxima.core.model.DeviceTier
+import mu.proxima.core.model.HopEvent
+import mu.proxima.core.model.MeshPacket
+import mu.proxima.core.model.PacketKind
+import mu.proxima.core.model.Peer
+import mu.proxima.core.model.Severity
+import mu.proxima.core.model.Transport
+import mu.proxima.core.pipeline.PacketFactory
+import mu.proxima.core.pipeline.ProximaJson
+
+/**
+ * Real mesh on Google Nearby Connections (P2P_CLUSTER: every phone advertises and discovers at once).
+ *
+ * Receive → drop duplicate packetId → deliver to [inbound] → forward to every other neighbour with
+ * ttl-1 / hopCount+1 / path+self. Packets are kept ~30 min and flushed to each new neighbour
+ * (CRITICAL first), so a phone that walks into range still gets live alerts.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+class NearbyMeshEngine(
+    private val context: Context,
+    private val capabilities: DeviceCapabilities,
+    private val trust: TrustEngine,
+    private val scope: CoroutineScope,
+    private val seen: SeenStore = SeenStore(MeshDatabase.create(context).seen()),
+    private val clock: () -> Long = System::currentTimeMillis,
+) : MeshEngine {
+
+    override val selfNodeId: String = trust.identity.nodeId
+
+    override val requiredPermissions: List<String> = buildList {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            add(Manifest.permission.BLUETOOTH_SCAN)
+            add(Manifest.permission.BLUETOOTH_ADVERTISE)
+            add(Manifest.permission.BLUETOOTH_CONNECT)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            add(Manifest.permission.NEARBY_WIFI_DEVICES)
+            add(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
+    private val _running = MutableStateFlow(false)
+    override val running: StateFlow<Boolean> = _running.asStateFlow()
+
+    private val _peers = MutableStateFlow<List<Peer>>(emptyList())
+    override val peers: StateFlow<List<Peer>> = _peers.asStateFlow()
+
+    private val _inbound = MutableSharedFlow<MeshPacket>(extraBufferCapacity = 128)
+    override val inbound: SharedFlow<MeshPacket> = _inbound.asSharedFlow()
+
+    private val _hops = MutableSharedFlow<HopEvent>(extraBufferCapacity = 256)
+    override val hops: SharedFlow<HopEvent> = _hops.asSharedFlow()
+
+    private val client: ConnectionsClient by lazy { Nearby.getConnectionsClient(context) }
+    private val packets = PacketFactory(trust, clock)
+
+    /** All engine state is touched only from this single-threaded dispatcher. */
+    private val serial = Dispatchers.Default.limitedParallelism(1)
+
+    private data class Endpoint(val nodeId: String, val tier: DeviceTier, val connected: Boolean, val lastSeenMs: Long)
+
+    private val endpoints = mutableMapOf<String, Endpoint>()          // endpointId → neighbour
+    private val indirect = mutableMapOf<String, Peer>()              // nodeId → peer known via beacons
+    private val outbox = ArrayDeque<MeshPacket>()                    // store-and-forward
+    private val jobs = mutableListOf<Job>()
+
+    private val localName = "$selfNodeId|${capabilities.tier.name}"
+
+    // ---------------------------------------------------------------- lifecycle
+
+    override suspend fun start() {
+        if (_running.value) return
+        _running.value = true
+        Log.i(TAG, "mesh start node=$selfNodeId tier=${capabilities.tier}")
+        MeshService.start(context)
+        scope.launch { runCatching { seen.prune() } }
+
+        val strategy = Strategy.P2P_CLUSTER
+        client.startAdvertising(localName, SERVICE_ID, lifecycle, AdvertisingOptions.Builder().setStrategy(strategy).build())
+            .addOnSuccessListener { Log.i(TAG, "advertising") }
+            .addOnFailureListener { Log.e(TAG, "advertising failed: ${it.message}") }
+        client.startDiscovery(SERVICE_ID, discovery, DiscoveryOptions.Builder().setStrategy(strategy).build())
+            .addOnSuccessListener { Log.i(TAG, "discovering") }
+            .addOnFailureListener { Log.e(TAG, "discovery failed: ${it.message}") }
+
+        jobs += scope.launch(serial) { // beacons → indirect peers on other phones
+            while (isActive) {
+                sendBeacon()
+                delay(BEACON_INTERVAL_MS)
+            }
+        }
+        jobs += scope.launch(serial) { // expire stale indirect peers and old outbox packets
+            while (isActive) {
+                delay(5_000)
+                val now = clock()
+                indirect.values.removeAll { now - it.lastSeenMs > PEER_EXPIRY_MS }
+                outbox.removeAll { now - it.createdAtMs > STORE_MS }
+                publishPeers()
+            }
+        }
+        jobs += scope.launch(serial) { // demo allow-list (issue #8)
+            MeshDemoControls.allowedNeighbours.collect { applyAllowList() }
+        }
+    }
+
+    override suspend fun stop() {
+        if (!_running.value) return
+        jobs.forEach { it.cancel() }
+        jobs.clear()
+        client.stopAdvertising()
+        client.stopDiscovery()
+        client.stopAllEndpoints()
+        scope.launch(serial) {
+            endpoints.clear()
+            indirect.clear()
+            publishPeers()
+        }
+        MeshService.stop(context)
+        _running.value = false
+        Log.i(TAG, "mesh stopped")
+    }
+
+    // ---------------------------------------------------------------- send / receive
+
+    override suspend fun send(packet: MeshPacket) {
+        scope.launch(serial) {
+            if (!seen.markFirstSeen(packet.packetId)) return@launch
+            val out = MeshRelay.originate(packet, selfNodeId)
+            remember(out)
+            broadcast(out, excludeEndpoint = null)
+        }.join()
+    }
+
+    private suspend fun onPacket(packet: MeshPacket, fromEndpoint: String) {
+        endpoints[fromEndpoint]?.let { endpoints[fromEndpoint] = it.copy(lastSeenMs = clock()) }
+        if (!seen.markFirstSeen(packet.packetId)) return
+        val fromNode = endpoints[fromEndpoint]?.nodeId ?: MeshRelay.lastHop(packet)
+        if (packet.kind != PacketKind.BEACON) {
+            Log.i(TAG, "rx ${packet.kind} ${packet.packetId.take(8)} from=$fromNode hops=${packet.hopCount} ttl=${packet.ttl}")
+            _hops.tryEmit(HopEvent(packet.packetId, packet.kind, packet.severity, fromNode, selfNodeId, clock()))
+        } else {
+            onBeacon(packet)
+        }
+        _inbound.tryEmit(packet)
+        MeshRelay.nextHop(packet, selfNodeId)?.let { fwd ->
+            remember(fwd)
+            broadcast(fwd, excludeEndpoint = fromEndpoint)
+        }
+    }
+
+    private fun broadcast(packet: MeshPacket, excludeEndpoint: String?) {
+        val targets = endpoints.filter { (id, ep) ->
+            ep.connected && id != excludeEndpoint && MeshRelay.shouldSendTo(packet, ep.nodeId)
+        }
+        if (targets.isEmpty()) return
+        sendTo(targets.keys.toList(), packet)
+        if (packet.kind != PacketKind.BEACON) {
+            targets.values.forEach {
+                _hops.tryEmit(HopEvent(packet.packetId, packet.kind, packet.severity, selfNodeId, it.nodeId, clock()))
+            }
+        }
+    }
+
+    private fun sendTo(endpointIds: List<String>, packet: MeshPacket) {
+        val bytes = ProximaJson.encodeToString(MeshPacket.serializer(), packet).encodeToByteArray()
+        if (bytes.size > ConnectionsClient.MAX_BYTES_DATA_SIZE) {
+            Log.e(TAG, "packet ${packet.packetId.take(8)} too big (${bytes.size} B), dropped")
+            return
+        }
+        client.sendPayload(endpointIds, Payload.fromBytes(bytes))
+            .addOnFailureListener { Log.w(TAG, "send failed: ${it.message}") }
+    }
+
+    /** Store-and-forward: keep live packets so new neighbours get them. */
+    private fun remember(packet: MeshPacket) {
+        if (packet.kind == PacketKind.BEACON) return
+        outbox.removeAll { it.packetId == packet.packetId }
+        outbox.addLast(packet)
+        while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
+    }
+
+    private fun flushTo(endpointId: String) {
+        val ep = endpoints[endpointId] ?: return
+        val now = clock()
+        outbox.filter { now - it.createdAtMs <= STORE_MS && MeshRelay.shouldSendTo(it, ep.nodeId) }
+            .sortedByDescending { it.severity.ordinal }
+            .forEach { sendTo(listOf(endpointId), it) }
+    }
+
+    // ---------------------------------------------------------------- beacons / peers
+
+    private fun sendBeacon() {
+        if (endpoints.values.none { it.connected }) return
+        val beacon = Beacon(selfNodeId, capabilities.tier, capabilities.hasUwb, llmReady = false, location = null)
+        val packet = packets.create(PacketKind.BEACON, ProximaJson.encodeToString(Beacon.serializer(), beacon), Severity.LOW)
+        scope.launch(serial) {
+            seen.markFirstSeen(packet.packetId)
+            broadcast(MeshRelay.originate(packet, selfNodeId), excludeEndpoint = null)
+        }
+    }
+
+    private fun onBeacon(packet: MeshPacket) {
+        val b = runCatching { ProximaJson.decodeFromString(Beacon.serializer(), packet.payload) }.getOrNull() ?: return
+        if (b.nodeId == selfNodeId) return
+        indirect[b.nodeId] = Peer(
+            nodeId = b.nodeId, shortCode = shortCode(b.nodeId), tier = b.tier, transport = Transport.NEARBY_AUTO,
+            lastSeenMs = clock(), location = b.location, hasUwb = b.hasUwb, llmReady = b.llmReady, direct = false,
+        )
+        publishPeers()
+    }
+
+    private fun publishPeers() {
+        val direct = endpoints.values.filter { it.connected }.map {
+            Peer(nodeId = it.nodeId, shortCode = shortCode(it.nodeId), tier = it.tier, transport = Transport.NEARBY_AUTO,
+                lastSeenMs = it.lastSeenMs, hasUwb = indirect[it.nodeId]?.hasUwb ?: false,
+                llmReady = indirect[it.nodeId]?.llmReady ?: false, direct = true)
+        }
+        val directIds = direct.map { it.nodeId }.toSet()
+        _peers.value = direct + indirect.values.filter { it.nodeId !in directIds }
+    }
+
+    // ---------------------------------------------------------------- connections
+
+    private fun parseName(name: String): Pair<String, DeviceTier> {
+        val parts = name.split('|')
+        val tier = parts.getOrNull(1)?.let { t -> DeviceTier.entries.firstOrNull { it.name == t } } ?: DeviceTier.TIER2_SCOUT
+        return parts[0] to tier
+    }
+
+    private fun connect(endpointId: String) {
+        client.requestConnection(localName, endpointId, lifecycle)
+            .addOnFailureListener { e ->
+                val code = (e as? com.google.android.gms.common.api.ApiException)?.statusCode
+                if (code != ConnectionsStatusCodes.STATUS_ALREADY_CONNECTED_TO_ENDPOINT) {
+                    Log.w(TAG, "requestConnection $endpointId failed: ${e.message}")
+                }
+            }
+    }
+
+    private fun applyAllowList() {
+        endpoints.forEach { (id, ep) ->
+            val allowed = MeshDemoControls.allows(ep.nodeId)
+            if (ep.connected && !allowed) {
+                Log.i(TAG, "demo allow-list: dropping ${ep.nodeId}")
+                client.disconnectFromEndpoint(id)
+                endpoints[id] = ep.copy(connected = false)
+            } else if (!ep.connected && allowed) {
+                connect(id)
+            }
+        }
+        publishPeers()
+    }
+
+    private val discovery = object : EndpointDiscoveryCallback() {
+        override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
+            if (info.serviceId != SERVICE_ID) return
+            scope.launch(serial) {
+                val (nodeId, tier) = parseName(info.endpointName)
+                if (nodeId == selfNodeId) return@launch
+                Log.i(TAG, "found $nodeId ($tier) ep=$endpointId")
+                endpoints[endpointId] = endpoints[endpointId] ?: Endpoint(nodeId, tier, connected = false, lastSeenMs = clock())
+                if (!MeshDemoControls.allows(nodeId)) return@launch
+                // Tie-break so both phones don't request at once; the other side retries if we never do.
+                if (selfNodeId < nodeId) {
+                    connect(endpointId)
+                } else {
+                    delay(CONNECT_FALLBACK_MS)
+                    if (endpoints[endpointId]?.connected == false) connect(endpointId)
+                }
+            }
+        }
+
+        override fun onEndpointLost(endpointId: String) {
+            scope.launch(serial) {
+                if (endpoints[endpointId]?.connected == false) endpoints.remove(endpointId)
+            }
+        }
+    }
+
+    private val lifecycle = object : ConnectionLifecycleCallback() {
+        override fun onConnectionInitiated(endpointId: String, info: ConnectionInfo) {
+            val (nodeId, tier) = parseName(info.endpointName)
+            if (!MeshDemoControls.allows(nodeId)) {
+                client.rejectConnection(endpointId)
+                return
+            }
+            scope.launch(serial) {
+                endpoints[endpointId] = Endpoint(nodeId, tier, connected = false, lastSeenMs = clock())
+            }
+            client.acceptConnection(endpointId, payloads)
+        }
+
+        override fun onConnectionResult(endpointId: String, resolution: ConnectionResolution) {
+            scope.launch(serial) {
+                val ep = endpoints[endpointId] ?: return@launch
+                if (resolution.status.statusCode == ConnectionsStatusCodes.STATUS_OK) {
+                    Log.i(TAG, "connected ${ep.nodeId}")
+                    endpoints[endpointId] = ep.copy(connected = true, lastSeenMs = clock())
+                    publishPeers()
+                    flushTo(endpointId)
+                    sendBeacon()
+                } else {
+                    Log.w(TAG, "connection to ${ep.nodeId} failed: ${resolution.status.statusCode}")
+                }
+            }
+        }
+
+        override fun onDisconnected(endpointId: String) {
+            scope.launch(serial) {
+                endpoints.remove(endpointId)?.let { Log.i(TAG, "disconnected ${it.nodeId}") }
+                publishPeers()
+            }
+        }
+    }
+
+    private val payloads = object : PayloadCallback() {
+        override fun onPayloadReceived(endpointId: String, payload: Payload) {
+            if (payload.type != Payload.Type.BYTES) return
+            val bytes = payload.asBytes() ?: return
+            val packet = runCatching {
+                ProximaJson.decodeFromString(MeshPacket.serializer(), bytes.decodeToString())
+            }.getOrElse {
+                Log.w(TAG, "bad packet from $endpointId: ${it.message}")
+                return
+            }
+            scope.launch(serial) { onPacket(packet, endpointId) }
+        }
+
+        override fun onPayloadTransferUpdate(endpointId: String, update: PayloadTransferUpdate) = Unit
+    }
+
+    private fun shortCode(nodeId: String) = nodeId.takeLast(4).uppercase()
+
+    companion object {
+        private const val TAG = "Proxima"
+        const val SERVICE_ID = "mu.proxima.mesh"
+        private const val BEACON_INTERVAL_MS = 10_000L
+        private const val PEER_EXPIRY_MS = 35_000L
+        private const val STORE_MS = 30 * 60 * 1000L
+        private const val OUTBOX_MAX = 200
+        private const val CONNECT_FALLBACK_MS = 6_000L
+    }
+}
