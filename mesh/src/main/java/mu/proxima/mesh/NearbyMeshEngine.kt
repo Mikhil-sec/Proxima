@@ -63,9 +63,12 @@ class NearbyMeshEngine(
     private val capabilities: DeviceCapabilities,
     private val trust: TrustEngine,
     private val scope: CoroutineScope,
-    private val seen: SeenStore = SeenStore(MeshDatabase.create(context).seen()),
+    private val db: MeshDatabase = MeshDatabase.create(context),
     private val clock: () -> Long = System::currentTimeMillis,
 ) : MeshEngine {
+
+    private val seen = SeenStore(db.seen(), clock)
+    private val stored = db.stored()
 
     override val selfNodeId: String = trust.identity.nodeId
 
@@ -119,6 +122,7 @@ class NearbyMeshEngine(
         Log.i(TAG, "mesh start node=$selfNodeId tier=${capabilities.tier}")
         MeshService.start(context)
         scope.launch { runCatching { seen.prune() } }
+        jobs += scope.launch(serial) { restoreOutbox() }
 
         startAdvertising()
         startDiscovery()
@@ -141,7 +145,9 @@ class NearbyMeshEngine(
                 delay(5_000)
                 val now = clock()
                 indirect.values.removeAll { now - it.lastSeenMs > PEER_EXPIRY_MS }
-                outbox.removeAll { now - it.createdAtMs > STORE_MS }
+                if (outbox.removeAll { now - it.createdAtMs > STORE_MS }) {
+                    runCatching { stored.pruneOlderThan(now - STORE_MS) }
+                }
                 publishPeers()
             }
         }
@@ -277,20 +283,35 @@ class NearbyMeshEngine(
             .addOnFailureListener { Log.w(TAG, "send failed: ${it.message}") }
     }
 
-    /** Store-and-forward: keep live packets so new neighbours get them. */
+    /** Store-and-forward: keep live packets (memory + Room) so new neighbours get them, even after a restart. */
     private fun remember(packet: MeshPacket) {
         if (packet.kind == PacketKind.BEACON) return
         outbox.removeAll { it.packetId == packet.packetId }
         outbox.addLast(packet)
         while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
+        val json = ProximaJson.encodeToString(MeshPacket.serializer(), packet)
+        scope.launch {
+            runCatching { stored.upsert(StoredPacket(packet.packetId, json, packet.createdAtMs)) }
+                .onFailure { Log.w(TAG, "store packet failed: ${it.message}") }
+        }
+    }
+
+    private suspend fun restoreOutbox() {
+        val rows = runCatching { stored.since(clock() - STORE_MS) }.getOrDefault(emptyList())
+        val restored = rows.mapNotNull { runCatching { ProximaJson.decodeFromString(MeshPacket.serializer(), it.json) }.getOrNull() }
+        restored.forEach { p ->
+            if (outbox.none { it.packetId == p.packetId }) outbox.addLast(p)
+            seen.markFirstSeen(p.packetId) // don't re-deliver our stored packets to inbound if they echo back
+        }
+        while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
+        if (restored.isNotEmpty()) Log.i(TAG, "restored ${restored.size} stored packets")
     }
 
     private fun flushTo(endpointId: String) {
         val ep = endpoints[endpointId] ?: return
-        val now = clock()
-        outbox.filter { now - it.createdAtMs <= STORE_MS && MeshRelay.shouldSendTo(it, ep.nodeId) }
-            .sortedByDescending { it.severity.ordinal }
-            .forEach { sendTo(listOf(endpointId), it) }
+        val toSend = MeshRelay.flushOrder(outbox, ep.nodeId, clock(), STORE_MS)
+        if (toSend.isNotEmpty()) Log.i(TAG, "flush ${toSend.size} stored packets to ${ep.nodeId}")
+        toSend.forEach { sendTo(listOf(endpointId), it) }
     }
 
     // ---------------------------------------------------------------- beacons / peers

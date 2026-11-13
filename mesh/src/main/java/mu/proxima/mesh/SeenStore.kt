@@ -28,9 +28,30 @@ interface SeenPacketDao {
     suspend fun pruneOlderThan(olderThanMs: Long): Int
 }
 
-@Database(entities = [SeenPacket::class], version = 1, exportSchema = false)
+/** Store-and-forward: a live packet (as it went on the wire) kept ~30 min for neighbours that arrive later. */
+@Entity(tableName = "stored_packets")
+data class StoredPacket(
+    @PrimaryKey val packetId: String,
+    val json: String,
+    val createdAtMs: Long,
+)
+
+@Dao
+interface StoredPacketDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(row: StoredPacket)
+
+    @Query("SELECT * FROM stored_packets WHERE createdAtMs >= :sinceMs ORDER BY createdAtMs")
+    suspend fun since(sinceMs: Long): List<StoredPacket>
+
+    @Query("DELETE FROM stored_packets WHERE createdAtMs < :olderThanMs")
+    suspend fun pruneOlderThan(olderThanMs: Long): Int
+}
+
+@Database(entities = [SeenPacket::class, StoredPacket::class], version = 2, exportSchema = false)
 abstract class MeshDatabase : RoomDatabase() {
     abstract fun seen(): SeenPacketDao
+    abstract fun stored(): StoredPacketDao
 
     companion object {
         fun create(context: Context): MeshDatabase =

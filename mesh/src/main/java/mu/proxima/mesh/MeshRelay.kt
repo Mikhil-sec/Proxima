@@ -29,6 +29,16 @@ object MeshRelay {
     fun shouldSendTo(packet: MeshPacket, neighbourNodeId: String): Boolean =
         neighbourNodeId !in packet.path
 
+    /**
+     * Store-and-forward flush for a newly connected neighbour: only live packets (≤ [storeMs] old)
+     * that it hasn't already carried, most severe first, oldest first within a severity.
+     */
+    fun flushOrder(stored: Collection<MeshPacket>, neighbourNodeId: String, nowMs: Long, storeMs: Long): List<MeshPacket> =
+        stored.asSequence()
+            .filter { nowMs - it.createdAtMs <= storeMs && it.ttl >= 1 && shouldSendTo(it, neighbourNodeId) }
+            .sortedWith(compareByDescending<MeshPacket> { it.severity.ordinal }.thenBy { it.createdAtMs })
+            .toList()
+
     /** The node that handed us this packet (for HopEvents). */
     fun lastHop(packet: MeshPacket): String = packet.path.lastOrNull() ?: packet.originNodeId
 }
