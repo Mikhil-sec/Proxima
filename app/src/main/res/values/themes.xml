@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- First frame matches the Compose surface (ui/theme/Color.kt LightColors.surface): no flash. -->
+    <style name="Theme.Proxima" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/proxima_surface</item>
+        <item name="android:colorBackground">@color/proxima_surface</item>
+    </style>
+    <color name="proxima_surface">#FFF4FBFA</color>
+</resources>

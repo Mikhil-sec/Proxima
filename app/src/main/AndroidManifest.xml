@@ -7,9 +7,10 @@
         android:allowBackup="false"
         android:label="Proxima"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
+        android:theme="@style/Theme.Proxima">
         <activity
             android:name=".MainActivity"
+            android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize|density|fontScale|keyboard|keyboardHidden|navigation|locale|layoutDirection"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
