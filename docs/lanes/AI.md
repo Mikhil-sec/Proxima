@@ -24,6 +24,10 @@ Implement `TriageEngine` + `VoiceIo` and return them from `AiModule`. The `TRIAG
       (TRIAGE_REQUEST ttl 2, wait ≤5 s for TRIAGE_RESULT); otherwise `RULES_ONLY`.
 - [x] (17:14) `TriageServer` on Tier 1: answers TRIAGE_REQUESTs from mesh.inbound.
 - [~] Kreol keywords (10 `RuleTriageEngineTest` cases pin current EN/FR/Kreol behaviour; native-speaker check still TODO): a Mauritian teammate verifies and extends the list in `RuleTriageEngine`. Add unit tests (`./gradlew :core:test`).
+**Pivot (#30, 17:40 Fri)**
+- [x] B hands-free guided first aid: device-tested on S24U.
+- [~] D crowd-crush early warning: code + tests; needs UI wiring + multi-phone test.
+- [ ] On-device LLM: Gemma 4 E2B (Nano unusable on team phones).
 **P2**
 - [ ] Kreol/French voice input; hazard photo classification (multimodal model) if time allows.
 - [ ] **10:00 Sat: compile all decision logs into a shortlist** for the README.
@@ -33,49 +37,41 @@ The AI never generates medical instructions. It outputs type, severity, subtype,
 Steps come from TRUST's cited protocol cards.
 
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
+1. **Triage:** every SOS goes through `TieredTriageEngine`: local on-device LLM → a nearby Tier 1 phone's LLM over the mesh (offload) → keyword rules (`RuleTriageEngine`, EN/FR/Kreol best-effort). It never fails and never waits more than 6 s.
+2. **Safety:** the model only classifies (type, severity, subtype, summary, landmark, count). Output is validated, protocol cards are always picked locally from TRUST's cited cards, and keyword rules can raise severity but never lower it. A wrong quick button can't hide a critical description (#16).
+3. **Voice:** offline-first speech in/out (`AndroidVoiceIo`): on-device recognizer, language fallback en-MU→en-GB→en-US (Kreol→French), takes audio focus so instructions are heard over music.
+4. **Hands-free first aid (B):** reads a vetted card step by step and follows "next / repeat / stop". "He's breathing" switches CPR → recovery position; it picks cards, never writes steps.
+5. **Crowd-crush early warning (D):** anonymous 25 m density cells + nearby crowd reports + fainting clusters → WATCH/WARNING/DANGER. Only the Command Center raises one HAZARD/CROWD_CRUSH alert per area per 10 min.
 
 ## NEXT_SESSION_HANDOFF
-- **18:04 Fri: Gemini Nano does NOT download on the S26+ (SM-S947B, Exynos/SLSI AICore)**: `DOWNLOAD_ERROR ... Feature SAPI Open Prompt
-  Stable Fast Mode with SLSI ... Task was cancelled`, twice, on validated Wi-Fi. Not fixable in our code. Next: try Nano on Diya's
-  S24 Ultra (Snapdragon AICore); if that fails too → Gemma 3 1B `.litertlm` via LiteRT-LM (`LlmBackend` swap, probe supports it).
-- **B hands-free guide: DEVICE-TESTED 18:25 on Diya's S24 Ultra, offline (on-device en-GB):** next / repeat / "he's breathing" (CPR→recovery) /
-  "he stop breathing" (recovery→CPR) / stop all correct; background chatter caused no false commands.
-  **Demo-phone checklist:** offline speech pack installed (the app requests en-GB once; add fr-FR for French), media volume up,
-  mic allowed. Guide pauses other audio while it talks/listens (audio focus).
-- B code: `ai/.../guide/` (`HandsFreeGuide`, `GuideCommands`,
-  `GuideIntentClassifier`, temp `GuideContract.kt` until #30 lands in core). `AiModule.createGuide(voice, protocols, caps, scope)`.
-  Device test: allow mic in Proxima, then `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez guide true [--es card cpr-adult]`.
-- **D crowd-crush warning (code + 15 JVM tests, 18:33; not device-tested):** `ai/.../crowd/` (`CrowdRiskModel` pure scoring,
-  `CrowdRiskMonitor` 10 s ticker, temp `CrowdContract.kt`). `AiModule.createCrowdRisk(mesh, locate, pipeline, caps, scope)`.
-  Inputs: peers' anonymous 25 m cells (#28) + self location + pipeline incidents. Density alone ≤ WATCH; WARNING needs a crowd
-  report; DANGER = several reports or report + high + rising density. Only COMMAND_CENTER raises HAZARD/CROWD_CRUSH (1 per area
-  per 10 min); own alerts excluded by id. Needs from UI: wire factory + tint cells; MESH #28 in main. TODO when #10 lands: pass triaged.
-- The S26+ used today was **Chanum's** phone: it now has the AI-lane build (my debug key). He must `adb uninstall mu.proxima.app` before installing his.
-- **Works (JVM-tested):** `ai/.../triage/` — `LlmBackend` interface, `GeminiNanoBackend` (ML Kit Prompt API),
-  `TriagePrompt` (prompt + strict validator), `LlmTriageEngine` (6 s budget, rules fallback, severity safety net).
-  `AiModule.createTriage` returns it on TIER1_COMPUTE, `RuleTriageEngine` otherwise. Capability = RULES_ONLY until Nano is on the phone
-  (re-checked every 60 s), so behaviour today is unchanged: rules.
-- Tests: `./gradlew :ai:testDebugUnitTest` (17) and `./gradlew :core:test` (10 RuleTriageEngine cases). All green.
-- **Not verified on device yet:** Gemini Nano status = DOWNLOADABLE on S26+; download waits for Wi-Fi (phone was on mobile data + hotspot).
-- **Exact next step:** phone on real Wi-Fi + USB → `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez nanoDownload true`
-  → `adb logcat -d -s Proxima:*` → record load/latency/RAM/JSON-valid per case → finalise the runtime decision below.
-  If Nano is weak/slow (>6 s): sideload Gemma 3 1B `.litertlm` and add a `LiteRtLmBackend` (probe already supports it).
-- **VoiceIo (code done, not device-tested):** `ai/.../voice/AndroidVoiceIo.kt` + `VoiceSupport.kt`. AiModule returns it whenever the phone has a
-  recognizer (FakeVoiceIo only on emulators without one). Adds RECORD_AUDIO + `<queries>` in `ai/src/main/AndroidManifest.xml`.
-  Device test: allow mic in the app, then `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez voice true [--es lang en-MU|fr-MU|mfe]`.
-  Check: on-device recognizer used? which language picked? Partial/Final arrive? speak works offline (airplane mode)?
-- Bus requests done on lane/ai (not yet on main): #16 (critical words beat a wrong quick button, rules + LLM path),
-  #9 (Level ~12 Hz, stopListening → Final with what was heard, ≤2 s). #10 approved (👍), UI owns that PR.
-- **Tier 2 offload (code done, JVM-tested, not device-tested):** `ai/.../offload/`. Every phone gets `TieredTriageEngine`
-  (local LLM → peer → rules). Tier 1 also runs `TriageServer`: announces readiness on CONTROL/"ai" every 20 s (ttl 2) and
-  answers fresh signed TRIAGE_REQUESTs. Request = text + button only (no location). Peer answers go through
-  `TriagePrompt.sanitize` (no protocolId, valid subtype, #16 rule) + `TriageMerge` safety net, marked OFFLOADED_LLM.
-  No `core/` change: MESH relays every packet kind generically. MESH's `Beacon.llmReady` is still hard-coded false (unused by us).
-  Device test needs 2 phones + Nano on the Tier 1 one: Tier 2 SOS → logcat `offload: answered` on Tier 1.
-- Files touched: `ai/build.gradle.kts`, `ai/src/main/.../AiModule.kt`, `ai/src/main/.../triage/*`, `ai/src/debug/*`, `ai/src/test/*`,
-  `core/src/test/.../RuleTriageEngineTest.kt`, `gradle/libs.versions.toml` (+mlkit-genai-prompt),
-  `ai/src/main/AndroidManifest.xml`, `ai/src/main/.../voice/*`, `ai/src/test/.../voice/*`.
-- Phone lent to MESH/LOCATE 15:27 Fri.
+_Saved 18:40 Fri by Seeya's session. Branch `lane/ai`, pushed, clean. Last AI merge to main: PR #21 at 16:14._
+
+**Done and working**
+- Triage: `LlmTriageEngine` (backend-agnostic `LlmBackend`), `TieredTriageEngine` + `TriageServer` (Tier 2 offload over the mesh, LLM-ready announcements on CONTROL/"ai"), shared `TriagePrompt.sanitize` + `TriageMerge` safety net. JVM-tested only.
+- Voice (`ai/.../voice/`): **device-tested offline on Diya's S24 Ultra.** Language fallback, offline pack request (`triggerModelDownload`), audio focus (`USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`), #9 (12 Hz levels, hold-to-talk Final).
+- **B hands-free guide** (`ai/.../guide/`, `AiModule.createGuide`): **device-tested on the S24U**: next / repeat / "he's breathing" → recovery / "he stop breathing" → CPR / stop.
+- **D crowd-crush warning** (`ai/.../crowd/`, `AiModule.createCrowdRisk`): 15 JVM tests, not device-tested (needs several phones outdoors + the tablet).
+- Bus: #16, #9 done; #10 👍; #35 answered (fix is b5bc9d0, on lane/ai only). Tests: **72 ai + 13 core green**.
+
+**Broken / not done / blocked**
+- **No on-device LLM works yet.** Gemini Nano: S26+ (Chanum's, Exynos) download cancelled by Samsung AICore; S24U (Diya's) UNAVAILABLE. So triage = rules in practice, and offload has no helper.
+- **Not on main yet:** offload, B, D, voice fixes (#35 needs them). Merge needs Seeya's OK.
+- **#30 waiting for Mikhil's 👍** (Diya 👍, Chanum 👍; #28 cell locations are on main via PR #32). After 👍: move `GuideContract.kt` + `CrowdContract.kt` shapes to `core/` in a small dedicated PR. UI must wire `createGuide` / `createCrowdRisk` in ProximaGraph.
+- **#10 not merged:** `CrowdRiskMonitor` raises via `pipeline.report(raw)`. When #10 lands, pass our own TriageResult (TODO in AiModule).
+- **#23 README AI section** (due 10:30 Sat) not written. **10:00 Sat:** AI compiles the team decision-log shortlist.
+
+**Exact next steps (in order)**
+1. Ask Seeya: merge `lane/ai` → main now? (`git fetch && git merge origin/main`, `./gradlew assembleDebug test`, PR, wait for CI `assemble`, `gh pr merge --merge`). Then tell Mikhil on #35 that the fix is live.
+2. LLM plan B = **Gemma 4 E2B** (`litert-community/gemma-4-E2B-it-litert-lm`, `gemma-4-E2B-it.litertlm`, ~2.6 GB, Apache 2.0, ~52 tok/s GPU on S26 Ultra per Google). Seeya downloads it. `adb push` to `/sdcard/Android/data/mu.proxima.app/files/models/`, run the probe (`--es backend gpu`) and record load / latency / RAM / JSON-valid, then add `LiteRtLmBackend : LlmBackend` (load once at app start) and swap it into `AiModule` + `createGuide`. Fallback candidate: Qwen3-1.7B (Apache 2.0, disable thinking mode).
+3. After Mikhil's 👍 on #30: core PR for the B/D shapes.
+4. README AI section (#23) + decision shortlist (10:00 Sat).
+
+**Device notes**
+- Probe: `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity` + `--ez nanoDownload true` | `--ez voice true` | `--ez guide true --es card cpr-adult` | `--es backend cpu|gpu`. Logs: `adb logcat -d -s Proxima:*`.
+- Other members' phones carry their own debug key: installing ours needs `adb uninstall mu.proxima.app` → **always ask the owner first** (done today for Chanum's S26+ and Diya's S24U, both notified on #3 / #6).
+- Demo-phone checklist: offline speech pack (en-GB; fr-FR for French), volume up, mic allowed, model file sideloaded (once Gemma is chosen).
+
+**Files touched today:** `ai/build.gradle.kts`, `ai/src/main/AndroidManifest.xml`, `ai/src/main/.../{AiModule.kt, triage/*, offload/*, voice/*, guide/*, crowd/*}`, `ai/src/debug/*`, `ai/src/test/*`, `core/.../pipeline/RuleTriageEngine.kt` (+ test), `gradle/libs.versions.toml` (+mlkit-genai-prompt), `docs/TEAM_ROLES.md`, `docs/lanes/AI.md`.
 
 ## Progress log
 | Time | What |
@@ -89,6 +85,7 @@ Steps come from TRUST's cited protocol cards.
 | 18:04 Fri | Nano download fails on S26+ (Samsung SLSI AICore); B hands-free guide built (16 tests, 56 ai tests green); #30 opened. |
 | 18:25 Fri | B device-tested on S24U (all 5 commands). Found+fixed on device: language fallback stuck on en-MU, no offline speech pack (now requested), TTS silent under music (audio focus), "he stop breathing" ended the guide. Nano UNAVAILABLE on S24U too. |
 | 18:33 Fri | D crowd-crush early warning built (CrowdRiskModel + CrowdRiskMonitor, 15 tests, 72 ai tests green). |
+| 18:40 Fri | Saving protocol: handoff rewritten; #35 answered (fix on lane/ai). |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
