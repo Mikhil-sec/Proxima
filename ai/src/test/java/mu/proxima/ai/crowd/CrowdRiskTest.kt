@@ -68,6 +68,11 @@ class CrowdRiskTest {
         assertEquals("5 phones within 40 m · 1 crowd report", r.reason)
     }
 
+    @Test fun reasonSingularForOnePhone() {
+        val r = eval(phones(1), listOf(report("people pushing at the gate"))).single()
+        assertEquals("1 phone within 40 m · 1 crowd report", r.reason)
+    }
+
     @Test fun severalReportsPlusDensity_isDanger() {
         val reports = listOf(report("stampede near the stalls"), report("can't move, too many people"), report("x", subtype = "CROWD_CRUSH"))
         assertEquals(CrowdRiskLevel.DANGER, eval(phones(5), reports).single().level)
