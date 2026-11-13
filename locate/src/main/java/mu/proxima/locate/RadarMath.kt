@@ -49,6 +49,20 @@ object RadarMath {
         else -> Proximity.FAR
     }
 
+    /**
+     * UWB azimuth (−90..+90, 0 = straight out of the phone's back) → radar relative bearing (0..360).
+     * Null when there is no azimuth or the peer is too close for the angle to mean anything
+     * (device check 13 Nov: below ~0.3 m it flips between ±90°).
+     * [sign] = +1 if positive azimuth means "to the right". VERIFY ON DEVICE and flip if the arrow is mirrored.
+     */
+    fun uwbRelativeBearingDeg(azimuthDeg: Double?, distanceM: Double, sign: Int = UWB_AZIMUTH_SIGN): Double? {
+        if (azimuthDeg == null || distanceM < UWB_MIN_AOA_DISTANCE_M) return null
+        return normalizeDeg(azimuthDeg * sign)
+    }
+
+    const val UWB_AZIMUTH_SIGN = 1
+    const val UWB_MIN_AOA_DISTANCE_M = 0.3
+
     /** Combined 1-sigma uncertainty of a distance between two independent fixes. */
     fun combinedAccuracyM(a: Float?, b: Float?): Double? {
         if (a == null && b == null) return null

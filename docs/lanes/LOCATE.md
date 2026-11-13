@@ -46,7 +46,16 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
   `uwbAvailable=false` until UWB is wired into `track()`.
 - On-phone test when S23+ is back: needs a sim=false build (ask UI how to toggle) → check heading vs a real compass
   outdoors, `adb logcat -s Proxima:*` shows "declination" and "fused location started".
-- Next: help-point bearing helper for the guided-response card (coordinate with UI), then UWB mode in `track()`.
+- **UWB mode wired into `track()` (16:15, builds, 11 JVM tests green, NOT yet run on phones).** `UwbRanger`:
+  tracker = controller sends CONTROL/"uwb" `UwbControl` REQUEST (sessionId, addr, channel, preamble, random STS key)
+  → target's always-on responder (started in `start()`) answers ACCEPT and ranges as controlee → tracker ranges.
+  Retries every 3 s, STOP on cancel. `track()` chain is now UWB (<1.5 s) → GPS → RSSI → stale GPS.
+  `uwbAvailable` = hasUwb && API 31+.
+- **Needs for a phone test:** simulation OFF + MESH's real Nearby engine delivering CONTROL packets (fake mesh
+  can't link two real phones). 2 UWB phones (S23+ as guardian). Check: arrow direction — if mirrored, flip
+  `RadarMath.UWB_AZIMUTH_SIGN` to −1.
+- Next: help-point bearing helper for the guided-response card (coordinate with UI). Venue data must include
+  assembly points (TRUST: OSM has none).
 
 ## Progress log
 | Time | What |
@@ -55,6 +64,7 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 | 15:46 Fri | UWB device-check tool (debug-only activity + adb script) builds; waiting for 2 phones |
 | 15:54 Fri | AndroidLocateEngine (GPS + true-north heading + RSSI fallback) builds, RadarMath tests pass |
 | 16:07 Fri | UWB device check passed: distance ±0.1–0.3 m on S23+ & S24U; azimuth only on S23+ |
+| 16:15 Fri | UWB radar mode (mesh CONTROL handshake + UwbRanger) in `track()`; builds, 11 tests green |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -67,3 +77,5 @@ If the manifest merger rejects the UWB lib's minSdk, use `tools:overrideLibrary`
 | 15:50 Fri | Fix chain GPS (fresh <30 s) → RSSI (heard <10 s) → stale GPS; `uwbAvailable=false` until UWB wired | Indoors GPS is stale, RSSI still says warmer/colder; never claim UWB we don't deliver | Report hardware UWB flag now |
 | 16:10 Fri | UWB is the indoor stage-demo radar; S23+ is the guardian (arrow) phone | Measured: S23+ has azimuth, S24U distance only; GPS fails indoors | GPS-only radar indoors; S24U as guardian |
 | 16:10 Fri | UWB radar: use azimuth only when distance > 0.3 m and AoA is supported, else distance-only | Azimuth is ±90° noise at contact range and absent on S24U | Always show the arrow |
+| 16:15 Fri | UWB session setup over the mesh (signed CONTROL "uwb" REQUEST/ACCEPT/STOP), tracker = controller, target auto-answers | No pairing screen for a panicking parent; reuses the one pipeline/wire format | Separate BLE GATT exchange; manual pairing UI |
+| 16:15 Fri | Per-session random static-STS key sent in the signed (not sealed) CONTROL payload | TrackTarget has no recipient key to seal to; key is single-use and carries no location/personal data | Fixed key (replayable); sealing (needs contract change) |

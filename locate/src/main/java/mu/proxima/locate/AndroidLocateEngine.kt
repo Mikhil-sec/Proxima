@@ -29,6 +29,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.proxima.core.engine.LocateEngine
 import mu.proxima.core.engine.MeshEngine
+import mu.proxima.core.engine.TrustEngine
+import java.util.concurrent.atomic.AtomicReference
 import mu.proxima.core.model.DeviceCapabilities
 import mu.proxima.core.model.FixSource
 import mu.proxima.core.model.GeoMath
@@ -44,10 +46,14 @@ class AndroidLocateEngine(
     context: Context,
     private val capabilities: DeviceCapabilities,
     private val mesh: MeshEngine,
+    trust: TrustEngine,
     private val scope: CoroutineScope,
 ) : LocateEngine {
 
     private val appContext = context.applicationContext
+    /** Null on phones without UWB hardware or below Android 12. */
+    private val uwb: UwbRanger? =
+        if (capabilities.hasUwb && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) UwbRanger(context, mesh, trust, scope) else null
     private val fused = LocationServices.getFusedLocationProviderClient(appContext)
     private val sensors = appContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
@@ -62,8 +68,8 @@ class AndroidLocateEngine(
     private val _heading = MutableStateFlow<Float?>(null)
     override val headingDeg: StateFlow<Float?> = _heading.asStateFlow()
 
-    /** False until UWB ranging is wired into [track] (P1). Never claim a capability we don't deliver. */
-    override val uwbAvailable: Boolean = false
+    /** UWB hardware + Android 12+. The user can still have UWB switched off; [track] then falls back to GPS/RSSI. */
+    override val uwbAvailable: Boolean = uwb != null
 
     private var started = false
     private var locationActive = false
@@ -79,6 +85,7 @@ class AndroidLocateEngine(
         if (started) return
         started = true
         startHeading()
+        uwb?.startResponder() // so a guardian can range to us when we are the finder
         if (hasLocationPermission()) startLocation()
         else waitForPermission = scope.launch {
             // The UI asks for permissions once; pick location up as soon as it's granted.
@@ -95,6 +102,7 @@ class AndroidLocateEngine(
         if (locationActive) fused.removeLocationUpdates(locationListener)
         locationActive = false
         smoother.reset()
+        uwb?.stop()
     }
 
     // ---------- position ----------
@@ -159,23 +167,27 @@ class AndroidLocateEngine(
     // ---------- radar ----------
 
     /**
-     * Fix chain: GPS (both sides have a fresh fix) → RSSI (target is a mesh peer we can hear)
-     * → last GPS fix even if stale. Emits every [TICK_MS] so the arrow follows the user turning.
+     * Fix chain: UWB (reading < 1.5 s old) → GPS (both sides have a fresh fix) → RSSI (target is a
+     * mesh peer we can hear) → last GPS fix even if stale. Emits every [TICK_MS] so the arrow follows the user turning.
      */
     override fun track(target: TrackTarget): Flow<RadarFix> = channelFlow {
-        var targetFix: GeoPoint? = null
-        var targetFixAtMs = 0L
-        launch { target.locations.collect { targetFix = it; targetFixAtMs = System.currentTimeMillis() } }
+        val targetFix = AtomicReference<Pair<GeoPoint, Long>?>(null)
+        val uwbFix = AtomicReference<UwbReading?>(null)
+        launch { target.locations.collect { targetFix.set(it to System.currentTimeMillis()) } }
+        uwb?.let { ranger -> launch { ranger.range(target.nodeId).collect { uwbFix.set(it) } } }
 
         while (isActive) {
             val now = System.currentTimeMillis()
             val me = _self.value
-            val there = targetFix
+            val tf = targetFix.get()
+            val there = tf?.first
+            val gpsFresh = me != null && there != null && now - tf.second < GPS_FRESH_MS
+            val reading = uwbFix.get()?.takeIf { now - it.atMs < UWB_FRESH_MS }
             val peer = mesh.peers.value.firstOrNull { it.nodeId == target.nodeId }
             val rssi = peer?.rssiDbm?.takeIf { now - peer.lastSeenMs < RSSI_FRESH_MS }
-            val gpsFresh = me != null && there != null && now - targetFixAtMs < GPS_FRESH_MS
 
             val fix = when {
+                reading != null -> uwbFix(target.nodeId, reading, now)
                 gpsFresh -> gpsFix(target.nodeId, me, there, now)
                 rssi != null -> RadarFix(
                     targetNodeId = target.nodeId, distanceM = null, bearingDeg = null, relativeBearingDeg = null,
@@ -187,6 +199,22 @@ class AndroidLocateEngine(
             if (fix != null) send(fix)
             delay(TICK_MS)
         }
+    }
+
+    /** UWB: centimetre distance; arrow only when this phone measures angle of arrival (S23+ yes, S24U no). */
+    private fun uwbFix(nodeId: String, r: UwbReading, now: Long): RadarFix {
+        val relative = RadarMath.uwbRelativeBearingDeg(r.azimuthDeg, r.distanceM)
+        val heading = _heading.value
+        return RadarFix(
+            targetNodeId = nodeId,
+            distanceM = r.distanceM.coerceAtLeast(0.0), // UWB reads slightly negative at contact range
+            bearingDeg = if (relative != null && heading != null) RadarMath.normalizeDeg(heading + relative) else null,
+            relativeBearingDeg = relative,
+            source = FixSource.UWB,
+            proximity = RadarMath.proximityForDistance(r.distanceM),
+            accuracyM = UWB_ACCURACY_M,
+            atMs = now,
+        )
     }
 
     private fun gpsFix(nodeId: String, me: GeoPoint, there: GeoPoint, now: Long): RadarFix {
@@ -209,5 +237,8 @@ class AndroidLocateEngine(
         const val TICK_MS = 100L
         const val GPS_FRESH_MS = 30_000L
         const val RSSI_FRESH_MS = 10_000L
+        const val UWB_FRESH_MS = 1_500L
+        /** Measured spread in the 13 Nov device check: ±0.1 m at 2 m, ±0.3 m at 5 m. */
+        const val UWB_ACCURACY_M = 0.3
     }
 }
