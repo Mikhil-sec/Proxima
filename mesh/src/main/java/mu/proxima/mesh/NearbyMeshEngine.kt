@@ -78,9 +78,10 @@ class NearbyMeshEngine(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             add(Manifest.permission.NEARBY_WIFI_DEVICES)
             add(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
+        // Verified on a Galaxy S947B (API 37): Nearby startDiscovery still fails with 8034 without coarse location.
+        add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        add(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
     private val _running = MutableStateFlow(false)
@@ -119,13 +120,15 @@ class NearbyMeshEngine(
         MeshService.start(context)
         scope.launch { runCatching { seen.prune() } }
 
-        val strategy = Strategy.P2P_CLUSTER
-        client.startAdvertising(localName, SERVICE_ID, lifecycle, AdvertisingOptions.Builder().setStrategy(strategy).build())
-            .addOnSuccessListener { Log.i(TAG, "advertising") }
-            .addOnFailureListener { Log.e(TAG, "advertising failed: ${it.message}") }
-        client.startDiscovery(SERVICE_ID, discovery, DiscoveryOptions.Builder().setStrategy(strategy).build())
-            .addOnSuccessListener { Log.i(TAG, "discovering") }
-            .addOnFailureListener { Log.e(TAG, "discovery failed: ${it.message}") }
+        startAdvertising()
+        startDiscovery()
+        jobs += scope.launch(serial) { // retry: phone locked at start, permission granted later, radio toggled
+            while (isActive) {
+                delay(RADIO_RETRY_MS)
+                if (!advertising) startAdvertising()
+                if (!discovering) startDiscovery()
+            }
+        }
 
         jobs += scope.launch(serial) { // beacons → indirect peers on other phones
             while (isActive) {
@@ -177,8 +180,34 @@ class NearbyMeshEngine(
         pingReceiver = receiver
     }
 
+    @Volatile private var advertising = false
+    @Volatile private var discovering = false
+
+    private fun startAdvertising() {
+        client.startAdvertising(localName, SERVICE_ID, lifecycle, AdvertisingOptions.Builder().setStrategy(STRATEGY).build())
+            .addOnSuccessListener { advertising = true; Log.i(TAG, "advertising") }
+            .addOnFailureListener { e ->
+                advertising = alreadyActive(e, ConnectionsStatusCodes.STATUS_ALREADY_ADVERTISING)
+                if (!advertising) Log.e(TAG, "advertising failed (retry in ${RADIO_RETRY_MS / 1000}s): ${e.message}")
+            }
+    }
+
+    private fun startDiscovery() {
+        client.startDiscovery(SERVICE_ID, discovery, DiscoveryOptions.Builder().setStrategy(STRATEGY).build())
+            .addOnSuccessListener { discovering = true; Log.i(TAG, "discovering") }
+            .addOnFailureListener { e ->
+                discovering = alreadyActive(e, ConnectionsStatusCodes.STATUS_ALREADY_DISCOVERING)
+                if (!discovering) Log.e(TAG, "discovery failed (retry in ${RADIO_RETRY_MS / 1000}s): ${e.message}")
+            }
+    }
+
+    private fun alreadyActive(e: Exception, code: Int) =
+        (e as? com.google.android.gms.common.api.ApiException)?.statusCode == code
+
     override suspend fun stop() {
         if (!_running.value) return
+        advertising = false
+        discovering = false
         jobs.forEach { it.cancel() }
         jobs.clear()
         pingReceiver?.let { runCatching { context.unregisterReceiver(it) } }
@@ -417,5 +446,7 @@ class NearbyMeshEngine(
         private const val STORE_MS = 30 * 60 * 1000L
         private const val OUTBOX_MAX = 200
         private const val CONNECT_FALLBACK_MS = 6_000L
+        private const val RADIO_RETRY_MS = 10_000L
+        private val STRATEGY = Strategy.P2P_CLUSTER
     }
 }

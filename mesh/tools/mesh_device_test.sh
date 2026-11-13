@@ -16,7 +16,13 @@ serials() { "$ADB" devices | awk 'NR>1 && $2=="device" {print $1}'; }
 case "${1:-setup}" in
   setup)
     [ -n "$(serials)" ] || { echo "No phone visible to adb (USB debugging on? data cable? prompt accepted?)"; exit 1; }
-    ./gradlew installDebug --console=plain -q
+    # Not `gradlew installDebug`: it fails on Samsung phones with a Secure Folder (extra Android user).
+    ./gradlew :app:assembleDebug --console=plain -q
+    APK=$(./gradlew -q :app:properties 2>/dev/null | awk -F': ' '/^buildDir:/{print $2}')/outputs/apk/debug/app-debug.apk
+    for s in $(serials); do
+      "$ADB" -s "$s" install -r --user 0 "$APK" | tr -d '\r' | tail -1 \
+        || { echo "install failed on $s (old Proxima from another laptop? adb -s $s uninstall $PKG)"; exit 1; }
+    done
     PREFS='<?xml version="1.0" encoding="utf-8" standalone="yes" ?><map><boolean name="simulation" value="false" /></map>'
     for s in $(serials); do
       echo "== $s ($("$ADB" -s "$s" shell getprop ro.product.model | tr -d '\r'))"
