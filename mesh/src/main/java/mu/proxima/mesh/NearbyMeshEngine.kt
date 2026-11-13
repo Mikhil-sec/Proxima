@@ -159,6 +159,13 @@ class NearbyMeshEngine(
                 val now = clock()
                 indirect.values.removeAll { now - it.lastSeenMs > PEER_EXPIRY_MS }
                 endpoints.values.removeAll { !it.connected && now - it.lastSeenMs > FORGET_ENDPOINT_MS }
+                // Nearby doesn't always report a disconnect (e.g. the peer app restarted): drop links silent > 90 s.
+                endpoints.entries.filter { (_, ep) -> ep.connected && MeshRelay.isSilent(ep.lastSeenMs, now) }.forEach { (id, ep) ->
+                    Log.i(TAG, "link to ${ep.nodeId} silent ${(now - ep.lastSeenMs) / 1000}s, dropping")
+                    client.disconnectFromEndpoint(id)
+                    endpoints[id] = ep.copy(connected = false, attempts = 0,
+                        nextAttemptMs = if (MeshDemoControls.allows(ep.nodeId)) now + ReconnectPolicy.backoffMs(0) else null)
+                }
                 if (outbox.removeAll { now - it.createdAtMs > STORE_MS }) {
                     runCatching { stored.pruneOlderThan(now - STORE_MS) }
                 }
@@ -324,7 +331,17 @@ class NearbyMeshEngine(
     }
 
     private suspend fun onPacket(packet: MeshPacket, fromEndpoint: String) {
-        endpoints[fromEndpoint]?.let { endpoints[fromEndpoint] = it.copy(lastSeenMs = clock()) }
+        endpoints[fromEndpoint]?.let { ep ->
+            val sender = MeshRelay.directSenderOf(packet)
+            if (sender != null && sender != ep.nodeId && sender != selfNodeId) {
+                Log.i(TAG, "link $fromEndpoint is now node $sender (was ${ep.nodeId}: app restarted)")
+                indirect.remove(sender)
+                endpoints[fromEndpoint] = ep.copy(nodeId = sender, lastSeenMs = clock())
+                publishPeers()
+            } else {
+                endpoints[fromEndpoint] = ep.copy(lastSeenMs = clock())
+            }
+        }
         if (!seen.markFirstSeen(packet.packetId)) return
         val fromNode = endpoints[fromEndpoint]?.nodeId ?: MeshRelay.lastHop(packet)
         if (packet.kind != PacketKind.BEACON) {

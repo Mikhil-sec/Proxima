@@ -48,6 +48,18 @@ object MeshRelay {
             .sortedWith(compareByDescending<MeshPacket> { it.severity.ordinal }.thenBy { it.createdAtMs })
             .toList()
 
+    /**
+     * A BEACON that has not been relayed (hopCount 0) was sent by the phone at the other end of this link,
+     * so its origin is that link's current node id, even if the app restarted with a new id on the same link (#24).
+     */
+    fun directSenderOf(packet: MeshPacket): String? =
+        if (packet.kind == PacketKind.BEACON && packet.hopCount == 0) packet.originNodeId else null
+
+    /** A connected link that has carried nothing (not even a 10 s beacon) for this long is treated as dead. */
+    const val SILENT_LINK_MS = 90_000L
+
+    fun isSilent(lastSeenMs: Long, nowMs: Long): Boolean = nowMs - lastSeenMs > SILENT_LINK_MS
+
     /** The node that handed us this packet (for HopEvents). */
     fun lastHop(packet: MeshPacket): String = packet.path.lastOrNull() ?: packet.originNodeId
 }
