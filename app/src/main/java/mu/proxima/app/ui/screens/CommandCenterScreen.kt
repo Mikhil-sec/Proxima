@@ -100,6 +100,8 @@ import kotlin.math.sin
 private const val CELL_M = 25.0
 private const val EARTH_R = 6_371_000.0
 private const val HOP_MS = 900L
+/** Phones in one 25 m square from which the cell reads as crowded (darkest shade). */
+private const val CROWDED = 4
 /** Unhandled for this long and the waiting time switches to the caution role. */
 private const val STALE_MS = 5 * 60_000L
 
@@ -425,6 +427,7 @@ private data class PlanInk(
     val nodeFill: Color,
     val post: Color,
     val pulse: Color,
+    val density: Color,
     val label: TextStyle,
     val postLabel: TextStyle,
     val hairline: Float,
@@ -463,6 +466,7 @@ private fun SitePlan(
         nodeFill = MaterialTheme.colorScheme.surface,
         post = MaterialTheme.colorScheme.primary,
         pulse = MaterialTheme.colorScheme.primary,
+        density = MaterialTheme.colorScheme.primary,
         label = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
         postLabel = MaterialTheme.typography.labelLarge.copy(color = MaterialTheme.colorScheme.primary),
         hairline = MaterialTheme.sizes.hairline.px(),
@@ -499,6 +503,8 @@ private fun SitePlan(
                         ?: Offset(c.x + cos(i * 2.4f) * size.minDimension * 0.4f, c.y + sin(i * 2.4f) * size.minDimension * 0.4f)
                 }
 
+                drawDensity(origin, c, pxPerM, peers, measurer, ink)
+
                 val directPeers = peers.filter { it.direct }
                 directPeers.forEach { drawLine(ink.line, c, pos.getValue(it.nodeId), ink.stroke) }
                 peers.filter { !it.direct }.forEach { p ->
@@ -522,7 +528,7 @@ private fun SitePlan(
 
                 val s = ink.pinRadius * 0.7f
                 drawRect(ink.post, c - Offset(s, s), Size(2 * s, 2 * s))
-                drawText(measurer, "This post", c + Offset(s + ink.gap * 2, -s - ink.gap * 4), ink.postLabel)
+                drawText(measurer.measure("This post", ink.postLabel), color = ink.post, topLeft = c + Offset(s + ink.gap * 2, -s - ink.gap * 4))
 
                 drawPins(origin, c, pxPerM, open, board, measurer, sevFills, ink)
                 drawScale(pxPerM, measurer, ink)
@@ -546,7 +552,8 @@ private fun SitePlan(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            "Square: phone that runs AI and relays. Circle: phone. Hatching: where reports came from.",
+            "Shading: phones per 25 m square, from their beacons; no one is tracked. Square: phone that runs AI and " +
+                "relays. Circle: phone. Hatching: where reports came from.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -579,15 +586,38 @@ private fun DrawScope.drawPhone(tier: DeviceTier, at: Offset, ink: PlanInk) {
     }
 }
 
+/**
+ * Invert GeoMath.cellKey to the cell's centre, then project it like every other point on the plan. (Projecting the
+ * key with the origin's cos(lat) drifted tens of metres per 100 m north-south at Mauritius' longitude.)
+ */
 private fun cellOf(origin: GeoPoint, c: Offset, pxPerM: Float, key: Pair<Int, Int>): Rect {
-    val originEast = Math.toRadians(origin.lon) * EARTH_R * cos(Math.toRadians(origin.lat))
-    val originNorth = Math.toRadians(origin.lat) * EARTH_R
-    val center = Offset(
-        c.x + (key.first * CELL_M - originEast).toFloat() * pxPerM,
-        c.y - (key.second * CELL_M - originNorth).toFloat() * pxPerM,
-    )
+    val lat = Math.toDegrees(key.second * CELL_M / EARTH_R)
+    val lon = Math.toDegrees(key.first * CELL_M / (EARTH_R * cos(Math.toRadians(lat))))
+    val (e, n) = local(origin, GeoPoint(lat, lon))
+    val center = Offset(c.x + e.toFloat() * pxPerM, c.y - n.toFloat() * pxPerM)
     val half = CELL_M.toFloat() * pxPerM / 2
     return Rect(center.x - half, center.y - half, center.x + half, center.y + half)
+}
+
+/**
+ * Crowd density from beacons: phones per anonymous 25 m cell. Beacon locations arrive already snapped to their
+ * cell (MeshBeaconInfo.coarse), so this only counts; it never places a person. Three shades, and the count in
+ * cells with two or more phones. Drawn first, under links, zones and pins.
+ * (Text colour goes in at draw time on this plan: TextMeasurer reuses cached layouts across a light/dark switch.)
+ */
+private fun DrawScope.drawDensity(origin: GeoPoint, c: Offset, pxPerM: Float, peers: List<Peer>, measurer: TextMeasurer, ink: PlanInk) {
+    peers.mapNotNull { it.location }
+        .groupingBy { GeoMath.cellKey(it, CELL_M) }
+        .eachCount()
+        .forEach { (key, n) ->
+            val cell = cellOf(origin, c, pxPerM, key)
+            val alpha = when { n >= CROWDED -> 0.32f; n >= 2 -> 0.18f; else -> 0.08f }
+            drawRect(ink.density.copy(alpha = alpha), cell.topLeft, cell.size)
+            if (n >= 2) {
+                val t = measurer.measure("$n", ink.label)
+                drawText(t, color = ink.node, topLeft = Offset(cell.left + ink.gap, cell.bottom - t.size.height - ink.gap))
+            }
+        }
 }
 
 /** Anonymous density: reports per 25 m cell (GeoMath.cellKey), drawn as hatching. Denser hatching = more reports. */
@@ -628,7 +658,7 @@ private fun DrawScope.drawPins(
                 drawCircle(ink.nodeFill, ink.pinRadius + ink.stroke, at)
                 drawCircle(fill, ink.pinRadius, at)
                 val t = measurer.measure(board.letter(r.incident.id), ink.label.copy(color = onFill))
-                drawText(t, topLeft = at - Offset(t.size.width / 2f, t.size.height / 2f))
+                drawText(t, color = onFill, topLeft = at - Offset(t.size.width / 2f, t.size.height / 2f))
             }
         }
 }
@@ -640,9 +670,9 @@ private fun DrawScope.drawScale(pxPerM: Float, measurer: TextMeasurer, ink: Plan
     drawLine(ink.node, Offset(0f, y), Offset(len, y), ink.stroke)
     drawLine(ink.node, Offset(0f, y - tick), Offset(0f, y + tick), ink.stroke)
     drawLine(ink.node, Offset(len, y - tick), Offset(len, y + tick), ink.stroke)
-    drawText(measurer, "50 m", Offset(len + ink.gap * 2, y - ink.gap * 4), ink.label)
+    drawText(measurer.measure("50 m", ink.label), color = ink.node, topLeft = Offset(len + ink.gap * 2, y - ink.gap * 4))
     // North: a plain letter over a short tick, top right.
     val n = Offset(size.width - ink.gap * 3, 0f)
-    drawText(measurer, "N", n, ink.label)
+    drawText(measurer.measure("N", ink.label), color = ink.node, topLeft = n)
     drawLine(ink.node, n + Offset(ink.gap, ink.gap * 5), n + Offset(ink.gap, ink.gap * 9), ink.stroke)
 }
