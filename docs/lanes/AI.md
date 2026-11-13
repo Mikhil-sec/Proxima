@@ -1,5 +1,5 @@
 # LANE: AI (triage + voice)
-Owner: see `docs/TEAM_ROLES.md` (recommended phone: Galaxy S24 Ultra) · Branch `lane/ai` · Issue `[LANE:AI]`
+Owner: **Seeya** (Member 4) · recommended phone: Galaxy S24 Ultra · Branch `lane/ai` · Issue `[LANE:AI]`
 
 ## Mission
 Turn panicked speech into a correct, tiny, structured incident on the phone itself, with a fallback that never fails.

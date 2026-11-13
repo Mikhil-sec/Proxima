@@ -1,5 +1,5 @@
 # LANE: TRUST (crypto, wristband QR, real dataset)
-Owner: see `docs/TEAM_ROLES.md` (recommended phone: Galaxy A56) · Branch `lane/trust` · Issue `[LANE:TRUST]`
+Owner: **Diya** (Member 5) · recommended phone: Galaxy A56 · Branch `lane/trust` · Issue `[LANE:TRUST]`
 
 ## Mission
 Make the app trustworthy and real: signed packets, child location only the guardian can read, and the Mauritian dataset that powers "nearest help".

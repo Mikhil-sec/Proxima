@@ -1,5 +1,5 @@
 # LANE: UI + Command Center
-Owner: **Member 1** · Phones: Honor X8b (Tier 2) + Galaxy Tab S6 Lite (Command Center) · Branch `lane/ui` · Issue `[LANE:UI]`
+Owner: **Mikhil** (Member 1, lead) · Phones: Honor X8b (Tier 2) + Galaxy Tab S6 Lite (Command Center) · Branch `lane/ui` · Issue `[LANE:UI]`
 
 ## Mission
 Make Proxima usable by a panicking parent without help, and make the Command Center the wow moment on stage.

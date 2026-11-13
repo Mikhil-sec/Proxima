@@ -17,11 +17,11 @@ Hackathon "Life Powered by Tech", theme **Powered to Protect**. Product brief: `
 ## 1. Lanes & ownership (edit ONLY your lane's paths)
 | Lane | Owner | Paths you own |
 |---|---|---|
-| UI | Member 1 (Honor X8b + Tab S6 Lite) | `app/`, `docs/STATUS.md`, `docs/lanes/UI.md` |
-| MESH | see `docs/TEAM_ROLES.md` | `mesh/`, `docs/lanes/MESH.md`, `core/.../fake/FakeMeshEngine` |
-| AI | see `docs/TEAM_ROLES.md` | `ai/`, `docs/lanes/AI.md`, `core/.../pipeline/RuleTriageEngine.kt` |
-| LOCATE | see `docs/TEAM_ROLES.md` | `locate/`, `docs/lanes/LOCATE.md`, `core/.../fake/FakeLocateEngine` |
-| TRUST | see `docs/TEAM_ROLES.md` | `trust/`, `scripts/fetch_help_points.sh`, `docs/lanes/TRUST.md` |
+| UI (+ lead) | Mikhil — Member 1 (Honor X8b + Tab S6 Lite) · issue #2 | `app/`, `docs/STATUS.md`, `docs/lanes/UI.md` |
+| LOCATE | Yorvan — Member 2 · issue #5 | `locate/`, `docs/lanes/LOCATE.md`, `core/.../fake/FakeLocateEngine` |
+| MESH | Chanum — Member 3 · issue #3 | `mesh/`, `docs/lanes/MESH.md`, `core/.../fake/FakeMeshEngine` |
+| AI | Seeya — Member 4 · issue #4 | `ai/`, `docs/lanes/AI.md`, `core/.../pipeline/RuleTriageEngine.kt` |
+| TRUST | Diya — Member 5 · issue #6 | `trust/`, `scripts/fetch_help_points.sh`, `docs/lanes/TRUST.md` |
 
 - `core/` is the shared contract (`Engines.kt`, models, `IncidentPipeline`). **Never change it silently**:
   open an `interface-change` issue first (see §5), wait for 👍 from affected lanes, then a small dedicated PR.

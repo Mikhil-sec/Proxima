@@ -21,3 +21,4 @@ Log generously. Correct times if they're off; all are Fri 13 Nov unless marked.
 | ~13:35 | Kotlin + Compose, 6 Gradle modules (one per lane), manual DI, fakes behind factories | Zero merge conflicts for 5 parallel devs; UI starts immediately | Single module; Hilt |
 | 13:40 | AGP 9.5.1 (built-in Kotlin), Kotlin 2.4.21, Gradle 9.9.1, minSdk 26 / UWB API 31+ | Latest stable at kickoff; Tab S6 Lite compatible | Older AGP 8.x |
 | 13:40 | Release APK signed with the debug key | Judges must be able to sideload the APK | Play signing (no time) |
+| 14:22 | Lanes assigned: Mikhil UI+lead, Yorvan LOCATE, Chanum MESH, Seeya AI, Diya TRUST | One owner per module = parallel work, zero merge conflicts; everyone explains their part | Pair programming on shared modules |

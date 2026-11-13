@@ -3,21 +3,23 @@
 Each member owns one lane: one Gradle module and one lane file. Lanes only touch each other through
 `core/` interfaces, so you can all work in parallel without merge conflicts.
 
-**Fill in the table** (each member edits only their own row, in their first PR):
+Each member fills in their own GitHub @ and actual phone in their first PR.
 
-| Lane | Member | GitHub @ | Phone | Why this phone |
-|---|---|---|---|---|
-| **UI** + Command Center | Member 1 | | Honor X8b + Tab S6 Lite | Tablet = Command Center; Honor = Tier 2 scout UX |
-| **AI** (triage, voice) | | | Galaxy S24 Ultra (recommended) | Strongest on-device LLM (12 GB) |
-| **LOCATE** (radar, UWB, map) | | | Galaxy S26+ (recommended) | UWB + newest sensors |
-| **MESH** (Nearby, relay) | | | Galaxy S23+ (recommended) | Tier 1 relay; UWB partner for LOCATE tests |
-| **TRUST** (crypto, QR, dataset) | | | Galaxy A56 (recommended) | Tier 2: proves crypto + QR run on mid-range |
+| Lane | Member | GitHub @ | Phone | Why this phone | Issue |
+|---|---|---|---|---|---|
+| **UI** + Command Center (+ extra tasks) | **Mikhil** (Member 1, lead) | @Mikhil-sec | Honor X8b + Tab S6 Lite | Tablet = Command Center; Honor = Tier 2 scout UX | #2 |
+| **LOCATE** (radar, UWB, position) | **Yorvan** (Member 2) | | Galaxy S26+ (recommended) | UWB + newest sensors | #5 |
+| **MESH** (Nearby, relay) | **Chanum** (Member 3) | | Galaxy S23+ (recommended) | Tier 1 relay; UWB partner for LOCATE tests | #3 |
+| **AI** (triage, voice) | **Seeya** (Member 4) | | Galaxy S24 Ultra (recommended) | Strongest on-device LLM (12 GB) | #4 |
+| **TRUST** (crypto, QR, dataset) | **Diya** (Member 5) | | Galaxy A56 (recommended) | Tier 2: proves crypto + QR run on mid-range | #6 |
 
 Phones are shared for tests: LOCATE needs a second UWB phone (S23+ or S24 Ultra), and MESH needs 3+ phones for hops.
 
 ## How to tell your Claude its lane
 In a fresh session after cloning, say:
 > "I am Member N, my lane is <LANE>. Run the onboarding checklist in docs/ONBOARDING.md."
+
+e.g. Yorvan: *"I am Yorvan, Member 2, my lane is LOCATE. Run the onboarding checklist in docs/ONBOARDING.md."*
 
 Claude writes this into `CLAUDE.local.md` (gitignored), so every later session knows your lane automatically.
 

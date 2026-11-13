@@ -1,5 +1,5 @@
 # LANE: LOCATE (radar, UWB, position)
-Owner: see `docs/TEAM_ROLES.md` (recommended phone: Galaxy S26+) · Branch `lane/locate` · Issue `[LANE:LOCATE]`
+Owner: **Yorvan** (Member 2) · recommended phone: Galaxy S26+ · Branch `lane/locate` · Issue `[LANE:LOCATE]`
 
 ## Mission
 "Where are they, and which way do I walk?" That has to work on every phone, with centimetre precision on UWB flagships and indoors for the demo.
