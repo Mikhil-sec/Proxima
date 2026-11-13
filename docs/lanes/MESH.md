@@ -40,7 +40,9 @@ Nearby has per-device connection limits, so the cluster may not be a full mesh: 
   `MeshRelay` (pure relay rules), Room dedup `SeenStore`, 30-min in-memory outbox flushed CRITICAL-first on a new link,
   beacons every 10 s → indirect peers, `MeshDemoControls.allowedNeighbours` (#8), `MeshService` (connectedDevice FGS).
   `MeshModule` returns the real engine when `simulation == false`.
-- **NOT yet run on a phone.** Nothing verified over the air.
+- **Verified on 2 phones (15:48):** connect, beacons, PING both ways, discovery retry after unlock. Not yet: 3-phone
+  multi-hop, allow-list, store-and-forward flush, screen-off relaying.
+- node ids change every launch (trust still gives `SELF-xxxx`) → allow-list needs stable ids from TRUST (request filed).
 - **Gaps:** outbox is in memory (lost on restart; Room persistence = P1). Beacon `location` = null, `llmReady` = false
   (mesh has no locate/AI handle). App has no permission prompt or sim toggle yet (UI lane), so the test script grants
   permissions and writes `simulation=false` prefs via adb.
@@ -56,6 +58,7 @@ Nearby has per-device connection limits, so the cluster may not be a full mesh: 
 | 15:05 Fri | Onboarded (gh, Android Studio, SDK, assembleDebug ✅), lane/mesh pushed |
 | 15:20 Fri | NearbyMeshEngine + relay + dedup + outbox + beacons + FGS + allow-list; 5/5 relay tests green |
 | 15:28 Fri | Debug adb PING hook + `mesh/tools/mesh_device_test.sh`; waiting on phones for the device check |
+| 15:48 Fri | ✅ **Device check passed** (S947B API 37 + S23+ API 36): Nearby connect ~6 s, beacons + PING both ways. Fixed: location needed on API 37, discovery retry |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -66,4 +69,6 @@ Nearby has per-device connection limits, so the cluster may not be a full mesh: 
 | 15:15 Fri | Dedup = in-memory set in front of Room `seen_packets` | Hot path skips disk; Room keeps dedup across restarts | Room only (slow); memory only (re-relays after restart) |
 | 15:16 Fri | Multi-hop demo via allow-list `MeshDemoControls.allowedNeighbours` in `:mesh` | Picks exact links for A→B→C in one room; no `core/` interface change | `setMaxDirectPeers(n)` (can't choose which link drops) |
 | 15:17 Fri | No HopEvents for BEACON packets | Beacons every 10 s from every phone would flood the hop visualizer | Animate beacons too |
+| 15:46 Fri | `requiredPermissions` lists coarse+fine location on every API level | Seen on device: API 37 Nearby discovery fails 8034 without it | Location only ≤ API 32 (per older docs) |
+| 15:47 Fri | Retry advertising/discovery every 10 s while running | Phone locked at start = location denied → discovery never recovered | Fail once and wait for app restart |
 | 15:25 Fri | Debug-only adb PING sends CONTROL/`ping`, not an INCIDENT | Tests multi-hop with no UI and no fake incidents in the pipeline (real-data rule) | Fake INCIDENT packets |
