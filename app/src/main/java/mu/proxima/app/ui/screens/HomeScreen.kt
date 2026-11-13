@@ -1,5 +1,6 @@
 package mu.proxima.app.ui.screens
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -13,7 +14,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -29,6 +31,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -72,6 +77,7 @@ import mu.proxima.app.ui.theme.grotesk
 import mu.proxima.app.ui.theme.mono
 import mu.proxima.core.model.IncidentRecord
 import mu.proxima.core.model.IncidentType
+import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -128,16 +134,28 @@ fun TopLine(simulation: Boolean, peerCount: Int, onDev: () -> Unit) {
     }
 }
 
+/** How long the finger must rest on the ring before it arms. Long enough that a scroll or a brush never fires it. */
+private const val ARM_MS = 600L
+
 /**
- * The SOS ring. Press and hold: listens while held, the voice draws itself around the ring,
- * release sends you to the report. A quick tap also starts listening (for people who can't hold).
+ * The SOS ring. Rest a finger on it: an arc fills for 0.6 s, then it arms (haptic) and listens while held;
+ * the voice draws itself around the ring; lifting the finger sends you to the review.
+ * A brush, a scroll, or a quick tap never arms it (a tap only shows "keep holding").
+ * TalkBack users activate it with a double-tap and talk on the next screen.
  */
 @Composable
 private fun SosRing(capture: VoiceCapture, onRelease: () -> Unit) {
     val haptics = LocalHapticFeedback.current
     val reducedMotion = rememberReducedMotion()
+    var arming by remember { mutableStateOf(false) }
     var held by remember { mutableStateOf(false) }
-    val press by animateFloatAsState(if (held) 0.94f else 1f, tween(160), label = "press")
+    var tapHint by remember { mutableStateOf(false) }
+    val press by animateFloatAsState(if (held || arming) 0.94f else 1f, tween(160), label = "press")
+    val arm = remember { Animatable(0f) }
+    LaunchedEffect(arming) {
+        if (arming) arm.animateTo(1f, tween(ARM_MS.toInt(), easing = LinearEasing)) else arm.snapTo(0f)
+    }
+    LaunchedEffect(tapHint) { if (tapHint) { delay(2_500); tapHint = false } }
 
     val breathe = if (reducedMotion) 0f else {
         val t = rememberInfiniteTransition(label = "breathe")
@@ -157,18 +175,39 @@ private fun SosRing(capture: VoiceCapture, onRelease: () -> Unit) {
                     onClick { capture.start(); onRelease(); true }
                 }
                 .pointerInput(Unit) {
-                    detectTapGestures(onPress = {
+                    awaitEachGesture {
+                        val down = awaitFirstDown()
+                        arming = true
+                        tapHint = false
+                        // Arms only after a steady hold. Lifting early or sliding past touch slop aborts.
+                        val aborted = withTimeoutOrNull(ARM_MS) {
+                            while (true) {
+                                val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+                                    ?: return@withTimeoutOrNull true
+                                if (!change.pressed) { tapHint = true; return@withTimeoutOrNull true }
+                                if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                    return@withTimeoutOrNull true
+                                }
+                            }
+                            @Suppress("UNREACHABLE_CODE")
+                            false
+                        }
+                        arming = false
+                        if (aborted == true) return@awaitEachGesture
+
                         held = true
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         capture.start()
-                        val t0 = System.currentTimeMillis()
-                        val released = tryAwaitRelease()
+                        // Listening: the finger may drift while talking; only lifting it ends the capture.
+                        while (true) {
+                            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                            change.consume()
+                            if (!change.pressed) break
+                        }
                         held = false
-                        if (!released) { capture.cancel(); return@detectTapGestures }
-                        // A long hold means "I'm done talking"; a quick tap keeps listening on the next screen.
-                        if (System.currentTimeMillis() - t0 > 450) capture.stop()
+                        capture.stop()
                         onRelease()
-                    })
+                    }
                 },
         ) {
             val c = Offset(size.width / 2, size.height / 2)
@@ -202,13 +241,27 @@ private fun SosRing(capture: VoiceCapture, onRelease: () -> Unit) {
                     )
                 }
             }
+            if (arming && !held) {
+                // Arming arc: fills clockwise while the finger rests; the ring arms when it closes.
+                val r = core + 12.dp.toPx()
+                drawArc(
+                    Px.Text, startAngle = -90f, sweepAngle = 360f * arm.value, useCenter = false,
+                    topLeft = Offset(c.x - r, c.y - r), size = Size(2 * r, 2 * r),
+                    style = Stroke(4.dp.toPx(), cap = StrokeCap.Round),
+                )
+            }
             drawCircle(Px.Crimson, core, c)
             drawText(sos, topLeft = Offset(c.x - sos.size.width / 2f, c.y - sos.size.height / 2f))
         }
         // Label sits under the ring rather than on it: the ring stays a clean target.
         Text(
-            if (held) "Listening. Let go when you're done." else "Hold to talk",
-            style = grotesk(16, FontWeight.Medium, if (held) Px.Text else Px.Dim),
+            when {
+                held -> "Listening. Let go when you're done."
+                arming -> "Keep holding"
+                tapHint -> "Keep your finger on it for a moment"
+                else -> "Hold to talk"
+            },
+            style = grotesk(16, FontWeight.Medium, if (held || arming || tapHint) Px.Text else Px.Dim),
         )
     }
 }
