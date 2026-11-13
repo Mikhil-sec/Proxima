@@ -26,7 +26,7 @@ _`[x]` = verified on phones · `[~]` = coded + unit-tested, not yet verified on 
       `object MeshDemoControls { val allowedNeighbours: MutableStateFlow<Set<String>?> }` and tell UI via a `request` issue.
 - [x] `selfNodeId` must equal `trust.identity.nodeId` (stable ids pending TRUST #19).
 **P2**
-- [ ] Acoustic FSK chirp fallback (AudioTrack/AudioRecord) for a tiny SOS packet when RF is unavailable.
+- [~] (FskModem + 16-byte SOS + engine wiring, off by default; 16 JVM tests on synthetic audio; phone check pending) Acoustic FSK chirp fallback (AudioTrack/AudioRecord) for a tiny SOS packet when RF is unavailable.
 - [ ] Film the backup demo video (09:30 Sat, outdoors).
 
 ## Gotchas
@@ -85,7 +85,7 @@ Same story as the stage demo, but lost & found follows #14 (lost-person alert, "
 Upload unlisted and post the link on #1 and #23.
 
 ## NEXT_SESSION_HANDOFF
-_Saved 17:40 Fri. Everything below is on `main` (PR #27 + #32, CI green) and on `lane/mesh`._
+_Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, the CONTROL no-store fix and the video plan are on `lane/mesh` (PR to main pending)._
 - **Works (verified on real phones, simulation off, no internet):** `NearbyMeshEngine` on Nearby P2P_CLUSTER:
   - 2 phones: connect ~6 s, packets both ways ~0.2 s.
   - 3 phones, chain S947B → Honor X8b (Tier 2) → S23+ forced by allow-list: relay hops=1 in 0.09–0.17 s.
@@ -93,17 +93,34 @@ _Saved 17:40 Fri. Everything below is on `main` (PR #27 + #32, CI green) and on 
 - **Design:** `MeshRelay` (pure relay/flush rules), `ReconnectPolicy` (backoff 2→30 s, ONE connect attempt in flight,
   forget ghosts after 8 tries), Room `seen_packets` dedup + `stored_packets` store-and-forward (30 min, CRITICAL first),
   beacons every 10 s → indirect peers, `MeshDemoControls.allowedNeighbours` (#8), `MeshBeaconInfo` (anonymous 25 m cell
-  location + llmReady in beacons), `MeshService` connectedDevice FGS. 16/16 mesh JVM tests.
-- **Coded, NOT yet verified on phones:** beacon location/llmReady (UI wired it on `lane/ui` for #28; check once that's on main).
+  location + llmReady in beacons), `MeshService` connectedDevice FGS. CONTROL packets (UWB #24) relay live but are never
+  stored (`MeshRelay.isStorable`). 33/33 mesh JVM tests.
+- **Acoustic fallback (P2), coded + JVM-tested, NOT yet on phones:** `mesh/.../acoustic/`.
+  - `FskModem`: BFSK at 4/5 kHz, 50 bit/s, preamble + sync 0x2DD4 + length + CRC-16, Goertzel demodulation over 8 phases.
+  - `AcousticSos`: 16-byte frame (type, severity, 4-byte node id, lat/lon ×1e4, nonce), 3.7 s on air.
+  - `AcousticReceiver`: rolling window + 60 s dedup. `AcousticLink`: AudioTrack on the alarm stream, plays the frame twice;
+    AudioRecord on UNPROCESSED or VOICE_RECOGNITION.
+  - **OFF by default** (`MeshDemoControls.acoustic`). When ON with no Nearby link, HIGH/CRITICAL sends are also chirped and
+    the mic listens (app must be on screen). A heard SOS enters the mesh as an unsigned INCIDENT, which the pipeline shows
+    as unverified, and store-and-forward re-sends it over RF later.
+  - adb: `mesh_device_test.sh acoustic <serial> on|off` (also drops/restores RF links) and `chirp <serial>`.
+- **Coded, NOT yet verified on phones:** beacon location/llmReady (#28, wired by UI).
 - **Waiting on others:** #19 TRUST `TinkTrustEngine` by M2 23:00 → stable 8-hex node ids (until then phones show `SELF-xxxx`
   that change per launch; UI's dev sheet does tap-to-allow from `mesh.peers`, so no stopgap needed). #8 stays open until
   UI's dev-sheet allow-list ships. App still lacks a runtime-permission prompt (UI); location is foreground-only.
 - **Exact next steps, in order:**
-  1. Backup demo video plan (MESH films 09:30 Sat, ~2 min, outdoors): shot list, who holds which phone, taps, voice-over.
-  2. P2 acoustic FSK fallback (tiny SOS via speaker→mic): build encoder/decoder as pure Kotlin + JVM tests with synthetic
-     audio first, then a 10-min phone check. Drop it if not done by the 08:00 Sat freeze.
-  3. When phones are free and UI #28 is on main: verify beacon location on 2–3 phones; after #19 lands, re-test allow-list with stable ids.
-- **Device testing:** `bash mesh/tools/mesh_device_test.sh health|setup|ids|allow <serial> <ids|*>|ping <serial>|logs [n]|cleanup`.
+  1. PR `lane/mesh` → main once CI is green (acoustic is off by default, so it's safe for the demo).
+  2. **Acoustic phone check, 10 min, 2 phones on a table ~1 m apart:**
+     - `setup`, then `acoustic <A> on` and `acoustic <B> on`, with B's app on screen.
+     - `chirp <A>`, then `logs`. Expect on B: `acoustic rx MEDICAL/HIGH`, then `rx INCIDENT`.
+     - Then try 3 m and 5 m. If decoding fails, first try alarm volume max, then `FskConfig` 2/3 kHz tones.
+     - Restore with `acoustic <serial> off`. Drop the feature if it isn't working by 08:00.
+  3. When phones are free: verify beacon location (#28) on 2–3 phones; 2-phone UWB radar with LOCATE (#24);
+     after #19 lands, re-test the allow-list with stable ids.
+  4. 09:00 Sat: run the video pre-flight; 09:30 film per "Backup demo video plan" above.
+  5. Write the MESH README section for TRUST (#23) by 10:30 Sat. Reuse "How my part works" + acoustic.
+- **Ask UI (not yet filed):** add a dev-sheet toggle for `MeshDemoControls.acoustic` if we want the acoustic fallback on stage.
+- **Device testing:** `bash mesh/tools/mesh_device_test.sh health|setup|ids|allow <serial> <ids|*>|ping <serial>|acoustic <serial> on|off|chirp <serial>|logs [n]|cleanup`.
   Installs side by side as `mu.proxima.app.meshtest` (needs `-Pmeshtest` from the machine-local init script), only
   force-stops teammates' `mu.proxima.app`, `cleanup` uninstalls only the test build. Safety routine: health first
   (battery, temp < 40 °C, storage), note BT/Wi-Fi state and restore it after, keep screens unlocked, `cleanup` at the end.
@@ -113,7 +130,8 @@ _Saved 17:40 Fri. Everything below is on `main` (PR #27 + #32, CI green) and on 
   puts build output in `C:/dev/proxima-build` (OneDrive locks `build/`) and adds `-Pmeshtest` suffix; no Python installed;
   `gh` at `C:/Program Files/GitHub CLI/gh.exe`, adb at `%LOCALAPPDATA%/Android/Sdk/platform-tools/adb.exe`.
 - **Files:** `mesh/src/main/AndroidManifest.xml`; `mesh/src/main/java/mu/proxima/mesh/{NearbyMeshEngine,MeshRelay,ReconnectPolicy,SeenStore,MeshService,MeshDemoControls,MeshBeaconInfo,MeshModule}.kt`;
-  `mesh/src/test/java/mu/proxima/mesh/{MeshRelayTest,StoreAndForwardTest,ReconnectPolicyTest,MeshBeaconInfoTest}.kt`; `mesh/tools/mesh_device_test.sh`.
+  `mesh/src/main/java/mu/proxima/mesh/acoustic/{FskModem,AcousticSos,AcousticReceiver,AcousticLink}.kt`;
+  `mesh/src/test/java/mu/proxima/mesh/{MeshRelayTest,StoreAndForwardTest,ReconnectPolicyTest,MeshBeaconInfoTest,AcousticModemTest}.kt`; `mesh/tools/mesh_device_test.sh`.
 
 ## Progress log
 | Time | What |
@@ -127,6 +145,10 @@ _Saved 17:40 Fri. Everything below is on `main` (PR #27 + #32, CI green) and on 
 | 16:46 Fri | ✅ **3-phone test** (S947B, Honor X8b relay, S23+): forced chain via allow-list, PING relayed hops=1 in 0.09–0.17 s (was 7–10 s before one-at-a-time connects); reconnect after 15 s radio-off in 31 s; relay with Honor screen off ~80 s (Doze); stored packets flushed after restart |
 | 17:15 Fri | PR #27 merged to main (CI green). Beacon coarse location + llmReady via `MeshBeaconInfo` (16/16 JVM tests); needs 2-line UI wiring |
 | 17:40 Fri | UI wired #28 on lane/ui; TRUST shipped NodeIds format (#19, keystore by M2). PR #32 (beacon location) merged after CI green. Saving protocol |
+| 17:55 Fri | Bus: #24 answered (CONTROL already relays; now never stored), 👍 #14 (+ newest-atMs note), ack #30. 17/17 tests |
+| 18:00 Fri | Backup demo video plan written (cast, pre-flight, 6-shot list, filming rules, edit) |
+| 18:05 Fri | Acoustic FskModem + 16-byte AcousticSos, 13 JVM tests on synthetic audio (noise, echo, drift, CRC) |
+| 18:08 Fri | Acoustic wired into NearbyMeshEngine (off by default), AcousticReceiver + mapping tests, adb acoustic/chirp; 33/33, app builds. No phones attached for the device check |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -147,3 +169,6 @@ _Saved 17:40 Fri. Everything below is on `main` (PR #27 + #32, CI green) and on 
 | 15:25 Fri | Debug-only adb PING sends CONTROL/`ping`, not an INCIDENT | Tests multi-hop with no UI and no fake incidents in the pipeline (real-data rule) | Fake INCIDENT packets |
 | 17:55 Fri | CONTROL packets are relayed live but never stored for store-and-forward (`MeshRelay.isStorable`) | #24: a UWB REQUEST replayed 20 min later to a phone walking into range would start a stale session; LOCATE already retries every 3 s | Store everything (stale handshakes); a separate CONTROL transport (second message system, breaks "one pipeline") |
 | 18:00 Fri | Backup video: camera phone outside the mesh, phone screen recordings spliced with handheld shots, riskiest shot (lost & found + UWB) filmed first | Clean screens, no camera phone altering topology, batteries/GPS freshest for the hardest shot | Filming screens with a camera (glare, unreadable); story order (risk running out of time on the key shot) |
+| 18:03 Fri | Acoustic modem: BFSK 4/5 kHz, 20 ms symbols, preamble + sync + CRC-16, Goertzel over 8 phases | Long symbols survive echo and speaker ringing; 4–5 kHz sits above crowd/voice energy and is still loud on phone speakers; Goertzel = 2 bins, tiny CPU | Near-ultrasonic 18 kHz (weak on cheap speakers, many mics filter it); higher baud (echo smears symbols); external lib (e.g. ggwave: native code, no time) |
+| 18:04 Fri | Acoustic SOS = 16 bytes, unsigned, shown as unverified, then relayed over RF by the hearing phone | A 64 B signature adds ~10 s on air; merging into the normal pipeline keeps "one feature, many uses"; no names/free text | Signed frame (14 s chirp); separate acoustic message system |
+| 18:06 Fri | Acoustic is OFF by default and only active when there is no Nearby link; foreground-only mic; no microphone FGS | Never compete with voice SOS for the mic (Android 10+ gives it to SpeechRecognizer anyway) or talk over the read-aloud steps; an always-on background mic is a privacy red flag | Always listening; microphone foreground service |
