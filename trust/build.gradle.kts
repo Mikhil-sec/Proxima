@@ -40,6 +40,21 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
 }
 
+// One-off organiser keypair for verified roles (#38). Public half -> assets (commit); private half -> OUTSIDE the
+// repo (~/.proxima), pushed to the organiser phone with adb, never committed. See tools/GenerateOrganiserKey.kt.
+tasks.register<JavaExec>("generateOrganiserKey") {
+    group = "proxima"
+    description = "Generates the organiser Ed25519 keypair for verified roles. Run once."
+    val unitTest = tasks.named<Test>("testDebugUnitTest")
+    dependsOn(unitTest.map { it.taskDependencies })
+    classpath = files(unitTest.map { it.classpath })
+    mainClass.set("mu.proxima.trust.tools.GenerateOrganiserKeyKt")
+    args(
+        file("src/main/assets/data/organiser_public.json").absolutePath,
+        File(System.getProperty("user.home"), ".proxima/organiser_private.json").absolutePath,
+    )
+}
+
 // Print each test result: `build/` is deny-listed for the agents, so the console is the only report we read.
 tasks.withType<Test>().configureEach {
     testLogging {

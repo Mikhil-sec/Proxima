@@ -72,6 +72,7 @@ Same story as the stage demo, but lost & found follows #14 (lost-person alert, "
 | 4 | 0:55–1:05 | A56 then tablet | Same event reported on the A56 → "2 reports", merged; `triagedBy` shows the offload | "A budget phone borrows a neighbour's AI. The tablet merges duplicates." |
 | 5 | 1:05–1:45 | Guardian S23+, then finder S24U ~30 m away | Guardian: "Lost child", description only → finder sees the alert, taps "I'm with them" → guardian gets the sealed alert + radar; walks over; under ~10 m the radar switches to UWB arrow + distance | "No names, no photos. The child's location is sealed so only the guardian can read it." |
 | 6 | 1:45–2:00 | Tablet | Heatmap (anonymous 25 m cells) + incident list → closing line | "No servers, no data plan. Proxima: powered to protect." |
+| 7 (optional, filmed last) | +0:10 | S26+ sends, S23+ receives, both Bluetooth/Wi-Fi OFF; the Honor films | `acoustic on` on both; the S26+ raises a CRITICAL SOS → the S23+ shows it marked "unverified". It's silent (18 kHz), so subtitle it. Only S26+ → S23+ works (the S23+ speaker is too weak) | "No radio at all? Phones can still pass an SOS by inaudible sound." |
 
 **Rules while filming.** These are product rules too, and judges check them.
 - No bystanders' faces. Only teammates who agreed to be filmed.
@@ -95,36 +96,38 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
   beacons every 10 s → indirect peers, `MeshDemoControls.allowedNeighbours` (#8), `MeshBeaconInfo` (anonymous 25 m cell
   location + llmReady in beacons), `MeshService` connectedDevice FGS. CONTROL packets (UWB #24) relay live but are never
   stored (`MeshRelay.isStorable`). 33/33 mesh JVM tests.
-- **Acoustic fallback (P2), coded + JVM-tested, NOT yet on phones:** `mesh/.../acoustic/`.
-  - `FskModem`: BFSK at 4/5 kHz, 50 bit/s, preamble + sync 0x2DD4 + length + CRC-16, Goertzel demodulation over 8 phases.
+- **Acoustic fallback (P2), JVM-tested + partly verified on phones (18:51 Fri, S26+ ↔ S23+ ~table distance):** `mesh/.../acoustic/`.
+  - `FskModem`: BFSK at **18.0/18.7 kHz (near-ultrasound, inaudible to most adults)**, 50 bit/s, preamble + sync 0x2DD4 + length + CRC-16, Goertzel demodulation over 8 phases.
   - `AcousticSos`: 16-byte frame (type, severity, 4-byte node id, lat/lon ×1e4, nonce), 3.7 s on air.
   - `AcousticReceiver`: rolling window + 60 s dedup. `AcousticLink`: AudioTrack on the alarm stream, plays the frame twice;
-    AudioRecord on UNPROCESSED or VOICE_RECOGNITION.
+    AudioRecord on UNPROCESSED or MIC (VOICE_RECOGNITION broke decoding on the S23+), NS/AGC/AEC disabled.
   - **OFF by default** (`MeshDemoControls.acoustic`). When ON with no Nearby link, HIGH/CRITICAL sends are also chirped and
     the mic listens (app must be on screen). A heard SOS enters the mesh as an unsigned INCIDENT, which the pipeline shows
     as unverified, and store-and-forward re-sends it over RF later.
   - adb: `mesh_device_test.sh acoustic <serial> on|off` (also drops/restores RF links) and `chirp <serial>`.
+  - **Phone results:** 4/5 kHz decoded both ways once MIC was used, but it was piercing and disturbed other teams. 18.0/18.7 kHz decodes
+    S26+ → S23+ 2/2, but S23+ → S26+ 0/2: the S23+ speaker is weaker up there (heard ~10–15 dB lower). The restart fix was
+    checked once: Nearby reported the disconnect in 2 s and reconnected under the new id in 7 s (Yorvan's silent case not reproduced).
+    Watch out: Bixby popping up on the S26+ put our app in the background, and the mic was silenced.
 - **Coded, NOT yet verified on phones:** beacon location/llmReady (#28, wired by UI).
 - **Waiting on others:** #19 TRUST `TinkTrustEngine` by M2 23:00 → stable 8-hex node ids (until then phones show `SELF-xxxx`
   that change per launch; UI's dev sheet does tap-to-allow from `mesh.peers`, so no stopgap needed). #8 stays open until
   UI's dev-sheet allow-list ships. App still lacks a runtime-permission prompt (UI); location is foreground-only.
 - **Exact next steps, in order:**
   1. PR `lane/mesh` → main once CI is green (acoustic is off by default, so it's safe for the demo).
-  2. **Acoustic phone check, 10 min, 2 phones on a table ~1 m apart:**
-     - `setup`, then `acoustic <A> on` and `acoustic <B> on`, with B's app on screen.
-     - `chirp <A>`, then `logs`. Expect on B: `acoustic rx MEDICAL/HIGH`, then `rx INCIDENT`.
-     - Then try 3 m and 5 m. If decoding fails, first try alarm volume max, then `FskConfig` 2/3 kHz tones.
-     - Restore with `acoustic <serial> off`. Drop the feature if it isn't working by 08:00.
+  2. Acoustic: decide with Chanum whether to keep ultrasonic (silent, one-way with the S23+ as sender) or lower it to ~17 kHz
+     and test again; otherwise drop it from the demo (it is off by default, so nothing breaks).
   3. When phones are free: verify beacon location (#28) on 2–3 phones; 2-phone UWB radar with LOCATE (#24);
      after #19 lands, re-test the allow-list with stable ids.
   4. 09:00 Sat: run the video pre-flight; 09:30 film per "Backup demo video plan" above.
-  5. Write the MESH README section for TRUST (#23) by 10:30 Sat. Reuse "How my part works" + acoustic.
+  5. README MESH section is DONE (PR #47). Update its numbers if M2 or the video shows anything new (e.g. a longer chain, outdoor range).
+- **Follow-up (from #24):** after a peer app restart, its old per-launch node id stays `direct=true` on the other phone (new id shows as indirect). Check that `onDisconnected` fires and clears the old endpoint; stable ids (#19) remove most of it.
 - **Ask UI (not yet filed):** add a dev-sheet toggle for `MeshDemoControls.acoustic` if we want the acoustic fallback on stage.
 - **Device testing:** `bash mesh/tools/mesh_device_test.sh health|setup|ids|allow <serial> <ids|*>|ping <serial>|acoustic <serial> on|off|chirp <serial>|logs [n]|cleanup`.
   Installs side by side as `mu.proxima.app.meshtest` (needs `-Pmeshtest` from the machine-local init script), only
   force-stops teammates' `mu.proxima.app`, `cleanup` uninstalls only the test build. Safety routine: health first
   (battery, temp < 40 °C, storage), note BT/Wi-Fi state and restore it after, keep screens unlocked, `cleanup` at the end.
-  Honor hides app logs: `adb -s <serial> shell setprop log.tag.Proxima V` (reset with `""`). Samsung Secure Folder → always `--user 0`.
+  Honor hides app logs: `adb -s <serial> shell setprop log.tag.Proxima V` (reset with `""`). TRUST (19:00) saw the Honor LLY-LX2 return 0 logcat lines even so: if it looks dead, check with `dumpsys activity` or the other phones' logs, not logcat. Samsung Secure Folder → always `--user 0`.
   USB hub dropped phones twice: prefer direct cables/powered hub for the stage.
 - **Machine notes (Chanum's laptop):** JDK = Android Studio JBR; `~/.gradle/init.d/proxima-builddir-outside-onedrive.gradle.kts`
   puts build output in `C:/dev/proxima-build` (OneDrive locks `build/`) and adds `-Pmeshtest` suffix; no Python installed;
@@ -149,6 +152,10 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:00 Fri | Backup demo video plan written (cast, pre-flight, 6-shot list, filming rules, edit) |
 | 18:05 Fri | Acoustic FskModem + 16-byte AcousticSos, 13 JVM tests on synthetic audio (noise, echo, drift, CRC) |
 | 18:08 Fri | Acoustic wired into NearbyMeshEngine (off by default), AcousticReceiver + mapping tests, adb acoustic/chirp; 33/33, app builds. No phones attached for the device check |
+| 18:20 Fri | #24 closed: LOCATE verified UWB CONTROL handshake over the real mesh on S23+ → S26+ (fix 0.5 s, arrow OK). Follow-up: after a peer app restart, its old per-launch id stays `direct=true` until Nearby reports the disconnect |
+| 18:51 Fri | Phone check S26+ ↔ S23+: restart fix OK (reconnect 7 s); acoustic decodes with MIC source; 4/5 kHz too loud for the venue → 18.0/18.7 kHz near-ultrasound: S26+→S23+ 2/2, S23+→S26+ 0/2 (weak speaker). Phones cleaned up |
+| 19:10 Fri | PR #44 merged (restart fix + ultrasonic acoustic). README MESH section + AI-disclosure row merged (PR #47), #23 answered |
+| 19:15 Fri | Validated #51 on its branch (whole project green), found + fixed the restart/LOST-report gap (PR #54 merged), 👍 #51 with "no mid-session rotation before freeze", told TRUST on #19 that MESH is ready for the found-notice test |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -172,3 +179,7 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:03 Fri | Acoustic modem: BFSK 4/5 kHz, 20 ms symbols, preamble + sync + CRC-16, Goertzel over 8 phases | Long symbols survive echo and speaker ringing; 4–5 kHz sits above crowd/voice energy and is still loud on phone speakers; Goertzel = 2 bins, tiny CPU | Near-ultrasonic 18 kHz (weak on cheap speakers, many mics filter it); higher baud (echo smears symbols); external lib (e.g. ggwave: native code, no time) |
 | 18:04 Fri | Acoustic SOS = 16 bytes, unsigned, shown as unverified, then relayed over RF by the hearing phone | A 64 B signature adds ~10 s on air; merging into the normal pipeline keeps "one feature, many uses"; no names/free text | Signed frame (14 s chirp); separate acoustic message system |
 | 18:06 Fri | Acoustic is OFF by default and only active when there is no Nearby link; foreground-only mic; no microphone FGS | Never compete with voice SOS for the mic (Android 10+ gives it to SpeechRecognizer anyway) or talk over the read-aloud steps; an always-on background mic is a privacy red flag | Always listening; microphone foreground service |
+| 18:46 Fri | Acoustic mic source = UNPROCESSED else MIC (+ NS/AGC/AEC off), not VOICE_RECOGNITION | On the S23+ VOICE_RECOGNITION heard the tones loud but never decoded; MIC decoded both ways | VOICE_RECOGNITION (fails on S23+) |
+| 18:50 Fri | Acoustic tones moved to near-ultrasound 18.0/18.7 kHz | Chanum: 4–5 kHz was piercing and disturbed other hackathon teams; ultrasound is inaudible to most adults. 19.5 kHz was too high for the S23+ speaker → S26+ mic path | 4/5 kHz (works both ways, too loud); 1/1.5 kHz (pleasant, did not decode once); 18.5/19.5 kHz (one-way only) |
+| 19:13 Fri | After an app restart the mesh replays its stored INCIDENT/SEALED packets (≤ 30 min) once into this phone's own pipeline | Found while validating #51: the pipeline keeps incidents in memory, and the mesh drops a re-forwarded copy of the guardian's own LOST report as already seen, so after a restart the finder's notice was refused. Fixed in `:mesh`, no core change | Forget seen ids on restart (would re-relay everything); persist incidents in core (core change near freeze) |
+| 19:39 Fri | Store-and-forward keeps only the newest SEALED packet per (finder, guardian) | A finder shares its position every 10 s as CRITICAL; 180 per 30 min filled the 200-slot store (the original SOS was evicted first) and flooded newly met phones with stale positions, oldest first | Bigger store (still floods); evict lowest severity (notices are CRITICAL too); fewer updates (LOCATE's radar needs them) |

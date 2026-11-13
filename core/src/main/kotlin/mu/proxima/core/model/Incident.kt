@@ -63,4 +63,9 @@ data class IncidentRecord(
     val hopsTravelled: Int,
     val lastUpdatedMs: Long,
     val resolved: Boolean = false,
+    /**
+     * Base64 public key of the phone that reported it (from the packet envelope). Lets a finder seal a
+     * FoundNotice to the guardian of a LOST_PERSON report without any wristband hardware.
+     */
+    val originKey: String? = null,
 )

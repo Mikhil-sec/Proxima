@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.proxima.core.engine.MeshEngine
@@ -159,6 +161,13 @@ class NearbyMeshEngine(
                 val now = clock()
                 indirect.values.removeAll { now - it.lastSeenMs > PEER_EXPIRY_MS }
                 endpoints.values.removeAll { !it.connected && now - it.lastSeenMs > FORGET_ENDPOINT_MS }
+                // Nearby doesn't always report a disconnect (e.g. the peer app restarted): drop links silent > 90 s.
+                endpoints.entries.filter { (_, ep) -> ep.connected && MeshRelay.isSilent(ep.lastSeenMs, now) }.forEach { (id, ep) ->
+                    Log.i(TAG, "link to ${ep.nodeId} silent ${(now - ep.lastSeenMs) / 1000}s, dropping")
+                    client.disconnectFromEndpoint(id)
+                    endpoints[id] = ep.copy(connected = false, attempts = 0,
+                        nextAttemptMs = if (MeshDemoControls.allows(ep.nodeId)) now + ReconnectPolicy.backoffMs(0) else null)
+                }
                 if (outbox.removeAll { now - it.createdAtMs > STORE_MS }) {
                     runCatching { stored.pruneOlderThan(now - STORE_MS) }
                 }
@@ -207,6 +216,10 @@ class NearbyMeshEngine(
                 if (intent.action == ACTION_ACOUSTIC) {
                     // adb shell am broadcast -a mu.proxima.mesh.ACOUSTIC -p <pkg> --ez on true
                     MeshDemoControls.acoustic.value = intent.getBooleanExtra("on", true)
+                    if (intent.hasExtra("source")) { // --ei source 1|6|9: device check of mic sources
+                        acoustic.sourceOverride = intent.getIntExtra("source", 6)
+                        scope.launch(serial) { acousticListen?.cancel(); acousticListen = null } // restarted within 2 s
+                    }
                     Log.i(TAG, "acoustic fallback = ${MeshDemoControls.acoustic.value}")
                     return
                 }
@@ -318,13 +331,26 @@ class NearbyMeshEngine(
 
     private suspend fun onAcoustic(bytes: ByteArray) {
         val sos = AcousticSos.decode(bytes) ?: return
-        if (AcousticSos.nodeIdBytes(sos.originNodeId) == AcousticSos.nodeIdBytes(selfNodeId)) return // own chirp echo
+        if (AcousticSos.nodeIdBytes(sos.originNodeId) == AcousticSos.nodeIdBytes(selfNodeId)) {
+            Log.i(TAG, "acoustic heard own chirp (ignored)")
+            return
+        }
         Log.i(TAG, "acoustic rx ${sos.type}/${sos.severity} from=${sos.originNodeId} loc=${sos.location != null}")
         scope.launch(serial) { onPacket(sos.toPacket(clock()), fromEndpoint = ACOUSTIC_ENDPOINT) }.join()
     }
 
     private suspend fun onPacket(packet: MeshPacket, fromEndpoint: String) {
-        endpoints[fromEndpoint]?.let { endpoints[fromEndpoint] = it.copy(lastSeenMs = clock()) }
+        endpoints[fromEndpoint]?.let { ep ->
+            val sender = MeshRelay.directSenderOf(packet)
+            if (sender != null && sender != ep.nodeId && sender != selfNodeId) {
+                Log.i(TAG, "link $fromEndpoint is now node $sender (was ${ep.nodeId}: app restarted)")
+                indirect.remove(sender)
+                endpoints[fromEndpoint] = ep.copy(nodeId = sender, lastSeenMs = clock())
+                publishPeers()
+            } else {
+                endpoints[fromEndpoint] = ep.copy(lastSeenMs = clock())
+            }
+        }
         if (!seen.markFirstSeen(packet.packetId)) return
         val fromNode = endpoints[fromEndpoint]?.nodeId ?: MeshRelay.lastHop(packet)
         if (packet.kind != PacketKind.BEACON) {
@@ -367,6 +393,13 @@ class NearbyMeshEngine(
     /** Store-and-forward: keep live packets (memory + Room) so new neighbours get them, even after a restart. */
     private fun remember(packet: MeshPacket) {
         if (!MeshRelay.isStorable(packet)) return
+        // A finder's newer position replaces its older ones (stops 10 s updates filling the store).
+        if (outbox.any { MeshRelay.supersededBy(it, listOf(packet)).isNotEmpty() }) return // an even newer one is kept
+        val old = MeshRelay.supersededBy(packet, outbox).map { it.packetId }.toSet()
+        if (old.isNotEmpty()) {
+            outbox.removeAll { it.packetId in old }
+            scope.launch { runCatching { stored.delete(old.toList()) } }
+        }
         outbox.removeAll { it.packetId == packet.packetId }
         outbox.addLast(packet)
         while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
@@ -386,6 +419,13 @@ class NearbyMeshEngine(
         }
         while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
         if (restored.isNotEmpty()) Log.i(TAG, "restored ${restored.size} stored packets")
+        // Rebuild this phone's own incident list (the pipeline keeps it in memory only), #51.
+        val replay = MeshRelay.replayAfterRestart(restored, clock(), STORE_MS)
+        if (replay.isNotEmpty()) {
+            withTimeoutOrNull(5_000) { _inbound.subscriptionCount.first { it > 0 } } // pipeline listening first
+            replay.forEach { _inbound.emit(it) }
+            Log.i(TAG, "replayed ${replay.size} stored incidents/notices to this phone's pipeline")
+        }
     }
 
     private fun flushTo(endpointId: String) {

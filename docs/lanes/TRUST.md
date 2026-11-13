@@ -16,7 +16,7 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
       Optionally cross-check health facilities with data.govmu.org.
 - [x] `AssetHelpPointRepository`: parse OSM → `HelpPoint` (amenity/emergency → `HelpCategory`, source "OpenStreetMap (ODbL)"),
       `nearest()` with `GeoMath`. Unit test with a known location.
-- [x] `TinkTrustEngine` (**Context7: Tink**) **DONE 18:10 Fri** - JVM-verified, not yet run on a phone: Ed25519 sign/verify of `MeshPacket.signingBytes()`; HPKE (X25519) hybrid seal/open;
+- [x] `TinkTrustEngine` (**Context7: Tink**) **DONE 18:10 Fri** - 21/21 on JVM and on the S24 Ultra Keystore (18:36): Ed25519 sign/verify of `MeshPacket.signingBytes()`; HPKE (X25519) hybrid seal/open;
       keysets persisted with the Android Keystore. `identity.publicKey` must carry both public keys (e.g. `sigB64.encB64`);
       `nodeId` = first 8 hex chars of SHA-256(publicKey). Tell MESH it must use this nodeId.
 **P1 (M2/M3)**
@@ -46,33 +46,26 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 
 
 ## NEXT_SESSION_HANDOFF
-_Saved 18:15 Fri 13 Nov. Branch `lane/trust`, synced with `main`, 51/51 trust tests pass, whole project builds
-(`assembleDebug test :trust:assembleDebugAndroidTest`, 233/233 tasks executed with `--rerun-tasks`)._
+_Saved 19:32 Fri 13 Nov. Branch `lane/trust` == `main`. 88/88 trust tests, core green, whole project builds._
+_Diya 19:12: time is short - merge interface changes WITHOUT waiting for 👍, but inform the lanes; stop only for key decisions._
 
-### `TinkTrustEngine` - DONE 18:10 Fri (all P0s now done)
-Simulation OFF now runs real crypto. Files: `TinkTrustEngine.kt`, `TrustStorage.kt`, `TrustModule.kt`.
-- Ed25519 sign/verify over `signingBytes()`. `verify` checks against the **sender's** key in `originKey`, and
-  rejects a packet unless `originNodeId == NodeIds.derive(originKey)` (no impersonating another node's id).
-- HPKE `DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_256_GCM` seal/open, context info `proxima/sealed/v1`.
-  `seal` to an unusable key **throws** `IllegalArgumentException` - never falls back to plaintext.
-- Keysets via `AndroidKeysetManager`, master key `android-keystore://proxima_trust_master_key`,
-  prefs `proxima_trust_keysets`. Wristband tags in prefs `proxima_trust_wristbands`.
-- Each public half = a Tink public keyset serialized without secrets, base64. `publicKey` = **317 chars**,
-  pinned <= 400 by a test. Signature ~92 chars. Sealed payload = plaintext + ~53 bytes, base64.
-- Storage is behind `KeysetStore` / `WristbandStore` so the crypto is JVM-testable.
-
-Tests: `TrustEngineContractTest` moved to **`src/testFixtures`** (a dir cannot be shared between `test` and
-`androidTest` since AGP 7.2). Runs as `TinkTrustEngineTest` (JVM, 21 tests, every `:trust:test`) and
-`TinkTrustEngineKeystoreTest` (`src/androidTest`, Keystore + "simulation OFF is never the fake").
-Method names are underscored because D8 rejects spaces in names below DEX 040 (minSdk 26).
-`FakeTrustEngineSecurityTest` deleted: it built the fake directly, so it could never have flipped to failing
-as the old handoff claimed.
+### #38 status
+- **1. Per-session identity - LIVE on main (#50 + interface change #51/PR #52).** Fresh identity per app launch;
+  previous sessions' keys kept 24 h (max 10); pipeline uses `trust.ownsKey/ownsNodeId`. **Not yet run on a phone**:
+  plug in the S24, `./gradlew :trust:connectedDebugAndroidTest`, read `adb logcat -d -s TestRunner:*`.
+  Open to MESH: can an id change mid-session (timed rotation)? Gap left with UI: pipeline incidents are in-memory.
+- **2. Verified roles - TRUST side DONE (#55, PRs #56/#57).** `Role`, `RolePass`, `TrustEngine.verifyRoleClaim` (default
+  false). Organiser key generated 19:24 by `./gradlew :trust:generateOrganiserKey`: PUBLIC in
+  `trust/src/main/assets/data/organiser_public.json`, PRIVATE at `~/.proxima/organiser_private.json` on Diya's laptop,
+  **outside the repo - never commit, never post it**. Push to the organiser phone per `RolePasses.ORGANISER_PRIVATE_FILE` doc.
+  The task refuses to overwrite the key (that would void issued passes). MESH/UI wiring asked as OPTIONAL on #55.
+  Not built: role-phone mode (`KeyRotation.STABLE`) and pass delivery - only if MESH/UI say they'll wire the rest.
+- **3. Friend find - NOT started.** 1 and 2 merged by 19:30, so per the #38 promise it is now allowed, but it costs
+  ~4 h TRUST + MESH + UI: needs Diya's go-ahead (key decision).
 
 ### THE ONE THING THAT MATTERS NEXT
-**Run it on a phone.** Plug in the S24, then `./gradlew :trust:connectedDebugAndroidTest`. Nothing in this lane
-has ever run on a device, and the Keystore path is only compiled, not executed. Then one two-phone found-notice
-with simulation OFF (needs MESH). README has a "check before submitting" note tied to this.
-After that: chase #23 (README sections due 10:30 Sat), and get `protocols.json` proof-read (gap 3 below).
+Ask Diya: friend find yes/no. Then: S24 device run of per-session storage; two-phone found-notice once everyone is on
+one build; chase #23 (README sections by 10:30) and #45 (protocol proof-read); update README privacy/roles lines.
 
 ### What works, merged to `main`, verified
 - **Dataset** `trust/src/main/assets/data/osm_help_points_raw.json` - 524 real Mauritius OSM features (ODbL),
@@ -97,8 +90,7 @@ After that: chase #23 (README sections due 10:30 Sat), and get `protocols.json` 
   (`ttl` / `hopCount` / `path` must stay outside `signingBytes()`).
 
 ### Known gaps, all deliberate and logged
-1. ~~Simulation-OFF is not demo-safe.~~ **Fixed 18:10 Fri** by `TinkTrustEngine`. Remaining: never run on a
-   device (see THE ONE THING). Also: two `TinkProtoKeysetFormat` calls are deprecated in Tink 1.24; Context7
+1. ~~Simulation-OFF is not demo-safe.~~ **Fixed 18:10 Fri** by `TinkTrustEngine`, device-verified 18:36. Also: two `TinkProtoKeysetFormat` calls are deprecated in Tink 1.24; Context7
    does not document the replacement, so they stay, with warnings visible, until it can be checked.
 2. **No CROWD_CRUSH / ELECTRICAL / FALLEN_BRANCH / FLOOD card - DECIDED 18:00 Fri, do not revisit.**
    Approved by Diya: we ship without them. IFRC 2020 has zero crush content and UK HSE is organiser
@@ -108,7 +100,7 @@ After that: chase #23 (README sections due 10:30 Sat), and get `protocols.json` 
    Fire and Rescue Service, or a printed Ganga Talao briefing sheet - a photo is enough and I can transcribe
    a cited card in under an hour.
 3. **`protocols.json` has NOT been proof-read by a second member.** The lane requires it before the demo.
-4. **This lane has never run on a phone.** `adb devices` was empty all session; `installDebug` untried.
+4. ~~This lane has never run on a phone.~~ Keystore contract passed on the S24 Ultra 18:36 Fri. `installDebug` of the full app still untried by this lane.
 5. OSM Mauritius has no assembly points, ambulance stations or defibrillators. `docs/PRODUCT.md` still
    wrongly claims defibrillators - not my file, flagged in PR #22.
 
@@ -161,6 +153,14 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 18:05 Fri | Context7 confirmed loaded (`resolve-library-id` / `query-docs`). Tink APIs checked there; a `javap` look at the jar was refused by the permission layer, so anything Context7 did not document was designed around rather than guessed. |
 | 18:10 Fri | **`TinkTrustEngine` done and wired** for simulation OFF. Contract moved to `src/testFixtures`, strengthened (cross-device, impersonation, key substitution, bit-flip, unusable key) and passing 21/21 on the JVM. 51/51 trust tests; whole project green. Instrumented test compiles; no device to run it. |
 | 18:12 Fri | Found + fixed two build traps on the way: AGP 7.2+ forbids sharing one test dir between `test` and `androidTest` (-> test fixtures), and D8 rejects backtick test names below DEX 040 (-> underscores). Test logging now prints failure messages. |
+| 18:36 Fri | **First on-device run of this lane.** `:trust:connectedDebugAndroidTest` on the S24 Ultra (Android 17): 21/21 pass under the real Android Keystore, incl. `simulationOffUsesTheRealEngine`. Read via the `TestRunner` logcat tag since Gradle prints no per-test lines for connected tests. |
+| 18:50 Fri | Keystore contract **21/21 on the Honor LLY-LX2** (Android 14) too, via `am instrument` since that phone logs nothing to logcat. Found that the app classes it **TIER1** (7.47 GiB >= 7.0), so neither test phone is Tier 2 - reported to UI. Two-phone mesh test deferred until all lanes are on one build. |
+| 19:00 Fri | Bus: closed #11, nudged #23 (UI/MESH/AI owe sections), opened #45 (AI to proof-read protocols), told UI the Honor is TIER1 (#2), warned MESH the Honor has no logcat (#19). Docs merged (#43). |
+| 19:05 Fri | Answered #38: per-session identity + roles tonight, friend find only if both merge by ~01:00. |
+| 19:08 Fri | **Per-session identity part A merged (#50)**, no runtime change. 78/78. Part B (core) up as interface change **#51 / PR #52**, held for 👍. Restart test proven to fail on the old pipeline. |
+| 19:13 Fri | Diya authorised merging interface changes without waiting for 👍 (inform instead). Merged #52: **per-session identity live**. Informed on #51 and closed it. No phone connected for the device run. |
+| 19:20 Fri | **Verified roles** core + TRUST merged (#55, PR #56): 9 tests (replay, forgery, edits, expiry, no key). |
+| 19:30 Fri | Organiser keypair generated on the laptop (public shipped, private off-repo), issuer for the organiser phone, guard test that the shipped key is public-only. PR #57. 88/88. MESH/UI asked on #55 to wire it, optional. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -197,3 +197,10 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 18:08 Fri | Put key storage behind a `KeysetStore` seam and run the full security contract on the **JVM**, with the Keystore covered by a separate instrumented test | No phone has ever been connected to this laptop, so an instrumented-only spec would mean shipping crypto whose security properties were never executed. The JVM run still re-serializes keysets on every load, so "restart" is real | Instrumented-only tests (would have run zero times before the freeze); Robolectric (new dependency, and its Keystore is a shadow, so it proves nothing more) |
 | 18:10 Fri | Delete `FakeTrustEngineSecurityTest` even though it still passes | It constructed the fake directly, so it could never have flipped to failing when Tink landed, which was its whole purpose. Its real job (catching simulation-OFF handing out the fake) now belongs to `simulationOffUsesTheRealEngine` | Keeping it (its header would then be false); rewriting it (it would only re-prove a dev-only fake is insecure) |
 | 18:10 Fri | Keep two deprecated `TinkProtoKeysetFormat` calls, warnings visible | Context7 documents the methods but not their 1.24 replacement. Guessing a crypto API to silence a warning is the exact failure section 3 exists to prevent | Suppressing the warning (hides it from whoever can fix it); guessing a replacement |
+| 19:05 Fri | **#38: commit to per-session identity + verified roles tonight; friend find only if both merge by ~01:00** (approved by Diya) | Per-session ids fix a real tracking hole (stable nodeId + 25 m beacon cell). Roles close the 8.5 km help gap with real, signed data and are this lane's P2 anyway. Friend find is the biggest (~4h), depends on per-session ids, and is the feature most likely to be challenged against "never track individuals". Design constraints posted: retired encryption keys kept 24h so lost & found survives a restart; role phones keep a stable key; a role claim must also be signed by `holderKey` | All three (~8h, no slack before the 08:00 freeze); only the privacy fix (leaves the 8.5 km gap open); per-launch keys with no retired-key window (a guardian's restart would silently lose the finder's notices) |
+| 19:06 Fri | Split per-session identity into **A (TRUST-only, merged) and B (core interface change, held for 👍)**, and keep the app on `STABLE` until B lands | The pipeline checks `recipientKey == identity.publicKey` and `reporterNodeId == selfNodeId`, so rotating keys alone would silently drop a guardian's found-notices after a restart - worse than the tracking it fixes. Shipping A first lets the engine work be reviewed and merged without changing behaviour | Rotating now and fixing the pipeline later (a regression in the hero flow in the meantime); changing `core/` without an issue (CLAUDE.md 1 forbids it) |
+| 19:06 Fri | Keep previous sessions' keys **24 h, max 10**, on the phone only | One event day covers a search; private keys never leave the device, so retention does not link sessions for anyone else. The cap bounds how many keys `open()` tries per notice | No retention (a restart loses the notices); indefinite retention (an old key would outlive the event for no reason) |
+| 19:07 Fri | New `TrustEngine` methods get **default implementations** (equality), and the pipeline keeps the `mesh.selfNodeId` check alongside | Defaults leave `FakeTrustEngine` and simulation untouched, so the interface change is two lines of behaviour. In simulation the fake mesh and fake trust ids differ, so dropping the old check would break sim lost & found | Abstract methods (every fake must change); replacing the selfNodeId check (breaks simulation) |
+| 19:18 Fri | A role is checked ONLY as `verifyRoleClaim(pass, packet, now)`, never as a bare pass check | A pass travels in the clear, so a bare signature check lets anyone replay an overheard medic pass. Requiring the carrying packet to be signed by `holderKey` makes the claim unforgeable without the holder's private key. Default `false` means the fake and any build without the organiser key never show a role | A public `verifyRolePass(pass)` as the lead proposed (replayable); sealing the pass (it is not secret, sealing adds nothing) |
+| 19:24 Fri | **Organiser key generated on the laptop, private half outside the repo** (approved by Diya) | One build serves every phone, and `~/.proxima/` cannot be picked up by any `git add`, which is stronger than a gitignore entry. The generator refuses to overwrite, since a new key silently voids every pass already issued | Generating on the organiser phone (needs a phone now and a second build round); a gitignored folder in the repo (one `-f` away from a leak) |
+| 19:30 Fri | Ask MESH/UI to wire roles as **optional** (approved by Diya) | Their own P0/P1s before the 08:00 freeze matter more, and TRUST-side roles are complete and tested either way, so the README can state it honestly | Pushing roles as a priority (risks other lanes' core features); not asking (the capability would never be visible) |

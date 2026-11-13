@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches ui/theme/Color.kt DarkColors.surface. -->
+    <style name="Theme.Proxima" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/proxima_surface</item>
+        <item name="android:colorBackground">@color/proxima_surface</item>
+    </style>
+    <color name="proxima_surface">#FF0E1515</color>
+</resources>

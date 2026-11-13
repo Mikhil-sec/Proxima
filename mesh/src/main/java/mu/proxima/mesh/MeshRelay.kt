@@ -48,6 +48,43 @@ object MeshRelay {
             .sortedWith(compareByDescending<MeshPacket> { it.severity.ordinal }.thenBy { it.createdAtMs })
             .toList()
 
+    /**
+     * A BEACON that has not been relayed (hopCount 0) was sent by the phone at the other end of this link,
+     * so its origin is that link's current node id, even if the app restarted with a new id on the same link (#24).
+     */
+    fun directSenderOf(packet: MeshPacket): String? =
+        if (packet.kind == PacketKind.BEACON && packet.hopCount == 0) packet.originNodeId else null
+
+    /** A connected link that has carried nothing (not even a 10 s beacon) for this long is treated as dead. */
+    const val SILENT_LINK_MS = 90_000L
+
+    fun isSilent(lastSeenMs: Long, nowMs: Long): Boolean = nowMs - lastSeenMs > SILENT_LINK_MS
+
+    /**
+     * Stored packets that [newer] replaces. A finder shares its position with the guardian every 10 s as SEALED
+     * CRITICAL packets; keeping all of them would fill the store (200 max, oldest evicted, so the original SOS goes
+     * first) and flood a newly met phone with stale positions. Only the newest SEALED packet per
+     * (origin, recipient) is worth carrying. SEALED is used only for found notices.
+     */
+    fun supersededBy(newer: MeshPacket, stored: Collection<MeshPacket>): List<MeshPacket> =
+        if (newer.kind != PacketKind.SEALED || newer.recipientKey == null) emptyList()
+        else stored.filter {
+            it.kind == PacketKind.SEALED && it.packetId != newer.packetId &&
+                it.originNodeId == newer.originNodeId && it.recipientKey == newer.recipientKey &&
+                it.createdAtMs <= newer.createdAtMs
+        }
+
+    /**
+     * After an app restart, which stored packets are handed once more to THIS phone's pipeline (its incident list
+     * lives in memory). Without this the guardian's own LOST report is gone, and when a neighbour re-forwards it the
+     * mesh drops it as already seen, so the finder's sealed notice is refused (#51). Only incidents and sealed
+     * notices: replaying triage requests would make the AI redo work.
+     */
+    fun replayAfterRestart(stored: Collection<MeshPacket>, nowMs: Long, storeMs: Long): List<MeshPacket> =
+        stored.filter {
+            (it.kind == PacketKind.INCIDENT || it.kind == PacketKind.SEALED) && nowMs - it.createdAtMs <= storeMs
+        }.sortedBy { it.createdAtMs }
+
     /** The node that handed us this packet (for HopEvents). */
     fun lastHop(packet: MeshPacket): String = packet.path.lastOrNull() ?: packet.originNodeId
 }
