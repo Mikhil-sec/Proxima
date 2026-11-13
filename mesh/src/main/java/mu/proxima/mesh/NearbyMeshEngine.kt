@@ -214,6 +214,10 @@ class NearbyMeshEngine(
                 if (intent.action == ACTION_ACOUSTIC) {
                     // adb shell am broadcast -a mu.proxima.mesh.ACOUSTIC -p <pkg> --ez on true
                     MeshDemoControls.acoustic.value = intent.getBooleanExtra("on", true)
+                    if (intent.hasExtra("source")) { // --ei source 1|6|9: device check of mic sources
+                        acoustic.sourceOverride = intent.getIntExtra("source", 6)
+                        scope.launch(serial) { acousticListen?.cancel(); acousticListen = null } // restarted within 2 s
+                    }
                     Log.i(TAG, "acoustic fallback = ${MeshDemoControls.acoustic.value}")
                     return
                 }
@@ -325,7 +329,10 @@ class NearbyMeshEngine(
 
     private suspend fun onAcoustic(bytes: ByteArray) {
         val sos = AcousticSos.decode(bytes) ?: return
-        if (AcousticSos.nodeIdBytes(sos.originNodeId) == AcousticSos.nodeIdBytes(selfNodeId)) return // own chirp echo
+        if (AcousticSos.nodeIdBytes(sos.originNodeId) == AcousticSos.nodeIdBytes(selfNodeId)) {
+            Log.i(TAG, "acoustic heard own chirp (ignored)")
+            return
+        }
         Log.i(TAG, "acoustic rx ${sos.type}/${sos.severity} from=${sos.originNodeId} loc=${sos.location != null}")
         scope.launch(serial) { onPacket(sos.toPacket(clock()), fromEndpoint = ACOUSTIC_ENDPOINT) }.join()
     }

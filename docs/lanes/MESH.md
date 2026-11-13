@@ -95,26 +95,27 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
   beacons every 10 s → indirect peers, `MeshDemoControls.allowedNeighbours` (#8), `MeshBeaconInfo` (anonymous 25 m cell
   location + llmReady in beacons), `MeshService` connectedDevice FGS. CONTROL packets (UWB #24) relay live but are never
   stored (`MeshRelay.isStorable`). 33/33 mesh JVM tests.
-- **Acoustic fallback (P2), coded + JVM-tested, NOT yet on phones:** `mesh/.../acoustic/`.
-  - `FskModem`: BFSK at 4/5 kHz, 50 bit/s, preamble + sync 0x2DD4 + length + CRC-16, Goertzel demodulation over 8 phases.
+- **Acoustic fallback (P2), JVM-tested + partly verified on phones (18:51 Fri, S26+ ↔ S23+ ~table distance):** `mesh/.../acoustic/`.
+  - `FskModem`: BFSK at **18.0/18.7 kHz (near-ultrasound, inaudible to most adults)**, 50 bit/s, preamble + sync 0x2DD4 + length + CRC-16, Goertzel demodulation over 8 phases.
   - `AcousticSos`: 16-byte frame (type, severity, 4-byte node id, lat/lon ×1e4, nonce), 3.7 s on air.
   - `AcousticReceiver`: rolling window + 60 s dedup. `AcousticLink`: AudioTrack on the alarm stream, plays the frame twice;
-    AudioRecord on UNPROCESSED or VOICE_RECOGNITION.
+    AudioRecord on UNPROCESSED or MIC (VOICE_RECOGNITION broke decoding on the S23+), NS/AGC/AEC disabled.
   - **OFF by default** (`MeshDemoControls.acoustic`). When ON with no Nearby link, HIGH/CRITICAL sends are also chirped and
     the mic listens (app must be on screen). A heard SOS enters the mesh as an unsigned INCIDENT, which the pipeline shows
     as unverified, and store-and-forward re-sends it over RF later.
   - adb: `mesh_device_test.sh acoustic <serial> on|off` (also drops/restores RF links) and `chirp <serial>`.
+  - **Phone results:** 4/5 kHz decoded both ways once MIC was used, but it was piercing and disturbed other teams. 18.0/18.7 kHz decodes
+    S26+ → S23+ 2/2, but S23+ → S26+ 0/2: the S23+ speaker is weaker up there (heard ~10–15 dB lower). The restart fix was
+    checked once: Nearby reported the disconnect in 2 s and reconnected under the new id in 7 s (Yorvan's silent case not reproduced).
+    Watch out: Bixby popping up on the S26+ put our app in the background, and the mic was silenced.
 - **Coded, NOT yet verified on phones:** beacon location/llmReady (#28, wired by UI).
 - **Waiting on others:** #19 TRUST `TinkTrustEngine` by M2 23:00 → stable 8-hex node ids (until then phones show `SELF-xxxx`
   that change per launch; UI's dev sheet does tap-to-allow from `mesh.peers`, so no stopgap needed). #8 stays open until
   UI's dev-sheet allow-list ships. App still lacks a runtime-permission prompt (UI); location is foreground-only.
 - **Exact next steps, in order:**
   1. PR `lane/mesh` → main once CI is green (acoustic is off by default, so it's safe for the demo).
-  2. **Acoustic phone check, 10 min, 2 phones on a table ~1 m apart:**
-     - `setup`, then `acoustic <A> on` and `acoustic <B> on`, with B's app on screen.
-     - `chirp <A>`, then `logs`. Expect on B: `acoustic rx MEDICAL/HIGH`, then `rx INCIDENT`.
-     - Then try 3 m and 5 m. If decoding fails, first try alarm volume max, then `FskConfig` 2/3 kHz tones.
-     - Restore with `acoustic <serial> off`. Drop the feature if it isn't working by 08:00.
+  2. Acoustic: decide with Chanum whether to keep ultrasonic (silent, one-way with the S23+ as sender) or lower it to ~17 kHz
+     and test again; otherwise drop it from the demo (it is off by default, so nothing breaks).
   3. When phones are free: verify beacon location (#28) on 2–3 phones; 2-phone UWB radar with LOCATE (#24);
      after #19 lands, re-test the allow-list with stable ids.
   4. 09:00 Sat: run the video pre-flight; 09:30 film per "Backup demo video plan" above.
@@ -151,6 +152,7 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:05 Fri | Acoustic FskModem + 16-byte AcousticSos, 13 JVM tests on synthetic audio (noise, echo, drift, CRC) |
 | 18:08 Fri | Acoustic wired into NearbyMeshEngine (off by default), AcousticReceiver + mapping tests, adb acoustic/chirp; 33/33, app builds. No phones attached for the device check |
 | 18:20 Fri | #24 closed: LOCATE verified UWB CONTROL handshake over the real mesh on S23+ → S26+ (fix 0.5 s, arrow OK). Follow-up: after a peer app restart, its old per-launch id stays `direct=true` until Nearby reports the disconnect |
+| 18:51 Fri | Phone check S26+ ↔ S23+: restart fix OK (reconnect 7 s); acoustic decodes with MIC source; 4/5 kHz too loud for the venue → 18.0/18.7 kHz near-ultrasound: S26+→S23+ 2/2, S23+→S26+ 0/2 (weak speaker). Phones cleaned up |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -174,3 +176,5 @@ _Saved 18:10 Fri. Nearby mesh is on `main` (PR #27 + #32). Acoustic fallback, th
 | 18:03 Fri | Acoustic modem: BFSK 4/5 kHz, 20 ms symbols, preamble + sync + CRC-16, Goertzel over 8 phases | Long symbols survive echo and speaker ringing; 4–5 kHz sits above crowd/voice energy and is still loud on phone speakers; Goertzel = 2 bins, tiny CPU | Near-ultrasonic 18 kHz (weak on cheap speakers, many mics filter it); higher baud (echo smears symbols); external lib (e.g. ggwave: native code, no time) |
 | 18:04 Fri | Acoustic SOS = 16 bytes, unsigned, shown as unverified, then relayed over RF by the hearing phone | A 64 B signature adds ~10 s on air; merging into the normal pipeline keeps "one feature, many uses"; no names/free text | Signed frame (14 s chirp); separate acoustic message system |
 | 18:06 Fri | Acoustic is OFF by default and only active when there is no Nearby link; foreground-only mic; no microphone FGS | Never compete with voice SOS for the mic (Android 10+ gives it to SpeechRecognizer anyway) or talk over the read-aloud steps; an always-on background mic is a privacy red flag | Always listening; microphone foreground service |
+| 18:46 Fri | Acoustic mic source = UNPROCESSED else MIC (+ NS/AGC/AEC off), not VOICE_RECOGNITION | On the S23+ VOICE_RECOGNITION heard the tones loud but never decoded; MIC decoded both ways | VOICE_RECOGNITION (fails on S23+) |
+| 18:50 Fri | Acoustic tones moved to near-ultrasound 18.0/18.7 kHz | Chanum: 4–5 kHz was piercing and disturbed other hackathon teams; ultrasound is inaudible to most adults. 19.5 kHz was too high for the S23+ speaker → S26+ mic path | 4/5 kHz (works both ways, too loud); 1/1.5 kHz (pleasant, did not decode once); 18.5/19.5 kHz (one-way only) |
