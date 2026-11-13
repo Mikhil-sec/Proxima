@@ -111,6 +111,17 @@ class HandsFreeGuideTest {
         assertEquals(2, guide.state.value.stepIndex)
     }
 
+    @Test fun timedStep_tellsHowToHearNextStepNow_untimedAndLastDoNot() = runTest {
+        val voice = ScriptedVoice("next") // to step 2 (timed), then let the timer run to step 3 (last)
+        val guide = HandsFreeGuide(voice, repo, backgroundScope)
+        guide.start(cpr)
+        advanceTimeBy(10_000); runCurrent()
+        assertTrue(voice.spoken.contains("Step 2 of 3. Push hard and fast. Say next to hear the next step now."))
+        assertTrue(voice.spoken.contains("Step 1 of 3. Call for help."))
+        advanceTimeBy(121_000); runCurrent()
+        assertEquals("Step 3 of 3. Get a defibrillator.", voice.spoken.last())
+    }
+
     @Test fun buttonsWorkAndStopEnds() = runTest {
         val voice = ScriptedVoice()
         val guide = HandsFreeGuide(voice, repo, backgroundScope)

@@ -154,14 +154,23 @@ class HandsFreeGuide(
         }
     }
 
-    private suspend fun sayStep(card: ProtocolCard, idx: Int) =
-        say("Step ${idx + 1} of ${card.steps.size}. ${card.steps[idx].text}")
+    /**
+     * A timed step (e.g. 20 min of cooling) would otherwise hold back the next step, which is often "call
+     * emergency services" and meant to happen at the same time (#45). So after a timed step that isn't the last,
+     * tell the person how to hear the next one now. Navigation only: the vetted step text is never changed.
+     */
+    private suspend fun sayStep(card: ProtocolCard, idx: Int) {
+        val timedAndMore = card.steps[idx].durationSec != null && idx < card.steps.lastIndex
+        say("Step ${idx + 1} of ${card.steps.size}. ${card.steps[idx].text}" + if (timedAndMore) " $NEXT_CUE" else "")
+    }
 
     private suspend fun say(text: String) = runCatching { voice.speak(text, languageTag) }.let { }
 
     private companion object {
         /** Real voice failures in a row (silence never counts) before falling back to buttons only. */
         const val MAX_LISTEN_FAILURES = 5
+        /** Spoken after a timed step that has more steps after it. */
+        const val NEXT_CUE = "Say next to hear the next step now."
         private val SILENCE = setOf(
             VoiceSupport.errorReason(android.speech.SpeechRecognizer.ERROR_NO_MATCH),
             VoiceSupport.errorReason(android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT),

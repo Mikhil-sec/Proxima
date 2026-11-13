@@ -80,7 +80,16 @@ class AndroidLocateEngine(
     private val smoother = HeadingSmoother()
     private val rotation = FloatArray(9)
     /** Debug builds only (no-op otherwise): adb TRACK/STOP/STATUS, see [LocateDebugTrigger]. */
-    private val debugTrigger = LocateDebugTrigger(appContext, this, mesh, scope)
+    private val debugTrigger = LocateDebugTrigger(appContext, this, mesh, scope) { compassInfo() }
+
+    /** Rotation-vector heading accuracy estimate (values[4], degrees); null if the phone doesn't report it. */
+    @Volatile private var compassAccDeg: Float? = null
+    /** Last SensorManager.SENSOR_STATUS_* for the rotation vector; -1 = not reported yet. */
+    @Volatile private var compassStatus: Int = -1
+
+    /** For the debug STATUS line: what the phone says about its own compass (to pick a calibration-hint threshold). */
+    internal fun compassInfo(): String =
+        "compassAcc=${compassAccDeg?.let { "±%.0f°".format(java.util.Locale.US, it) } ?: "?"} compassStatus=${statusName(compassStatus)}"
 
     // ---------- lifecycle ----------
 
@@ -152,6 +161,8 @@ class AndroidLocateEngine(
 
     private val headingListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
+            // values[4] = estimated heading accuracy in radians, -1 when unavailable (TYPE_ROTATION_VECTOR only).
+            compassAccDeg = event.values.getOrNull(4)?.takeIf { it >= 0f }?.let { Math.toDegrees(it.toDouble()).toFloat() }
             SensorManager.getRotationMatrixFromVector(rotation, event.values)
             val magnetic = RadarMath.headingFromRotationMatrix(rotation) ?: return
             val trueNorth = RadarMath.normalizeDeg(magnetic + declinationDeg)
@@ -159,7 +170,9 @@ class AndroidLocateEngine(
         }
 
         override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
-            if (accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) Log.w(TAG, "locate: compass needs calibration (figure-8)")
+            compassStatus = accuracy
+            Log.i(TAG, "locate: compass status=${statusName(accuracy)}" +
+                if (accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) " (needs calibration: figure-8)" else "")
         }
     }
 
@@ -249,6 +262,14 @@ class AndroidLocateEngine(
 
     private companion object {
         const val TAG = "Proxima"
+        fun statusName(s: Int) = when (s) {
+            SensorManager.SENSOR_STATUS_NO_CONTACT -> "NO_CONTACT"
+            SensorManager.SENSOR_STATUS_UNRELIABLE -> "UNRELIABLE"
+            SensorManager.SENSOR_STATUS_ACCURACY_LOW -> "LOW"
+            SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> "MEDIUM"
+            SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> "HIGH"
+            else -> "?"
+        }
         const val TICK_MS = 100L
         const val GPS_FRESH_MS = 30_000L
         const val RSSI_FRESH_MS = 10_000L
