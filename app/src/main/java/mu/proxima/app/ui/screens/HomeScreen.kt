@@ -65,7 +65,7 @@ import mu.proxima.app.ui.components.Rail
 import mu.proxima.app.ui.components.SimBadge
 import mu.proxima.app.ui.components.rememberReducedMotion
 import mu.proxima.app.ui.label
-import mu.proxima.app.ui.subtypeLabel
+import mu.proxima.app.ui.incidentTitle
 import mu.proxima.app.ui.theme.Px
 import mu.proxima.app.ui.theme.color
 import mu.proxima.app.ui.theme.grotesk
@@ -216,17 +216,16 @@ private fun SosRing(capture: VoiceCapture, onRelease: () -> Unit) {
 /** Secondary destinations: glyph + one-line label, quieter than the report row, full-width halves. */
 @Composable
 private fun LinkCell(glyph: Glyph, label: String, color: androidx.compose.ui.graphics.Color, modifier: Modifier, onClick: () -> Unit) {
-    Row(
+    Column(
         modifier
-            .height(56.dp)
             .clip(RoundedCornerShape(14.dp))
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        GlyphIcon(glyph, color, 20.dp)
-        Spacer(Modifier.width(10.dp))
-        Text(label, style = grotesk(16, FontWeight.Medium, color), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        GlyphIcon(glyph, color, 22.dp)
+        Spacer(Modifier.height(6.dp))
+        Text(label, style = grotesk(15, FontWeight.Medium, color), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -288,7 +287,7 @@ private fun AlertsStrip(open: List<IncidentRecord>, onClick: () -> Unit) {
             )
             if (top != null) {
                 Text(
-                    subtypeLabel(top.incident.subtype) ?: top.incident.type.label(),
+                    incidentTitle(top.incident.type, top.incident.subtype),
                     style = grotesk(15, FontWeight.Medium, Px.Dim),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

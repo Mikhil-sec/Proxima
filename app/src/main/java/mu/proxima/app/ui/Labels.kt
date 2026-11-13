@@ -48,6 +48,14 @@ fun subtypeLabel(code: String?): String? = code?.let {
     subtypeNames[it] ?: it.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase)
 }
 
+/** The one-line headline for an incident everywhere in the UI. */
+fun incidentTitle(type: IncidentType, subtype: String?): String = when (type) {
+    IncidentType.LOST_PERSON -> if (subtype == "CHILD") "Lost child" else "Lost person"
+    IncidentType.FOUND -> "Person found"
+    IncidentType.SIGHTING, IncidentType.ALL_CLEAR -> type.label()
+    else -> subtypeLabel(subtype) ?: type.label()
+}
+
 fun TriageSource.label(): String = when (this) {
     TriageSource.ON_DEVICE_LLM -> "On-device AI"
     TriageSource.OFFLOADED_LLM -> "AI on a nearby phone"

@@ -59,7 +59,7 @@ import mu.proxima.app.ui.components.SimBadge
 import mu.proxima.app.ui.components.rememberReducedMotion
 import mu.proxima.app.ui.label
 import mu.proxima.app.ui.shortNode
-import mu.proxima.app.ui.subtypeLabel
+import mu.proxima.app.ui.incidentTitle
 import mu.proxima.app.ui.theme.Px
 import mu.proxima.app.ui.theme.color
 import mu.proxima.app.ui.theme.grotesk
@@ -408,7 +408,7 @@ private fun CompactRow(r: IncidentRecord, now: Long, selected: Boolean, modifier
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(subtypeLabel(i.subtype) ?: i.type.label(), style = grotesk(16), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(incidentTitle(i.type, i.subtype), style = grotesk(16), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(ageLabel(r.lastUpdatedMs, now), style = mono(12, color = Px.Text))
             }
             Text(i.summary, style = grotesk(13, FontWeight.Medium, Px.Dim), maxLines = 1, overflow = TextOverflow.Ellipsis)

@@ -54,7 +54,7 @@ import mu.proxima.app.ui.components.SimBadge
 import mu.proxima.app.ui.components.VerifiedMark
 import mu.proxima.app.ui.distanceLabel
 import mu.proxima.app.ui.label
-import mu.proxima.app.ui.subtypeLabel
+import mu.proxima.app.ui.incidentTitle
 import mu.proxima.app.ui.theme.Px
 import mu.proxima.app.ui.theme.color
 import mu.proxima.app.ui.theme.grotesk
@@ -139,7 +139,7 @@ fun IncidentRow(record: IncidentRecord, me: GeoPoint?, now: Long, modifier: Modi
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.Top) {
                 Text(
-                    subtypeLabel(i.subtype) ?: i.type.label(),
+                    incidentTitle(i.type, i.subtype),
                     style = grotesk(20),
                     modifier = Modifier.weight(1f),
                 )
@@ -193,8 +193,8 @@ fun IncidentSheet(graph: ProximaGraph, record: IncidentRecord, me: GeoPoint?, on
         },
     ) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).navigationBarsPadding()) {
-            Text(i.type.label(), style = grotesk(15, FontWeight.Medium, i.severity.color()))
-            Text(subtypeLabel(i.subtype) ?: i.type.label(), style = grotesk(28))
+            Text(i.severity.label(), style = grotesk(15, FontWeight.Medium, i.severity.color()))
+            Text(incidentTitle(i.type, i.subtype), style = grotesk(28))
             Spacer(Modifier.height(8.dp))
             Text(i.summary, style = grotesk(17, FontWeight.Medium))
             Spacer(Modifier.height(20.dp))

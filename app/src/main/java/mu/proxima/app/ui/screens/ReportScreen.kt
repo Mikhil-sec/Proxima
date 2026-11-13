@@ -59,7 +59,7 @@ import mu.proxima.app.ui.components.PrimaryAction
 import mu.proxima.app.ui.components.QuietAction
 import mu.proxima.app.ui.components.Rail
 import mu.proxima.app.ui.label
-import mu.proxima.app.ui.subtypeLabel
+import mu.proxima.app.ui.incidentTitle
 import mu.proxima.app.ui.theme.Px
 import mu.proxima.app.ui.theme.color
 import mu.proxima.app.ui.theme.grotesk
@@ -282,8 +282,9 @@ private fun androidx.compose.foundation.layout.ColumnScope.ReviewView(
             Rail(result.severity.color(), Modifier.fillMaxHeight())
             Spacer(Modifier.width(16.dp))
             Column {
-                Text(result.type.label(), style = grotesk(16, FontWeight.Medium, Px.Dim))
-                Text(subtypeLabel(result.subtype) ?: result.type.label(), style = grotesk(32))
+                val title = incidentTitle(result.type, result.subtype)
+                if (title != result.type.label()) Text(result.type.label(), style = grotesk(16, FontWeight.Medium, Px.Dim))
+                Text(title, style = grotesk(32))
                 Spacer(Modifier.height(6.dp))
                 Text(result.severity.label(), style = grotesk(18, FontWeight.Bold, result.severity.color()))
             }
@@ -312,7 +313,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.ReviewView(
         drawRoundRect(Px.Crimson, size = Size(size.width * countdown.value, size.height), cornerRadius = CornerRadius(2.dp.toPx()))
     }
     Spacer(Modifier.height(16.dp))
-    PrimaryAction("Send alert now", ::fire, color = Px.Crimson, enabled = !sending)
+    PrimaryAction(if (sending) "Sending" else "Send alert now", ::fire, color = Px.Crimson, enabled = !sending)
     QuietAction("Cancel", onCancel, Modifier.fillMaxWidth())
     Spacer(Modifier.height(8.dp))
 }
@@ -356,7 +357,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.SentView(
             Rail(incident.severity.color(), Modifier.fillMaxHeight())
             Spacer(Modifier.width(16.dp))
             Column {
-                Text(subtypeLabel(incident.subtype) ?: incident.type.label(), style = grotesk(20))
+                Text(incidentTitle(incident.type, incident.subtype), style = grotesk(20))
                 Text(incident.summary, style = grotesk(15, FontWeight.Medium, Px.Dim))
             }
         }
