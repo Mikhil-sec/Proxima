@@ -59,9 +59,10 @@ ALL_CLEAR and FOUND close the incident named in `relatedIncidentId`.
    `PacketFactory` signs it → `mesh.send` → relays → each node's `pipeline.incidents` → lists, heatmap, Command Center.
 2. **Guided response:** `incident.protocolId` → `ProtocolRepository.byId` → steps read aloud by `VoiceIo.speak`;
    `HelpPointRepository.nearest(location, type.helpCategories)` gives distance and bearing to real facilities.
-3. **Lost & found:** the guardian mints a `WristbandTag` (QR: `PRX1:tagId:guardianKey:ts`, no personal data). The finder scans it,
-   then `pipeline.reportFound(tag)` / `shareLocationWithGuardian(tag)` sends a FoundNotice sealed to `guardianKey`,
-   so relays can't read it. The guardian gets `pipeline.foundNotices`, then `pipeline.trackFinder(notice)` gives a
+3. **Lost & found (no hardware):** the guardian reports a `LOST_PERSON` incident (description only). Every
+   `IncidentRecord` carries the reporter's `originKey`. A finder who is with the person picks that alert and calls
+   `pipeline.reportFound(record)` / `shareLocationWithGuardian(record)`, which sends a FoundNotice (`tagId` = the lost
+   incident id) sealed to `originKey`, so relays can't read it. (`WristbandTag` overloads still exist but are unused.) The guardian gets `pipeline.foundNotices`, then `pipeline.trackFinder(notice)` gives a
    `TrackTarget`, then `locate.track()` gives `RadarFix` (UWB → GPS+compass → RSSI).
 4. **Tier 2 AI offload:** the AI engine sends `TRIAGE_REQUEST` to a Tier 1 peer (`Peer.llmReady`), which answers with `TRIAGE_RESULT`.
    On timeout it falls back to rules. This happens entirely inside `:ai`.
@@ -76,3 +77,4 @@ ALL_CLEAR and FOUND close the incident named in `relatedIncidentId`.
 | Time | Lane | Change | Issue |
 |---|---|---|---|
 | 13:40 Fri | setup | Initial contract | — |
+| 15:40 Fri | UI | `IncidentRecord.originKey`; `reportFound(IncidentRecord)` + `shareLocationWithGuardian(IncidentRecord)`; guardian accepts notices for its own LOST_PERSON reports; SIM finder in FakeMeshEngine | see PR |
