@@ -93,9 +93,13 @@ What it must do (the spec is already written as a test - see below):
    `FakeTrustEngine`, whose `seal()` is recoverable base64 and whose `verify()` accepts anything.
    Proven by `FakeTrustEngineSecurityTest`. Fixed by `TinkTrustEngine`. Reported on #19 and #1.
    **The README has a blocker note about this - its privacy claims must not be submitted until this is true.**
-2. **No CROWD_CRUSH / ELECTRICAL / FALLEN_BRANCH / FLOOD card.** IFRC 2020 has zero crush content; UK HSE is
-   organiser prevention only. Awaiting the lead on #20, now more urgent because #30's feature D raises
-   CROWD_CRUSH incidents. Default is to ship without. **Do not invent these.**
+2. **No CROWD_CRUSH / ELECTRICAL / FALLEN_BRANCH / FLOOD card - DECIDED 18:00 Fri, do not revisit.**
+   Approved by Diya: we ship without them. IFRC 2020 has zero crush content and UK HSE is organiser
+   prevention only, so there is nothing citable. `bestFor` returns null by design. **Do not invent these.**
+   The only remaining work is UI-side: render a hazard with `protocolId == null` and no steps panel (#20,
+   left open for UI to confirm). If someone produces a Mauritian source - St John Ambulance Mauritius, the
+   Fire and Rescue Service, or a printed Ganga Talao briefing sheet - a photo is enough and I can transcribe
+   a cited card in under an hour.
 3. **`protocols.json` has NOT been proof-read by a second member.** The lane requires it before the demo.
 4. **This lane has never run on a phone.** `adb devices` was empty all session; `installDebug` untried.
 5. OSM Mauritius has no assembly points, ambulance stations or defibrillators. `docs/PRODUCT.md` still
@@ -103,7 +107,8 @@ What it must do (the spec is already written as a test - see below):
 
 ### My open asks on other lanes
 - **#11** UI - nearest-help must render kilometre distances (Ganga Talao's nearest help is 8.5 km).
-- **#20** UI/lead - decide the CROWD_CRUSH card before 08:00 freeze.
+- **#20** UI - CROWD_CRUSH card decision is **settled** (no card). Open only until UI confirms it
+  renders a hazard with `protocolId == null` cleanly.
 - **#23** all lanes - one README section each by 10:30 Sat. **I compile it, so chase this.**
 
 ### Machine notes
@@ -145,6 +150,7 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 16:50 Fri | Direction change proposed (blockchain instead of the crypto) and **rejected** after laying out the costs; staying with Ed25519 + HPKE. |
 | 17:00 Fri | **`TrustEngineContractTest` + `FakeTrustEngineSecurityTest` merged (#31).** The spec `TinkTrustEngine` must satisfy, written before the implementation, plus 4 passing tests that prove the fake accepts forged signatures, misses tampering, and base64s instead of encrypting. 33/33 tests. |
 | 17:50 Fri | 👍 #30 (AI: GuideEngine + CrowdRiskEngine). Their guide switches cards **by id**, so pinned `cpr-adult` / `unresponsive-breathing` / `severe-bleeding` / `seizure` with a test - card ids are now a cross-lane API. Warned them feature D raises `CROWD_CRUSH`, which has no card. Escalated #20. 34/34 tests. |
+| 18:00 Fri | CROWD_CRUSH decision **approved**: no card, UI renders hazards with `protocolId == null` and no steps panel. Confirmed on #20; left open until UI confirms the rendering. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -174,3 +180,4 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 16:50 Fri | **Keep Ed25519 + HPKE; do not replace the trust layer with a blockchain** | A blockchain is a replicated *public* log: it gives integrity but zero confidentiality, so a child's location on a ledger is the exact inverse of the product's headline privacy rule. It also needs consensus, and consensus needs connectivity - the one thing Proxima assumes is absent. And blockchains are *built on* Ed25519-style signatures, so it would not have removed any of the work, only added to it at 16:50 Fri with freeze at 08:00 | Replacing sign/seal with a ledger (breaks privacy and cannot run offline); adding a signed `prevHash` chain for tamper-evidence on top (defensible and offline-safe, but a `core/` interface change after the last P0, so deferred rather than dismissed) |
 | 17:00 Fri | Write the `TrustEngine` security contract as an abstract test **before** implementing Tink, and pin the fake's insecurity as passing tests | Two reasons. The contract stops a rushed 03:00 implementation shipping without tamper-rejection or confidentiality, which is exactly what gets dropped under time pressure. And a comment saying "the fake is insecure" never appears in anyone's build, whereas a test does - and it will flip to failing the moment the real engine lands, which is a free reminder to delete it | Implementing first and testing after (the untested property would be the one that matters); documenting the fake's weakness in the lane file only (invisible to other lanes) |
 | 17:50 Fri | Treat the protocol card **ids** as a published cross-lane API and enforce them with a test | #30's hands-free guide switches card by id on a voice command ("he stopped breathing" -> `cpr-adult`). That turns an internal string into an integration contract, and the failure mode is silent - the voice command just stops working, probably mid-demo at 03:00. A test makes a rename break my build instead | Promising it in an issue comment (nothing stops a later rename); asking AI to switch on subtype instead (their condition changes do not map to triage subtypes) |
+| 18:00 Fri | **APPROVED by Diya: ship with no `CROWD_CRUSH` protocol card** (option A on #20). `bestFor` returns null and the UI renders the hazard with no steps panel | No authoritative source exists - IFRC 2020 has zero crush content, UK HSE is organiser prevention only, the rest is blogs. Confirming the default as a deliberate decision rather than letting it stand by silence, so the team can build against it before the 08:00 freeze instead of waiting on a source that is not coming | Option B, waiting for a Mauritian source (St John / Fire & Rescue) - still welcome if one appears, I can transcribe in under an hour; inventing the card (forbidden, and the highest-stakes card in the set) |
