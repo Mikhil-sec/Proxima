@@ -14,6 +14,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val graph = (application as ProximaApp).graph
+        // The manifest handles config changes in place (dark mode at sunset, keyboard, tablet rotation): the back stack
+        // lives in Compose memory, so a recreation would throw a half-written report away.
         // Phones are portrait-locked (one-handed, panicking user); the tablet Command Center rotates freely.
         if (!graph.capabilities.isLargeScreen) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         setContent { ProximaTheme { ProximaRoot(graph) } }
