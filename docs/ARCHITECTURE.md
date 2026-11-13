@@ -84,3 +84,4 @@ ALL_CLEAR and FOUND close the incident named in `relatedIncidentId`.
 | 13:40 Fri | setup | Initial contract | — |
 | 15:40 Fri | UI | `IncidentRecord.originKey`; `reportFound(IncidentRecord)` + `shareLocationWithGuardian(IncidentRecord)`; guardian accepts notices for its own LOST_PERSON reports; SIM finder in FakeMeshEngine | see PR |
 | 19:05 Fri | AI | Additive: `GuideState` + `GuideEngine` (hands-free guided first aid) and `CrowdRiskLevel` + `CrowdRisk` + `CrowdRiskEngine` (crowd-crush early warning) moved from `ai/` into `Domain.kt` / `Engines.kt`. Deprecated typealiases at the old `mu.proxima.ai.guide/crowd` names keep `app/` compiling until its imports switch | #30 |
+| 20:17 Fri | MESH | Additive: `Beacon.role: RolePass?` (role phones only) and `Peer.role` / `Peer.roleLabel`, set only when `trust.verifyRoleClaim(pass, beaconPacket, now)` passes on the receiving phone. Old builds ignore the field; ordinary beacons are unchanged on the wire | #69 (#55) |

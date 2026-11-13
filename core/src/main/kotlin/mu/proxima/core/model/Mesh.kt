@@ -54,6 +54,8 @@ data class Beacon(
     val llmReady: Boolean,
     /** Coarse location only (rounded by sender). */
     val location: GeoPoint? = null,
+    /** Organiser-signed pass of a role phone (#55, #69). Public by design; it only counts together with this beacon's signature. */
+    val role: RolePass? = null,
 )
 
 data class Peer(
@@ -68,6 +70,10 @@ data class Peer(
     val llmReady: Boolean = false,
     /** True if directly connected (1 hop); false if only known via beacons. */
     val direct: Boolean = true,
+    /** Set ONLY when trust.verifyRoleClaim(pass, beaconPacket, now) passed on this phone (#69). Null = ordinary phone. */
+    val role: Role? = null,
+    /** The pass's post label, e.g. "Medic tent 2" (never a person). */
+    val roleLabel: String? = null,
 )
 
 /** One packet crossing one link — drives the live hop visualizer. */
