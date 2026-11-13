@@ -4,7 +4,6 @@ import android.content.Context
 import mu.proxima.core.engine.HelpPointRepository
 import mu.proxima.core.engine.ProtocolRepository
 import mu.proxima.core.engine.TrustEngine
-import mu.proxima.core.fake.EmptyProtocolRepository
 import mu.proxima.core.fake.FakeTrustEngine
 
 /**
@@ -23,8 +22,10 @@ object TrustModule {
      */
     fun createHelpPoints(context: Context): HelpPointRepository = AssetHelpPointRepository(context)
 
-    fun createProtocols(context: Context): ProtocolRepository {
-        // TODO(TRUST): AssetProtocolRepository(context, "data/protocols.json")
-        return EmptyProtocolRepository()
-    }
+    /**
+     * Vetted protocol cards, always real. Transcribed from the IFRC 2020 first aid guidelines with a
+     * citation on each card; `bestFor` returns null for subtypes the source does not cover rather than
+     * substituting an unrelated card.
+     */
+    fun createProtocols(context: Context): ProtocolRepository = AssetProtocolRepository(context)
 }

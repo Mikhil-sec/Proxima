@@ -19,7 +19,7 @@ object MeshModule {
         scope: CoroutineScope,
         simulation: Boolean,
     ): MeshEngine {
-        // TODO(MESH): if (!simulation) return NearbyMeshEngine(context, capabilities, trust, scope)
+        if (!simulation) return NearbyMeshEngine(context, capabilities, trust, scope)
         return FakeMeshEngine(scope)
     }
 }

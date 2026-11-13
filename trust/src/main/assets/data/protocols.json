@@ -1,0 +1,151 @@
+{
+  "_source": "IFRC International first aid, resuscitation, and education guidelines 2020 (EN_GFARC_GUIDELINES_2020.pdf, https://www.ifrc.org/sites/default/files/2022-02/EN_GFARC_GUIDELINES_2020.pdf)",
+  "_transcribedAt": "2026-11-13",
+  "_rules": [
+    "Every step here is transcribed from the IFRC 2020 guidelines. Nothing is written by an AI and nothing is written from memory.",
+    "The AI only SELECTS a card. It never edits, reorders or adds a step.",
+    "Before the demo a second team member must proof-read every card against the cited pages.",
+    "Subtype codes must stay in sync with core/pipeline/RuleTriageEngine.kt."
+  ],
+  "cards": [
+    {
+      "id": "cpr-adult",
+      "title": "Not breathing - start CPR",
+      "appliesTo": ["MEDICAL"],
+      "subtypes": ["CARDIAC_ARREST"],
+      "source": "IFRC 2020, Unresponsive and abnormal breathing (adolescent and adult)",
+      "steps": [
+        { "text": "Ask a bystander to call emergency services now, or call yourself. Put the phone on speaker." },
+        { "text": "Begin chest compressions without delay. Push down on the centre of the chest, fast and regular, 100 to 120 compressions per minute.", "durationSec": 120 },
+        { "text": "Ask a bystander to bring a defibrillator as soon as possible. Follow its voice prompts and interrupt compressions as little as possible." },
+        { "text": "If you are able and willing, combine compressions and rescue breaths at a ratio of 30 compressions to 2 breaths." },
+        { "text": "If another first aid provider is present, swap every one to two minutes to prevent getting tired. Do not interrupt CPR during the swap.", "durationSec": 120 },
+        { "text": "Continue until told to pause by the defibrillator or a professional responder, or until the person coughs, opens their eyes, speaks, moves purposefully and breathes normally." }
+      ]
+    },
+    {
+      "id": "unresponsive-breathing",
+      "title": "Unresponsive but breathing - recovery position",
+      "appliesTo": ["MEDICAL"],
+      "subtypes": ["UNCONSCIOUS"],
+      "source": "IFRC 2020, Unresponsiveness (p. 129)",
+      "steps": [
+        { "text": "Check that they are breathing normally. If the breathing is gasping, irregular or absent, stop and start CPR instead." },
+        { "text": "Move them onto their side and tilt their head back to keep the airway open. This is the recovery position. A baby can be held in this position in your arms, with the head in a neutral position." },
+        { "text": "Call emergency medical services." },
+        { "text": "Monitor their breathing and level of response. If you can, try to establish why they are unresponsive." },
+        { "text": "If you suspect a spine injury, do not roll them. Keep the airway open with a head-tilt-chin-lift or jaw thrust only, and call emergency services." }
+      ]
+    },
+    {
+      "id": "severe-bleeding",
+      "title": "Severe bleeding",
+      "appliesTo": ["MEDICAL"],
+      "subtypes": ["BLEEDING"],
+      "source": "IFRC 2020, Severe bleeding",
+      "steps": [
+        { "text": "Ask the person to press on their own wound with their hands. This lowers infection risk for both of you." },
+        { "text": "Help the person to lie down." },
+        { "text": "Call emergency medical services." },
+        { "text": "Apply direct pressure to the bleed. Use a bandage, cloth or plastic as a barrier between your hand and the blood. If blood soaks through, add a second dressing on top of the first and press harder." },
+        { "text": "If direct pressure is not working and the bleed is on an arm or leg, consider a tourniquet if one is available. If not, consider a haemostatic dressing and keep up the direct pressure." },
+        { "text": "Expect shock after significant bleeding. Keep them lying on their back and keep them warm, wrapping them in clothing if needed." },
+        { "text": "If there is an object embedded in the wound, press around it and try to stabilise it. Do not remove it." },
+        { "text": "If they become unresponsive, open the airway and check breathing." }
+      ]
+    },
+    {
+      "id": "seizure",
+      "title": "Seizure",
+      "appliesTo": ["MEDICAL"],
+      "subtypes": ["SEIZURE"],
+      "source": "IFRC 2020, Seizure",
+      "steps": [
+        { "text": "Move nearby objects away so they cannot hurt themselves. Do not move the person unless they are in immediate danger." },
+        { "text": "Put soft padding, such as a cushion or a sweater, under their head. Remove eyeglasses and loosen tight clothing around the neck. Do not restrain them and do not put anything in their mouth." },
+        { "text": "Note the time the seizure starts and stops, and whether it happens again. Tell emergency services." },
+        { "text": "Call emergency services if they hurt themselves, if it is their first seizure, if the seizure lasts more than five minutes, or if they do not regain responsiveness afterwards.", "durationSec": 300 },
+        { "text": "Also call if the seizures repeat or differ from their usual ones, if they are pregnant or diabetic, if they have a high fever, if alcohol or drugs are involved, or whenever you are in doubt." },
+        { "text": "When the seizure is over, check their breathing and keep checking. Remove the padding if it could block their breathing." },
+        { "text": "If they are breathing normally, move them onto their side and keep the airway open. If breathing is abnormal, start CPR." },
+        { "text": "For a baby or child, also check their temperature. If they are too hot, remove excess clothing and let them have fresh, cool air." }
+      ]
+    },
+    {
+      "id": "heat-illness",
+      "title": "Heat exhaustion and heatstroke",
+      "appliesTo": ["MEDICAL"],
+      "subtypes": ["HEAT_EXHAUSTION"],
+      "source": "IFRC 2020, Hyperthermia (heatstroke) and Dehydration",
+      "steps": [
+        { "text": "Tell them to stop all physical activity. Help them rest in a cool place and remove excess clothing." },
+        { "text": "For severe heatstroke, start cooling immediately. Immerse them in cold water for around 15 minutes, or until their temperature is below 39 degrees Celsius.", "durationSec": 900 },
+        { "text": "If immersion is not possible, use any active cooling you have: a cool wet sheet, wetting them with cold water, ice packs on the neck and groin. Fanning increases the cooling." },
+        { "text": "Call emergency medical services." },
+        { "text": "For mild to moderate heat illness, cool them with whatever is available and give them water to drink. Sports drinks or cold tea may also help." },
+        { "text": "Keep monitoring their temperature and their level of response. Aim to bring the temperature below 39 degrees Celsius." },
+        { "text": "Seek medical advice if they do not improve quickly, if they are a baby, child or older adult, if they are losing more fluid than they take in, or if they pass very little dark urine." }
+      ]
+    },
+    {
+      "id": "fracture",
+      "title": "Fracture, sprain or strain",
+      "appliesTo": ["MEDICAL"],
+      "subtypes": ["FRACTURE"],
+      "source": "IFRC 2020, Fractures, sprains and strains",
+      "steps": [
+        { "text": "Help the person keep the injury still." },
+        { "text": "Support the injury in a comfortable position so it cannot move. Keeping the limb raised may reduce swelling." },
+        { "text": "Apply ice or something cold for up to 20 minutes. Always wrap an ice pack in a cloth. Cooling longer than this can damage the skin.", "durationSec": 1200 },
+        { "text": "Call emergency medical services if there is a lot of pain or swelling, or if the limb is in an abnormal position." },
+        { "text": "If it is an open fracture, your priority is to stop the bleeding first, then stabilise the limb." },
+        { "text": "Reassure the person and keep them comfortable." }
+      ]
+    },
+    {
+      "id": "chest-pain",
+      "title": "Chest pain - suspected heart attack",
+      "appliesTo": ["MEDICAL"],
+      "subtypes": ["CHEST_PAIN"],
+      "source": "IFRC 2020, Chest pain (p. 265)",
+      "steps": [
+        { "text": "Help the person sit down in a comfortable position and take their own medication if they have it." },
+        { "text": "Call emergency services immediately if you suspect a heart attack. Say that you suspect a heart attack so they prioritise the call. Ask a bystander to bring a defibrillator if possible." },
+        { "text": "Suggest they consider chewing a dose of acetylsalicylic acid if a heart attack is suspected. Do not give it if they are allergic to it, have a bleeding disorder, or have already taken the recommended dose." },
+        { "text": "Reassure the person and monitor their breathing and responsiveness." },
+        { "text": "If they become unresponsive with abnormal breathing, start CPR." }
+      ]
+    },
+    {
+      "id": "burns",
+      "title": "Burn",
+      "appliesTo": ["HAZARD", "MEDICAL"],
+      "subtypes": ["FIRE"],
+      "source": "IFRC 2020, Burns (p. 214)",
+      "steps": [
+        { "text": "Cool the burn with clean running water for at least 10 minutes, ideally 20 minutes. Do not use ice-cold water and do not apply ice.", "durationSec": 1200 },
+        { "text": "Call emergency medical services if the burn is large or deep, is near the face, mouth, throat or genitals, or was caused by chemicals, electricity or flames." },
+        { "text": "Remove clothing and jewellery on or near the burn, as long as they are not stuck to the skin." },
+        { "text": "After cooling, cover it with a dressing that keeps moisture in, follows the shape of the wound and does not stick." },
+        { "text": "If you have to move the person to medical care, cover the burn with a wet cloth or plastic cling wrap." },
+        { "text": "Leave any blisters intact and seek medical advice." },
+        { "text": "Reassure the person and monitor their responsiveness, breathing and temperature, especially for a child or an older adult." }
+      ]
+    },
+    {
+      "id": "assess-person",
+      "title": "Assess the person",
+      "appliesTo": ["MEDICAL"],
+      "subtypes": [],
+      "source": "IFRC 2020, Assess the person (p. 102)",
+      "steps": [
+        { "text": "Treat what you find in order of severity. Deal with breathing and circulation first, because those are critical to survival." },
+        { "text": "Call for help if needed." },
+        { "text": "Keep assessing and observing. Watch for any change in their condition." },
+        { "text": "Stay with them until professional medical care takes over." },
+        { "text": "If more than one person is hurt, call emergency services first to warn them it is a potentially critical situation, then call again once you have details." },
+        { "text": "With multiple casualties, quickly assess everyone before treating anyone, and treat the most life-threatening breathing and circulation problems first." }
+      ]
+    }
+  ]
+}
