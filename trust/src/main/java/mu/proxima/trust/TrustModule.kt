@@ -20,6 +20,9 @@ object TrustModule {
         // trust.ownsKey / ownsNodeId, so a guardian's restart mid-search still receives the finder's notices.
         if (simulation) FakeTrustEngine() else TinkTrustEngine(context, KeyRotation.PER_SESSION)
 
+    /** Organiser phone only (holds the adb-pushed organiser key): issues verified-role passes. Null everywhere else. */
+    fun createRoleIssuer(context: Context): RolePassIssuer? = RolePasses.loadIssuer(context)
+
     /**
      * Real OSM dataset, always - there is no simulated variant. 524 Mauritius help points parsed from
      * the raw Overpass extract committed in this module's assets. Loads lazily on first use.

@@ -101,6 +101,18 @@ class RolePassTest {
         }
     }
 
+    /**
+     * The organiser key that SHIPS in the app. parseKeysetWithoutSecret throws on any secret material, so this
+     * fails the build if anyone ever commits the private key in its place.
+     */
+    @Test
+    fun the_shipped_organiser_key_is_public_only() {
+        val shipped = java.io.File("src/main/assets/${RolePasses.ORGANISER_PUBLIC_ASSET}").readText()
+
+        RolePasses.parseOrganiserKey(shipped)
+        assertFalse(shipped.contains("ASYMMETRIC_PRIVATE"))
+    }
+
     @Test
     fun issuer_rejects_labels_that_could_name_or_confuse() {
         val key = medicTent.identity.publicKey

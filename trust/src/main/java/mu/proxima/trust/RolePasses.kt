@@ -29,6 +29,23 @@ object RolePasses {
         null
     }
 
+    /**
+     * The organiser phone's private key, pushed by hand into the app's private files dir (never committed):
+     * `adb push ~/.proxima/organiser_private.json /data/local/tmp/` then
+     * `adb shell run-as mu.proxima.app cp /data/local/tmp/organiser_private.json files/` then
+     * `adb shell rm /data/local/tmp/organiser_private.json`.
+     */
+    const val ORGANISER_PRIVATE_FILE = "organiser_private.json"
+
+    /** A pass issuer if this phone holds the organiser key, else null (every phone but one). */
+    fun loadIssuer(context: Context): RolePassIssuer? {
+        val file = java.io.File(context.filesDir, ORGANISER_PRIVATE_FILE)
+        if (!file.exists()) return null
+        return RolePassIssuer(
+            TinkJsonProtoKeysetFormat.parseKeyset(file.readText(), com.google.crypto.tink.InsecureSecretKeyAccess.get()),
+        )
+    }
+
     /** Parses a public keyset; rejects anything carrying secret material. */
     fun parseOrganiserKey(json: String): KeysetHandle = TinkJsonProtoKeysetFormat.parseKeysetWithoutSecret(json)
 
