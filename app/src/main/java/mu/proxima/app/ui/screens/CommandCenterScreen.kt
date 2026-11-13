@@ -67,8 +67,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
-import mu.proxima.ai.crowd.CrowdRisk
-import mu.proxima.ai.crowd.CrowdRiskLevel
 import mu.proxima.app.ProximaGraph
 import mu.proxima.app.ui.components.MeshStatus
 import mu.proxima.app.ui.components.SimLabel
@@ -80,6 +78,8 @@ import mu.proxima.app.ui.theme.fill
 import mu.proxima.app.ui.theme.semantic
 import mu.proxima.app.ui.theme.sizes
 import mu.proxima.app.ui.theme.spacing
+import mu.proxima.core.model.CrowdRisk
+import mu.proxima.core.model.CrowdRiskLevel
 import mu.proxima.core.model.DeviceTier
 import mu.proxima.core.model.GeoMath
 import mu.proxima.core.model.GeoPoint
