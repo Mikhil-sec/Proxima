@@ -16,4 +16,12 @@ object MeshDemoControls {
     val allowedNeighbours: MutableStateFlow<Set<String>?> = MutableStateFlow(null)
 
     fun allows(nodeId: String): Boolean = allowedNeighbours.value?.contains(nodeId) ?: true
+
+    /**
+     * Acoustic fallback (P2), OFF by default so it never competes with voice SOS for the mic or talks over
+     * the read-aloud steps. When ON and this phone has **no** Nearby link: HIGH/CRITICAL incidents it sends are
+     * also chirped through the speaker (~3.7 s, twice), and the mic listens for chirps from other phones
+     * (app on screen + RECORD_AUDIO needed). A heard SOS enters the mesh as an unverified incident.
+     */
+    val acoustic: MutableStateFlow<Boolean> = MutableStateFlow(false)
 }
