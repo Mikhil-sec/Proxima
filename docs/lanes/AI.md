@@ -20,9 +20,9 @@ Implement `TriageEngine` + `VoiceIo` and return them from `AiModule`. The `TRIAG
 **P1 (M2 23:00)**
 - [~] `LlmTriageEngine` (code + 17 JVM tests done 15:37; on-device validation pending Nano download): few-shot prompt → strict JSON matching `TriageResult` → parse with `ProximaJson` → validate enums;
       6 s timeout → fall back to `RuleTriageEngine`. Fill `subtype` from the codes in `RuleTriageEngine` so protocols match.
-- [ ] Tiered engine: Tier 1 with model loaded = `ON_DEVICE_LLM`; otherwise, if a peer has `llmReady` = `OFFLOAD_TO_PEER`
+- [x] (17:14, 11 JVM tests; not device-tested) Tiered engine: Tier 1 with model loaded = `ON_DEVICE_LLM`; otherwise, if a peer has `llmReady` = `OFFLOAD_TO_PEER`
       (TRIAGE_REQUEST ttl 2, wait ≤5 s for TRIAGE_RESULT); otherwise `RULES_ONLY`.
-- [ ] `TriageServer` on Tier 1: answers TRIAGE_REQUESTs from mesh.inbound.
+- [x] (17:14) `TriageServer` on Tier 1: answers TRIAGE_REQUESTs from mesh.inbound.
 - [~] Kreol keywords (10 `RuleTriageEngineTest` cases pin current EN/FR/Kreol behaviour; native-speaker check still TODO): a Mauritian teammate verifies and extends the list in `RuleTriageEngine`. Add unit tests (`./gradlew :core:test`).
 **P2**
 - [ ] Kreol/French voice input; hazard photo classification (multimodal model) if time allows.
@@ -50,7 +50,12 @@ Steps come from TRUST's cited protocol cards.
   Check: on-device recognizer used? which language picked? Partial/Final arrive? speak works offline (airplane mode)?
 - Bus requests done on lane/ai (not yet on main): #16 (critical words beat a wrong quick button, rules + LLM path),
   #9 (Level ~12 Hz, stopListening → Final with what was heard, ≤2 s). #10 approved (👍), UI owns that PR.
-- Then: Tier 2 offload + `TriageServer` (P1) — coordinate payload/flow with MESH (#3) first.
+- **Tier 2 offload (code done, JVM-tested, not device-tested):** `ai/.../offload/`. Every phone gets `TieredTriageEngine`
+  (local LLM → peer → rules). Tier 1 also runs `TriageServer`: announces readiness on CONTROL/"ai" every 20 s (ttl 2) and
+  answers fresh signed TRIAGE_REQUESTs. Request = text + button only (no location). Peer answers go through
+  `TriagePrompt.sanitize` (no protocolId, valid subtype, #16 rule) + `TriageMerge` safety net, marked OFFLOADED_LLM.
+  No `core/` change: MESH relays every packet kind generically. MESH's `Beacon.llmReady` is still hard-coded false (unused by us).
+  Device test needs 2 phones + Nano on the Tier 1 one: Tier 2 SOS → logcat `offload: answered` on Tier 1.
 - Files touched: `ai/build.gradle.kts`, `ai/src/main/.../AiModule.kt`, `ai/src/main/.../triage/*`, `ai/src/debug/*`, `ai/src/test/*`,
   `core/src/test/.../RuleTriageEngineTest.kt`, `gradle/libs.versions.toml` (+mlkit-genai-prompt),
   `ai/src/main/AndroidManifest.xml`, `ai/src/main/.../voice/*`, `ai/src/test/.../voice/*`.
@@ -64,6 +69,7 @@ Steps come from TRUST's cited protocol cards.
 | 15:37 Fri | LlmTriageEngine + GeminiNanoBackend + TriagePrompt wired into AiModule (Tier 1); 17 ai tests + 10 RuleTriageEngine tests green. |
 | 15:53 Fri | AndroidVoiceIo (offline-first STT + TTS) wired into AiModule; probe gains `--ez voice true`; 25 ai tests green. |
 | 15:56 Fri | Bus: #16 + #9 implemented with tests (42 green), #10 approved. |
+| 17:14 Fri | Tier 2 offload: TieredTriageEngine + TriageServer + LLM-ready announcements; shared sanitize/merge; 40 ai tests green. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -76,4 +82,7 @@ Steps come from TRUST's cited protocol cards.
 | 15:53 Fri | Real VoiceIo even in SIM mode (fake only on emulators without a recognizer) | Voice must be exercised on real phones before the demo; sim flag is about mesh/locate data, not the mic | Fake voice whenever sim=true |
 | 15:56 Fri | #16: quick-button type kept unless the words match a CRITICAL rule of another type; LLM path: model CRITICAL of another type beats the button, and rules CRITICAL overrides an under-rating model | Panicking users tap the wrong button; hop budget depends on severity; under-triage is the dangerous error | Always trusting the button (old behaviour); words always winning (would ignore deliberate button choice for non-critical cases) |
 | 15:56 Fri | #9: hold-to-talk release always ends with Final(best text heard) within 2 s; levels throttled to ~12 Hz | A released SOS button must never lose what the user said; UI ring animates at ~12 Hz | Waiting indefinitely for the recognizer; emitting raw onRmsChanged rate |
+| 17:14 Fri | Helpers advertise LLM readiness via signed CONTROL/"ai" packets every 20 s, not `Beacon.llmReady` | Works today with zero contract change; MESH beacons hard-code llmReady=false and wiring it needs an interface change + MESH work | Interface change on MeshEngine; asking every Tier 1 peer blindly (5 s wasted when none is ready) |
+| 17:14 Fri | Peer triage results are untrusted: signature checked, re-sanitised, protocolId dropped, rules safety net applied | A relay or malicious node could forge a low-severity answer or point at a wrong protocol card | Trusting a signed answer as-is |
+| 17:14 Fri | Offload request carries only text + pressed button (no location); stale (>15 s) requests ignored | Requests are readable by relays; store-and-forward replays old packets to new neighbours | Sending the full RawReport; sealing to a helper key (helpers don't advertise keys) |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |

@@ -49,6 +49,7 @@ object TriagePrompt {
     }
 
     private val lenientJson = Json { isLenient = true; ignoreUnknownKeys = true }
+    private val WHITESPACE = Regex("\\s+")
 
     /**
      * Parses and validates model output. Returns null when type or severity is missing or invalid,
@@ -56,30 +57,49 @@ object TriagePrompt {
      */
     fun parse(raw: String, report: RawReport): TriageResult? {
         val obj = extractJsonObject(raw) ?: return null
+        val type = obj.str("type")?.let { enumOrNull<IncidentType>(it) } ?: return null
+        val severity = obj.str("severity")?.let { enumOrNull<Severity>(it) } ?: return null
+        return sanitize(
+            TriageResult(
+                type = type,
+                severity = severity,
+                subtype = obj.str("subtype"),
+                summary = obj.str("summary").orEmpty(),
+                landmark = obj.str("landmark"),
+                peopleCount = obj.int("peopleCount"),
+                source = TriageSource.ON_DEVICE_LLM,
+                confidence = 0.8f,
+            ),
+            report,
+        )
+    }
 
-        val llmType = obj.str("type")?.let { enumOrNull<IncidentType>(it) } ?: return null
-        var severity = obj.str("severity")?.let { enumOrNull<Severity>(it) } ?: return null
+    /**
+     * Normalises any model-produced result, local or received from a peer, so it can't carry
+     * anything we wouldn't produce ourselves: button rule (#16), valid subtype, lost child = CRITICAL,
+     * clamped text and counts, and NO protocolId (cards are always resolved locally from vetted data).
+     */
+    fun sanitize(result: TriageResult, report: RawReport): TriageResult {
         // A pressed category button wins, same as RuleTriageEngine, unless the model rates a different
         // type CRITICAL (#16: panicking users tap the wrong button; the words win for life-threatening cases).
         val hint = report.typeHint
-        val type = if (hint != null && !(severity == Severity.CRITICAL && llmType != hint)) hint else llmType
+        val type = if (hint != null && !(result.severity == Severity.CRITICAL && result.type != hint)) hint else result.type
 
-        val subtype = normaliseSubtype(type, obj.str("subtype"))
-        if (type == IncidentType.LOST_PERSON && subtype == "CHILD") severity = Severity.CRITICAL
+        val subtype = normaliseSubtype(type, result.subtype)
+        val severity = if (type == IncidentType.LOST_PERSON && subtype == "CHILD") Severity.CRITICAL else result.severity
 
-        val summary = obj.str("summary")?.replace(Regex("\\s+"), " ")?.trim()?.takeIf { it.isNotEmpty() }
-            ?: report.text.trim().replace(Regex("\\s+"), " ")
+        val summary = result.summary.replace(WHITESPACE, " ").trim().takeIf { it.isNotEmpty() }
+            ?: report.text.trim().replace(WHITESPACE, " ")
 
-        return TriageResult(
+        return result.copy(
             type = type,
             severity = severity,
             subtype = subtype,
             summary = summary.take(140),
-            landmark = obj.str("landmark")?.trim()?.take(60)?.takeIf { it.isNotEmpty() },
-            peopleCount = obj.int("peopleCount")?.takeIf { it in 1..999 },
+            landmark = result.landmark?.trim()?.takeUnless { it.isEmpty() || it.equals("null", ignoreCase = true) }?.take(60),
+            peopleCount = result.peopleCount?.takeIf { it in 1..999 },
             protocolId = null, // pipeline resolves via ProtocolRepository.bestFor()
-            source = TriageSource.ON_DEVICE_LLM,
-            confidence = 0.8f,
+            confidence = result.confidence.coerceIn(0f, 1f),
         )
     }
 
