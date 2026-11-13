@@ -122,6 +122,9 @@ encryption in the pitch yet. Protocol cards: 9 IFRC cards on main; crowd crush /
 ## Progress log
 | Time | What |
 |---|---|
+| 18:05 Fri | Command Center crowd density from beacons (25 m cells, shade + count); fixed cell projection drift (hatching was offset). Built; tablet review pending (Tab S6 Lite not on the cable) |
+| 17:58 Fri | #8 done: dev sheet "Demo chain" - switch + tap-to-allow phones (MeshDemoControls.allowedNeighbours); verified untick/re-tick on the Honor |
+| 17:55 Fri | Honor light/dark audit: fixed back stack lost on dark-mode/keyboard config change (configChanges), safe green on buttons, missing SIM badges, keyboard hiding "Check alert", "1 hops", stray ListItem boxes, radar labels unreadable in light, truncated home row, dead chip. designCheck 0, lint clean |
 | 14:40 Fri | Onboarded: build OK, `lane/ui` pushed, M0 wiring check runs on Honor X8b (sim=true, 6 peers) |
 | 14:45 Fri | Design plan + anti-slop checklist + mobile UI guidelines written (this file) |
 | 14:55 Fri | First full UI pass compiles: Home/SOS, Report, Feed, Command Center, Boot, Dev sheet, Wristbands, Finder. Requests #7 TRUST, #8 MESH, #9 AI, interface-change #10 |
@@ -138,6 +141,10 @@ encryption in the pitch yet. Protocol cards: 9 IFRC cards on main; crowd crush /
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
 |---|---|---|---|
+| 17:50 Fri | Activity handles uiMode/keyboard/orientation config changes itself | Honor is on night mode "auto": a report in progress at sunset was thrown away with the back stack; Compose-only activity re-themes in place (Android guidance) | Saveable back stack (Parcelable routes, still loses in-flight capture state) |
+| 17:55 Fri | Mic fallback is a calm tonal note showing the engine's own reason | Not an emergency; red is reserved for SOS; the AI lane's reasons already say what to do | Generic crimson error text |
+| 17:58 Fri | Demo chain switch seeds the allow-list with the phones linked right now | Nothing drops until you untick one, so a misclick can't break the stage mesh | Start from an empty list (drops every link at once) |
+| 18:00 Fri | Density = teal-tinted 25 m cells with a count, under everything else | Density is not severity, so no red/amber; the count makes the shade readable from 2 m; cells, never dots, so no one is placed | Red-amber heatmap (reads as danger); one dot per phone (tracks individuals) |
 | 14:45 Fri | Two visual registers: calm civilian phone screens, terminal look only on Command Center/radar | A panicking parent needs a public-safety sign, not a hacker toy; the terminal look is the stage wow on the tablet | One terminal style everywhere (reads as generic AI "hacker" UI, hurts usability) |
 | 14:45 Fri | Green means meaning only (verified / connected); neutral buttons are white, SOS crimson | Colour has to carry state reliably under stress | Green as the brand/primary colour |
 | 14:48 Fri | Hand-drawn Canvas glyphs, no icon library or emoji | material-icons is not a dependency; one stroke grammar looks crafted | material-icons-extended (+MBs, stock look), emoji |
