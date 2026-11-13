@@ -46,37 +46,37 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 
 
 ## NEXT_SESSION_HANDOFF
-_Saved 18:15 Fri 13 Nov. Branch `lane/trust`, synced with `main`, 51/51 trust tests pass, whole project builds
-(`assembleDebug test :trust:assembleDebugAndroidTest`, 233/233 tasks executed with `--rerun-tasks`)._
+_Saved 19:10 Fri 13 Nov. Branch `lane/trust` == `main` (c0bceaf). 78/78 trust tests, 16/16 core, whole project green._
 
-### `TinkTrustEngine` - DONE 18:10 Fri (all P0s now done)
-Simulation OFF now runs real crypto. Files: `TinkTrustEngine.kt`, `TrustStorage.kt`, `TrustModule.kt`.
-- Ed25519 sign/verify over `signingBytes()`. `verify` checks against the **sender's** key in `originKey`, and
-  rejects a packet unless `originNodeId == NodeIds.derive(originKey)` (no impersonating another node's id).
-- HPKE `DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_256_GCM` seal/open, context info `proxima/sealed/v1`.
-  `seal` to an unusable key **throws** `IllegalArgumentException` - never falls back to plaintext.
-- Keysets via `AndroidKeysetManager`, master key `android-keystore://proxima_trust_master_key`,
-  prefs `proxima_trust_keysets`. Wristband tags in prefs `proxima_trust_wristbands`.
-- Each public half = a Tink public keyset serialized without secrets, base64. `publicKey` = **317 chars**,
-  pinned <= 400 by a test. Signature ~92 chars. Sealed payload = plaintext + ~53 bytes, base64.
-- Storage is behind `KeysetStore` / `WristbandStore` so the crypto is JVM-testable.
+### State of #38 (committed to the lead at 19:05: per-session identity + roles tonight, friend find only if both merge by ~01:00)
+**1. Per-session identity - code DONE, waiting on review.**
+- **Part A merged (#50), no runtime change.** `KeyRotation.PER_SESSION | STABLE` in `TinkTrustEngine`: fresh keysets per
+  session, previous sessions kept **24 h, max 10**, older ones + legacy stable keysets destroyed. `ownsKey` / `ownsNodeId`.
+  `KeysetStore` gained `names()` / `delete()`. The contract runs under both policies (`TinkTrustEngineTest` = per-session,
+  `TinkTrustEngineStableTest`) + `TinkKeyRotationTest` (5). New contract test: a notice sealed before a restart opens after.
+- **Part B = interface change #51, PR #52 (`iface/session-identity`) - DO NOT MERGE until UI + MESH 👍 on #51.** Adds
+  `TrustEngine.ownsKey/ownsNodeId` (defaults = equality, fake unchanged), uses them in `IncidentPipeline` (SEALED recipient
+  check + `mineLost`), flips `TrustModule` to `PER_SESSION`, updates `docs/ARCHITECTURE.md`, adds a `LostAndFoundTest`
+  restart case that **fails with the old lines** (checked by reverting). When 👍 arrive: `git fetch`, merge main into the
+  branch if needed, re-run `./gradlew assembleDebug test`, `gh pr merge 52 --merge`, then run
+  `:trust:connectedDebugAndroidTest` on the S24 (per-session storage has only run on the JVM so far), comment #51/#38/#1.
+- Open question to MESH on #38/#51: can a peer id change *mid-session*? If yes, timed rotation (~30 min) is a small
+  follow-up in `TinkTrustEngine` (new session on a timer); if not, we ship per-launch and say so honestly.
+- **Gap reported, not mine to fix:** `IncidentPipeline._incidents` is in-memory, so after a restart the guardian only
+  recognises their own lost report once a neighbour re-forwards it (stated on #51).
 
-Tests: `TrustEngineContractTest` moved to **`src/testFixtures`** (a dir cannot be shared between `test` and
-`androidTest` since AGP 7.2). Runs as `TinkTrustEngineTest` (JVM, 21 tests, every `:trust:test`) and
-`TinkTrustEngineKeystoreTest` (`src/androidTest`, Keystore + "simulation OFF is never the fake").
-Method names are underscored because D8 rejects spaces in names below DEX 040 (minSdk 26).
-`FakeTrustEngineSecurityTest` deleted: it built the fake directly, so it could never have flipped to failing
-as the old handoff claimed.
-
-### THE ONE THING THAT MATTERS NEXT
-**On-device: done for the Keystore.** 18:36 Fri, `./gradlew :trust:connectedDebugAndroidTest` on the Galaxy S24 Ultra
-(SM-S928B, Android 17): **21 tests, 0 failed**. 18:50: also **21/21 on the Honor LLY-LX2 (X8b family, Android 14)**,
-run via `adb -s <serial> shell am instrument -w -r mu.proxima.trust.test/androidx.test.runner.AndroidJUnitRunner`
-because that phone has logcat switched off entirely (0 lines), so the TestRunner-tag method shows nothing there. Gradle prints no per-test lines for connected tests and `build/` is
-deny-listed, so read results with `adb logcat -d -s TestRunner:* | grep -E "started:|failed:|run finished"`.
-Remaining: one two-phone sealed found-notice with simulation OFF (needs MESH, asked on #19) - after everyone is on one build.
-**Committed on #38 (19:05):** per-session identity by ~21:30, then verified roles by ~00:30, friend find only if both merge by ~01:00.
-Then: chase #23 (README sections due 10:30 Sat), and get `protocols.json` proof-read (gap 3 below).
+### THE ONE THING THAT MATTERS NEXT: verified roles (#38 item 2, promised ~00:30)
+Needs its own `interface-change` issue FIRST (none opened yet). Plan:
+1. Issue with exact Kotlin: in `core/model`: `enum class Role { MEDIC, STEWARD, POLICE }`, `@Serializable data class
+   RolePass(role, holderKey, label, expiresAtMs, organiserSig)` with `signingBytes()` prefixed `"proxima-rolepass-v1|"`;
+   on `TrustEngine`: `fun verifyRoleClaim(pass: RolePass, packet: MeshPacket, nowMs: Long): Boolean = false` (default false
+   so the fake never shows a role) - true only if the organiser signature verifies, not expired, `packet.originKey ==
+   pass.holderKey` AND `verify(packet)` (stops replaying an overheard pass).
+2. TRUST: role phones construct with `KeyRotation.STABLE` (a pass binds to `holderKey`). Organiser public keyset in
+   `trust/src/main/assets/` (safe to commit); organiser PRIVATE keyset only via `adb push`, never committed (CLAUDE.md 9).
+   Issuing helper for the organiser phone. **Context7 first** for Tink JSON keyset parsing of the pushed private key.
+3. MESH adds `role` + `pass` to the beacon; UI draws it (map + nearest help). Ask them on the issue.
+Still owed after that: two-phone found-notice (after everyone is on one build), #23 README chase, #45 proof-read.
 
 ### What works, merged to `main`, verified
 - **Dataset** `trust/src/main/assets/data/osm_help_points_raw.json` - 524 real Mauritius OSM features (ODbL),
@@ -166,6 +166,9 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 18:12 Fri | Found + fixed two build traps on the way: AGP 7.2+ forbids sharing one test dir between `test` and `androidTest` (-> test fixtures), and D8 rejects backtick test names below DEX 040 (-> underscores). Test logging now prints failure messages. |
 | 18:36 Fri | **First on-device run of this lane.** `:trust:connectedDebugAndroidTest` on the S24 Ultra (Android 17): 21/21 pass under the real Android Keystore, incl. `simulationOffUsesTheRealEngine`. Read via the `TestRunner` logcat tag since Gradle prints no per-test lines for connected tests. |
 | 18:50 Fri | Keystore contract **21/21 on the Honor LLY-LX2** (Android 14) too, via `am instrument` since that phone logs nothing to logcat. Found that the app classes it **TIER1** (7.47 GiB >= 7.0), so neither test phone is Tier 2 - reported to UI. Two-phone mesh test deferred until all lanes are on one build. |
+| 19:00 Fri | Bus: closed #11, nudged #23 (UI/MESH/AI owe sections), opened #45 (AI to proof-read protocols), told UI the Honor is TIER1 (#2), warned MESH the Honor has no logcat (#19). Docs merged (#43). |
+| 19:05 Fri | Answered #38: per-session identity + roles tonight, friend find only if both merge by ~01:00. |
+| 19:08 Fri | **Per-session identity part A merged (#50)**, no runtime change. 78/78. Part B (core) up as interface change **#51 / PR #52**, held for 👍. Restart test proven to fail on the old pipeline. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -203,3 +206,6 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 18:10 Fri | Delete `FakeTrustEngineSecurityTest` even though it still passes | It constructed the fake directly, so it could never have flipped to failing when Tink landed, which was its whole purpose. Its real job (catching simulation-OFF handing out the fake) now belongs to `simulationOffUsesTheRealEngine` | Keeping it (its header would then be false); rewriting it (it would only re-prove a dev-only fake is insecure) |
 | 18:10 Fri | Keep two deprecated `TinkProtoKeysetFormat` calls, warnings visible | Context7 documents the methods but not their 1.24 replacement. Guessing a crypto API to silence a warning is the exact failure section 3 exists to prevent | Suppressing the warning (hides it from whoever can fix it); guessing a replacement |
 | 19:05 Fri | **#38: commit to per-session identity + verified roles tonight; friend find only if both merge by ~01:00** (approved by Diya) | Per-session ids fix a real tracking hole (stable nodeId + 25 m beacon cell). Roles close the 8.5 km help gap with real, signed data and are this lane's P2 anyway. Friend find is the biggest (~4h), depends on per-session ids, and is the feature most likely to be challenged against "never track individuals". Design constraints posted: retired encryption keys kept 24h so lost & found survives a restart; role phones keep a stable key; a role claim must also be signed by `holderKey` | All three (~8h, no slack before the 08:00 freeze); only the privacy fix (leaves the 8.5 km gap open); per-launch keys with no retired-key window (a guardian's restart would silently lose the finder's notices) |
+| 19:06 Fri | Split per-session identity into **A (TRUST-only, merged) and B (core interface change, held for 👍)**, and keep the app on `STABLE` until B lands | The pipeline checks `recipientKey == identity.publicKey` and `reporterNodeId == selfNodeId`, so rotating keys alone would silently drop a guardian's found-notices after a restart - worse than the tracking it fixes. Shipping A first lets the engine work be reviewed and merged without changing behaviour | Rotating now and fixing the pipeline later (a regression in the hero flow in the meantime); changing `core/` without an issue (CLAUDE.md 1 forbids it) |
+| 19:06 Fri | Keep previous sessions' keys **24 h, max 10**, on the phone only | One event day covers a search; private keys never leave the device, so retention does not link sessions for anyone else. The cap bounds how many keys `open()` tries per notice | No retention (a restart loses the notices); indefinite retention (an old key would outlive the event for no reason) |
+| 19:07 Fri | New `TrustEngine` methods get **default implementations** (equality), and the pipeline keeps the `mesh.selfNodeId` check alongside | Defaults leave `FakeTrustEngine` and simulation untouched, so the interface change is two lines of behaviour. In simulation the fake mesh and fake trust ids differ, so dropping the old check would break sim lost & found | Abstract methods (every fake must change); replacing the selfNodeId check (breaks simulation) |
