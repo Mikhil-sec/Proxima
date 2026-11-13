@@ -16,7 +16,7 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
       Optionally cross-check health facilities with data.govmu.org.
 - [x] `AssetHelpPointRepository`: parse OSM → `HelpPoint` (amenity/emergency → `HelpCategory`, source "OpenStreetMap (ODbL)"),
       `nearest()` with `GeoMath`. Unit test with a known location.
-- [ ] `TinkTrustEngine` (**Context7: Tink**): Ed25519 sign/verify of `MeshPacket.signingBytes()`; HPKE (X25519) hybrid seal/open;
+- [x] `TinkTrustEngine` (**Context7: Tink**) **DONE 18:10 Fri** - JVM-verified, not yet run on a phone: Ed25519 sign/verify of `MeshPacket.signingBytes()`; HPKE (X25519) hybrid seal/open;
       keysets persisted with the Android Keystore. `identity.publicKey` must carry both public keys (e.g. `sigB64.encB64`);
       `nodeId` = first 8 hex chars of SHA-256(publicKey). Tell MESH it must use this nodeId.
 **P1 (M2/M3)**
@@ -46,25 +46,33 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 
 
 ## NEXT_SESSION_HANDOFF
-_Saved 17:55 Fri 13 Nov. Branch `lane/trust`, synced with `main`, 34/34 tests pass, whole project builds._
+_Saved 18:15 Fri 13 Nov. Branch `lane/trust`, synced with `main`, 51/51 trust tests pass, whole project builds
+(`assembleDebug test :trust:assembleDebugAndroidTest`, 233/233 tasks executed with `--rerun-tasks`)._
+
+### `TinkTrustEngine` - DONE 18:10 Fri (all P0s now done)
+Simulation OFF now runs real crypto. Files: `TinkTrustEngine.kt`, `TrustStorage.kt`, `TrustModule.kt`.
+- Ed25519 sign/verify over `signingBytes()`. `verify` checks against the **sender's** key in `originKey`, and
+  rejects a packet unless `originNodeId == NodeIds.derive(originKey)` (no impersonating another node's id).
+- HPKE `DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_256_GCM` seal/open, context info `proxima/sealed/v1`.
+  `seal` to an unusable key **throws** `IllegalArgumentException` - never falls back to plaintext.
+- Keysets via `AndroidKeysetManager`, master key `android-keystore://proxima_trust_master_key`,
+  prefs `proxima_trust_keysets`. Wristband tags in prefs `proxima_trust_wristbands`.
+- Each public half = a Tink public keyset serialized without secrets, base64. `publicKey` = **317 chars**,
+  pinned <= 400 by a test. Signature ~92 chars. Sealed payload = plaintext + ~53 bytes, base64.
+- Storage is behind `KeysetStore` / `WristbandStore` so the crypto is JVM-testable.
+
+Tests: `TrustEngineContractTest` moved to **`src/testFixtures`** (a dir cannot be shared between `test` and
+`androidTest` since AGP 7.2). Runs as `TinkTrustEngineTest` (JVM, 21 tests, every `:trust:test`) and
+`TinkTrustEngineKeystoreTest` (`src/androidTest`, Keystore + "simulation OFF is never the fake").
+Method names are underscored because D8 rejects spaces in names below DEX 040 (minSdk 26).
+`FakeTrustEngineSecurityTest` deleted: it built the fake directly, so it could never have flipped to failing
+as the old handoff claimed.
 
 ### THE ONE THING THAT MATTERS NEXT
-**`TinkTrustEngine`.** It is the last P0, MESH is blocked on it (#19), and until it lands the product's
-headline privacy claim is false. **Check Context7 is loaded before writing a line of it** (CLAUDE.md section 3):
-the tools are `resolve-library-id` / `query-docs`. It is registered at **user** scope and reports Connected, so
-it should appear now. If it does not, do NOT write Tink from memory - say so and stop.
-
-What it must do (the spec is already written as a test - see below):
-- Ed25519 sign/verify over `MeshPacket.signingBytes()`.
-- HPKE (X25519) seal/open.
-- Keysets persisted via the **Android Keystore**, so identity survives restart.
-- `identity.publicKey = NodeIds.publicKey(sigB64, encB64)`; `identity.nodeId = NodeIds.derive(publicKey)`.
-  **Both helpers already exist and are tested - use them, do not re-derive.**
-- Then flip `TrustModule.createTrust`: `if (!simulation) return TinkTrustEngine(context)`.
-- Then `class TinkTrustEngineTest : TrustEngineContractTest() { override fun newEngine() = ... }` in
-  **`src/androidTest`** (the Keystore needs a real `Context`, so it is instrumented, not JVM).
-- Then **delete `FakeTrustEngineSecurityTest`** - it will start failing, which is the intended signal.
-- Then comment on #19 and #1 that simulation-OFF is now genuinely signed and sealed.
+**Run it on a phone.** Plug in the S24, then `./gradlew :trust:connectedDebugAndroidTest`. Nothing in this lane
+has ever run on a device, and the Keystore path is only compiled, not executed. Then one two-phone found-notice
+with simulation OFF (needs MESH). README has a "check before submitting" note tied to this.
+After that: chase #23 (README sections due 10:30 Sat), and get `protocols.json` proof-read (gap 3 below).
 
 ### What works, merged to `main`, verified
 - **Dataset** `trust/src/main/assets/data/osm_help_points_raw.json` - 524 real Mauritius OSM features (ODbL),
@@ -89,10 +97,9 @@ What it must do (the spec is already written as a test - see below):
   (`ttl` / `hopCount` / `path` must stay outside `signingBytes()`).
 
 ### Known gaps, all deliberate and logged
-1. **Simulation-OFF is not demo-safe.** `TrustModule.createTrust` ignores the flag and returns
-   `FakeTrustEngine`, whose `seal()` is recoverable base64 and whose `verify()` accepts anything.
-   Proven by `FakeTrustEngineSecurityTest`. Fixed by `TinkTrustEngine`. Reported on #19 and #1.
-   **The README has a blocker note about this - its privacy claims must not be submitted until this is true.**
+1. ~~Simulation-OFF is not demo-safe.~~ **Fixed 18:10 Fri** by `TinkTrustEngine`. Remaining: never run on a
+   device (see THE ONE THING). Also: two `TinkProtoKeysetFormat` calls are deprecated in Tink 1.24; Context7
+   does not document the replacement, so they stay, with warnings visible, until it can be checked.
 2. **No CROWD_CRUSH / ELECTRICAL / FALLEN_BRANCH / FLOOD card - DECIDED 18:00 Fri, do not revisit.**
    Approved by Diya: we ship without them. IFRC 2020 has zero crush content and UK HSE is organiser
    prevention only, so there is nothing citable. `bestFor` returns null by design. **Do not invent these.**
@@ -151,6 +158,9 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 17:00 Fri | **`TrustEngineContractTest` + `FakeTrustEngineSecurityTest` merged (#31).** The spec `TinkTrustEngine` must satisfy, written before the implementation, plus 4 passing tests that prove the fake accepts forged signatures, misses tampering, and base64s instead of encrypting. 33/33 tests. |
 | 17:50 Fri | 👍 #30 (AI: GuideEngine + CrowdRiskEngine). Their guide switches cards **by id**, so pinned `cpr-adult` / `unresponsive-breathing` / `severe-bleeding` / `seizure` with a test - card ids are now a cross-lane API. Warned them feature D raises `CROWD_CRUSH`, which has no card. Escalated #20. 34/34 tests. |
 | 18:00 Fri | CROWD_CRUSH decision **approved**: no card, UI renders hazards with `protocolId == null` and no steps panel. Confirmed on #20; left open until UI confirms the rendering. |
+| 18:05 Fri | Context7 confirmed loaded (`resolve-library-id` / `query-docs`). Tink APIs checked there; a `javap` look at the jar was refused by the permission layer, so anything Context7 did not document was designed around rather than guessed. |
+| 18:10 Fri | **`TinkTrustEngine` done and wired** for simulation OFF. Contract moved to `src/testFixtures`, strengthened (cross-device, impersonation, key substitution, bit-flip, unusable key) and passing 21/21 on the JVM. 51/51 trust tests; whole project green. Instrumented test compiles; no device to run it. |
+| 18:12 Fri | Found + fixed two build traps on the way: AGP 7.2+ forbids sharing one test dir between `test` and `androidTest` (-> test fixtures), and D8 rejects backtick test names below DEX 040 (-> underscores). Test logging now prints failure messages. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -181,3 +191,9 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 17:00 Fri | Write the `TrustEngine` security contract as an abstract test **before** implementing Tink, and pin the fake's insecurity as passing tests | Two reasons. The contract stops a rushed 03:00 implementation shipping without tamper-rejection or confidentiality, which is exactly what gets dropped under time pressure. And a comment saying "the fake is insecure" never appears in anyone's build, whereas a test does - and it will flip to failing the moment the real engine lands, which is a free reminder to delete it | Implementing first and testing after (the untested property would be the one that matters); documenting the fake's weakness in the lane file only (invisible to other lanes) |
 | 17:50 Fri | Treat the protocol card **ids** as a published cross-lane API and enforce them with a test | #30's hands-free guide switches card by id on a voice command ("he stopped breathing" -> `cpr-adult`). That turns an internal string into an integration contract, and the failure mode is silent - the voice command just stops working, probably mid-demo at 03:00. A test makes a rename break my build instead | Promising it in an issue comment (nothing stops a later rename); asking AI to switch on subtype instead (their condition changes do not map to triage subtypes) |
 | 18:00 Fri | **APPROVED by Diya: ship with no `CROWD_CRUSH` protocol card** (option A on #20). `bestFor` returns null and the UI renders the hazard with no steps panel | No authoritative source exists - IFRC 2020 has zero crush content, UK HSE is organiser prevention only, the rest is blogs. Confirming the default as a deliberate decision rather than letting it stand by silence, so the team can build against it before the 08:00 freeze instead of waiting on a source that is not coming | Option B, waiting for a Mauritian source (St John / Fire & Rescue) - still welcome if one appears, I can transcribe in under an hour; inventing the card (forbidden, and the highest-stakes card in the set) |
+| 18:05 Fri | Public keys travel as **Tink public keysets serialized without secrets** (317 chars), not raw 32-byte keys | Importing raw key bytes needs `Ed25519PublicKey.create` / `HpkePublicKey.create`, which Context7 does not document, and CLAUDE.md forbids writing crypto APIs from memory. The keyset format is documented, and Tink itself parses a peer's key, so there is no hand-rolled byte handling on attacker-supplied input | Raw 32-byte keys (88 chars total, but undocumented factories); JSON keyset format (documented, but roughly twice the size in every packet) |
+| 18:05 Fri | `verify()` also requires `originNodeId == NodeIds.derive(originKey)` | A signature only proves *some* key signed the packet. Without this check an attacker signs validly with their own key while claiming the victim's node id, which defeats MESH's allow-list (#8) and the README's "a node id cannot be forged" claim. Pinned by an impersonation test | Trusting `originNodeId` as sent (forgeable); keying the allow-list on full public keys (MESH already built it on node ids) |
+| 18:05 Fri | `seal()` to an unusable recipient key **throws** instead of returning something | The interface returns a String, so a quiet fallback is tempting, but the only safe failure for a child's location is to not send it. A crash in testing is far better than a readable notice on the mesh | Returning an empty/marker string (the pipeline would mesh it as if sealed); falling back to the fake's base64 (exactly the bug this replaces) |
+| 18:08 Fri | Put key storage behind a `KeysetStore` seam and run the full security contract on the **JVM**, with the Keystore covered by a separate instrumented test | No phone has ever been connected to this laptop, so an instrumented-only spec would mean shipping crypto whose security properties were never executed. The JVM run still re-serializes keysets on every load, so "restart" is real | Instrumented-only tests (would have run zero times before the freeze); Robolectric (new dependency, and its Keystore is a shadow, so it proves nothing more) |
+| 18:10 Fri | Delete `FakeTrustEngineSecurityTest` even though it still passes | It constructed the fake directly, so it could never have flipped to failing when Tink landed, which was its whole purpose. Its real job (catching simulation-OFF handing out the fake) now belongs to `simulationOffUsesTheRealEngine` | Keeping it (its header would then be false); rewriting it (it would only re-prove a dev-only fake is insecure) |
+| 18:10 Fri | Keep two deprecated `TinkProtoKeysetFormat` calls, warnings visible | Context7 documents the methods but not their 1.24 replacement. Guessing a crypto API to silence a warning is the exact failure section 3 exists to prevent | Suppressing the warning (hides it from whoever can fix it); guessing a replacement |
