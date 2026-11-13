@@ -12,6 +12,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    // Triage accuracy eval (ai/eval/README.md): off unless -PproximaEval=export|score is passed.
+    testOptions.unitTests.all {
+        it.systemProperty("proxima.eval", providers.gradleProperty("proximaEval").getOrElse(""))
+    }
 }
 
 dependencies {
