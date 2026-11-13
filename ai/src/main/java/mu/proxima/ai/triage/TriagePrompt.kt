@@ -139,14 +139,16 @@ object TriagePrompt {
 
     /** Minimum severity per subtype, matching RuleTriageEngine's rules (keep in sync). */
     private val SEVERITY_FLOOR = mapOf(
-        "CARDIAC_ARREST" to Severity.CRITICAL, "UNCONSCIOUS" to Severity.CRITICAL,
-        "CROWD_CRUSH" to Severity.CRITICAL, "FIRE" to Severity.CRITICAL,
-        "SEIZURE" to Severity.HIGH, "BLEEDING" to Severity.HIGH, "CHEST_PAIN" to Severity.HIGH, "ELECTRICAL" to Severity.HIGH,
+        "CARDIAC_ARREST" to Severity.CRITICAL, "UNCONSCIOUS" to Severity.CRITICAL, "SEIZURE" to Severity.CRITICAL,
+        "CROWD_CRUSH" to Severity.CRITICAL, "FIRE" to Severity.CRITICAL, "ELECTRICAL" to Severity.CRITICAL,
+        "BLEEDING" to Severity.HIGH, "CHEST_PAIN" to Severity.HIGH,
     )
 
-    private fun floorFor(type: IncidentType, subtype: String?): Severity = when {
-        type == IncidentType.LOST_PERSON && subtype == "CHILD" -> Severity.CRITICAL
-        type == IncidentType.MEDICAL || type == IncidentType.HAZARD -> SEVERITY_FLOOR[subtype] ?: Severity.LOW
+    private fun floorFor(type: IncidentType, subtype: String?): Severity = when (type) {
+        IncidentType.LOST_PERSON -> if (subtype == "CHILD") Severity.CRITICAL else Severity.HIGH
+        IncidentType.FOUND -> Severity.HIGH // same as RuleTriageEngine: a found person needs reuniting now
+        IncidentType.SIGHTING -> Severity.MEDIUM
+        IncidentType.MEDICAL, IncidentType.HAZARD -> SEVERITY_FLOOR[subtype] ?: Severity.LOW
         else -> Severity.LOW
     }
 

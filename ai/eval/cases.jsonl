@@ -42,3 +42,15 @@
 {"id":"ho10","lang":"en","hint":"HAZARD","text":"a man is lying there not breathing","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["CARDIAC_ARREST"]}
 {"id":"ho11","lang":"en","text":"a teenager cut his hand badly on broken glass, lots of blood","types":["MEDICAL"],"severities":["HIGH","CRITICAL"],"subtypes":["BLEEDING"]}
 {"id":"ho12","lang":"en","text":"an elderly lady seems lost and confused, sitting alone at the bus stop","types":["SIGHTING","FOUND","LOST_PERSON"],"severities":["MEDIUM","HIGH"],"subtypes":["ELDERLY"]}
+{"id":"fs01","lang":"mfe","hint":"MEDICAL","text":"mo mama ena douler dan lestoma li pe transpire boukou","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["CHEST_PAIN"]}
+{"id":"fs02","lang":"mfe","text":"ena enn ti garson pe plore tousel pre kot stati shiva","types":["SIGHTING"],"severities":["HIGH"],"subtypes":["CHILD"]}
+{"id":"fs03","lang":"mfe","hint":"HAZARD","text":"difé dan bwa deryer bann tant lafime pe monte","types":["HAZARD"],"severities":["CRITICAL"],"subtypes":["FIRE"]}
+{"id":"fs04","lang":"mfe","hint":"MEDICAL","text":"mo granper inn tonbe so lipie kase li pa kapav marse","types":["MEDICAL"],"severities":["HIGH"],"subtypes":["FRACTURE"]}
+{"id":"fs05","lang":"mfe","text":"foul la pe pouse tro for pre kot stage dimoun pe tase","types":["HAZARD"],"severities":["CRITICAL"],"subtypes":["CROWD_CRUSH"]}
+{"id":"fs06","lang":"en","text":"found an old lady confused near the main gate and doesnt know where she is","types":["FOUND"],"severities":["HIGH"],"subtypes":["ELDERLY"]}
+{"id":"fs07","lang":"en","hint":"MEDICAL","text":"guy having a seizure by the food stalls and is shaking on the ground","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["SEIZURE"]}
+{"id":"fs08","lang":"en","hint":"HAZARD","text":"live wire hanging down from a pole near the wet path","types":["HAZARD"],"severities":["CRITICAL"],"subtypes":["ELECTRICAL"]}
+{"id":"fs09","lang":"fr","hint":"MEDICAL","text":"mon fils de 5 ans a disparu pres du lac et il porte un t-shirt bleu","types":["LOST_PERSON"],"severities":["CRITICAL"],"subtypes":["CHILD"]}
+{"id":"fs10","lang":"fr","hint":"MEDICAL","text":"quelqu'un s'est evanoui a cause de la chaleur et il ne repond pas","types":["MEDICAL"],"severities":["CRITICAL"],"subtypes":["HEAT_EXHAUSTION","UNCONSCIOUS"]}
+{"id":"fs11","lang":"fr","hint":"HAZARD","text":"une grosse branche est tombee sur le chemin mais personne n'est blesse","types":["HAZARD"],"severities":["MEDIUM"],"subtypes":["FALLEN_BRANCH"]}
+{"id":"fs12","lang":"fr","text":"finalement on a retrouve ma soeur et tout va bien merci","types":["ALL_CLEAR"],"severities":["LOW"],"subtypes":[]}
