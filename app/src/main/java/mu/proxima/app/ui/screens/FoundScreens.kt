@@ -131,13 +131,17 @@ private fun rangeFor(d: Double): Double =
 fun RadarScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav, lostId: String) {
     val notice = lostFound.notices[lostId] ?: run { LaunchedEffect(Unit) { nav.back() }; return }
     val fixes = remember(lostId) { graph.locate.track(graph.pipeline.trackFinder(notice, "Your child")) }
-    RadarView("Finding your child", fixes, notice.landmark, "We're together", onDone = { reunite(graph, nav, lostId) }, onBack = nav::back)
+    val me by graph.locate.selfLocation.collectAsStateWithLifecycle()
+    RadarView("Finding your child", fixes, notice.landmark, "We're together", onDone = { reunite(graph, nav, lostId) }, onBack = nav::back, ownFix = me != null)
 }
 
 /** The radar itself, shared by lost & found (the finder's sealed positions) and My people (a friend's last-heard cell). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RadarView(title: String, fixes: Flow<RadarFix>, note: String?, doneLabel: String, onDone: () -> Unit, onBack: () -> Unit) {
+fun RadarView(
+    title: String, fixes: Flow<RadarFix>, note: String?, doneLabel: String, onDone: () -> Unit, onBack: () -> Unit,
+    ownFix: Boolean = true,
+) {
     val haptics = LocalHapticFeedback.current
     val fix by fixes.collectAsStateWithLifecycle(initialValue = null)
 
@@ -185,6 +189,15 @@ fun RadarView(title: String, fixes: Flow<RadarFix>, note: String?, doneLabel: St
                 color = if (fix?.proximity == Proximity.HERE) MaterialTheme.semantic.safe else MaterialTheme.colorScheme.onSurface,
             )
             note?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            // No spinner on a blank screen: if this phone doesn't know where it is, say why and what to do.
+            if (fix == null && !ownFix) {
+                Spacer(Modifier.height(MaterialTheme.spacing.md))
+                Text(
+                    "This phone doesn't know where it is yet. Step outside or near a window: GPS is weak indoors.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.semantic.caution,
+                )
+            }
             if (fix != null && fix?.relativeBearingDeg == null && fix?.bearingDeg != null) {
                 Text("No compass on this phone: the map is north-up.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.semantic.caution)
             }
