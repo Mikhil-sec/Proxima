@@ -24,9 +24,11 @@ object TriageMerge {
             )
         }
         val rulesMatched = rules.confidence >= 0.6f && rules.type == llm.type
-        val severity = if (rulesMatched && rules.severity > llm.severity) rules.severity else llm.severity
+        val rulesRaise = rulesMatched && rules.severity > llm.severity
         return llm.copy(
-            severity = severity,
+            severity = if (rulesRaise) rules.severity else llm.severity,
+            // The rule that raised severity explains it (e.g. lost PERSON → lost CHILD), so its subtype wins.
+            subtype = if (rulesRaise && rules.subtype != null) rules.subtype else llm.subtype,
             landmark = llm.landmark ?: rules.landmark,
             peopleCount = llm.peopleCount ?: rules.peopleCount,
             confidence = if (rulesMatched) 0.9f else llm.confidence,

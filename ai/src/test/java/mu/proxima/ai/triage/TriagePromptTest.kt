@@ -94,4 +94,47 @@ class TriagePromptTest {
         val u = TriagePrompt.user(report("help", hint = IncidentType.HAZARD))
         assert(u.contains("HAZARD"))
     }
+
+    // ---- fixes from the v1 on-phone eval (ai/eval/REPORT_v1_baseline.md) ----
+
+    @Test fun lostPersonChildLabel_isChild_andCritical() {
+        val r = TriagePrompt.parse("""{"type":"LOST_PERSON","severity":"HIGH","subtype":"LOST_PERSON_CHILD","summary":"x"}""", report("my daughter is lost"))!!
+        assertEquals("CHILD", r.subtype)
+        assertEquals(Severity.CRITICAL, r.severity)
+    }
+
+    @Test fun subtypeInTypeField_isRecovered() {
+        val r = TriagePrompt.parse("""{"type":"CROWD_CRUSH","severity":"HIGH","summary":"x"}""", report("people squeezed"))!!
+        assertEquals(IncidentType.HAZARD, r.type)
+        assertEquals("CROWD_CRUSH", r.subtype)
+    }
+
+    @Test fun unknownTypeStillRejected() {
+        assertNull(TriagePrompt.parse("""{"type":"PANIC","severity":"HIGH"}""", report("x")))
+    }
+
+    @Test fun lostChildBeatsWrongButton() {
+        val r = TriagePrompt.parse(
+            """{"type":"LOST_PERSON","severity":"HIGH","subtype":"CHILD","summary":"x"}""",
+            report("my kid is missing", hint = IncidentType.MEDICAL),
+        )!!
+        assertEquals(IncidentType.LOST_PERSON, r.type)
+        assertEquals(Severity.CRITICAL, r.severity)
+    }
+
+    @Test fun lostAdultStillFollowsButton() {
+        val r = TriagePrompt.parse(
+            """{"type":"LOST_PERSON","severity":"HIGH","subtype":"PERSON","summary":"x"}""",
+            report("my friend is missing", hint = IncidentType.MEDICAL),
+        )!!
+        assertEquals(IncidentType.MEDICAL, r.type)
+    }
+
+    @Test fun mergeTakesRulesSubtypeWhenRulesRaiseSeverity() {
+        val rules = mu.proxima.core.pipeline.RuleTriageEngine().classify(report("I can't find my daughter"))
+        val llm = TriagePrompt.parse("""{"type":"LOST_PERSON","severity":"HIGH","subtype":"PERSON","summary":"x"}""", report("I can't find my daughter"))!!
+        val merged = TriageMerge.merge(llm, rules)
+        assertEquals("CHILD", merged.subtype)
+        assertEquals(Severity.CRITICAL, merged.severity)
+    }
 }

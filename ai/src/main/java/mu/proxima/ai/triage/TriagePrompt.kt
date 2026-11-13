@@ -44,7 +44,7 @@ object TriagePrompt {
     """.trimIndent()
 
     fun user(report: RawReport): String {
-        val hint = report.typeHint?.let { "\nThe reporter pressed the $it button." } ?: ""
+        val hint = report.typeHint?.let { "\nThe reporter pressed the $it button, but panicking people press the wrong one: classify from the words." } ?: ""
         return "Report: \"${report.text.trim()}\"$hint\nJSON:"
     }
 
@@ -57,13 +57,16 @@ object TriagePrompt {
      */
     fun parse(raw: String, report: RawReport): TriageResult? {
         val obj = extractJsonObject(raw) ?: return null
-        val type = obj.str("type")?.let { enumOrNull<IncidentType>(it) } ?: return null
+        val rawType = obj.str("type") ?: return null
+        // Small models sometimes put the subtype in the type field ("type":"CROWD_CRUSH"): recover it.
+        val (type, typeAsSubtype) = enumOrNull<IncidentType>(rawType)?.let { it to null }
+            ?: subtypeAsType(rawType) ?: return null
         val severity = obj.str("severity")?.let { enumOrNull<Severity>(it) } ?: return null
         return sanitize(
             TriageResult(
                 type = type,
                 severity = severity,
-                subtype = obj.str("subtype"),
+                subtype = typeAsSubtype ?: obj.str("subtype"),
                 summary = obj.str("summary").orEmpty(),
                 landmark = obj.str("landmark"),
                 peopleCount = obj.int("peopleCount"),
@@ -83,7 +86,10 @@ object TriagePrompt {
         // A pressed category button wins, same as RuleTriageEngine, unless the model rates a different
         // type CRITICAL (#16: panicking users tap the wrong button; the words win for life-threatening cases).
         val hint = report.typeHint
-        val type = if (hint != null && !(result.severity == Severity.CRITICAL && result.type != hint)) hint else result.type
+        // A lost child is always CRITICAL, so it overrides a wrong button like any other critical report.
+        val lostChild = result.type == IncidentType.LOST_PERSON && normaliseSubtype(result.type, result.subtype) == "CHILD"
+        val modelCritical = result.severity == Severity.CRITICAL || lostChild
+        val type = if (hint != null && !(modelCritical && result.type != hint)) hint else result.type
 
         val subtype = normaliseSubtype(type, result.subtype)
         val severity = if (type == IncidentType.LOST_PERSON && subtype == "CHILD") Severity.CRITICAL else result.severity
@@ -105,10 +111,26 @@ object TriagePrompt {
 
     private fun normaliseSubtype(type: IncidentType, raw: String?): String? {
         val s = raw?.trim()?.uppercase()?.replace(' ', '_')
+        // Exact code first, then a code embedded in a longer label ("MEDICAL_SEIZURE" → SEIZURE).
+        fun pick(codes: Set<String>) = s?.let { v -> codes.firstOrNull { it == v } ?: codes.firstOrNull { it in v } }
         return when (type) {
-            IncidentType.MEDICAL -> s?.takeIf { it in MEDICAL_SUBTYPES } ?: "GENERAL"
-            IncidentType.HAZARD -> s?.takeIf { it in HAZARD_SUBTYPES }
-            in PERSON_TYPES -> s?.takeIf { it in PERSON_SUBTYPES } ?: "PERSON"
+            IncidentType.MEDICAL -> pick(MEDICAL_SUBTYPES) ?: "GENERAL"
+            IncidentType.HAZARD -> pick(HAZARD_SUBTYPES)
+            in PERSON_TYPES -> when {
+                s == null -> "PERSON"
+                "CHILD" in s || "KID" in s -> "CHILD" // "LOST_PERSON_CHILD"
+                "ELDER" in s -> "ELDERLY"
+                else -> "PERSON"
+            }
+            else -> null
+        }
+    }
+
+    private fun subtypeAsType(raw: String): Pair<IncidentType, String>? {
+        val s = raw.trim().uppercase().replace(' ', '_')
+        return when (s) {
+            in HAZARD_SUBTYPES -> IncidentType.HAZARD to s
+            in MEDICAL_SUBTYPES -> IncidentType.MEDICAL to s
             else -> null
         }
     }
