@@ -72,6 +72,7 @@ Same story as the stage demo, but lost & found follows #14 (lost-person alert, "
 | 4 | 0:55–1:05 | A56 then tablet | Same event reported on the A56 → "2 reports", merged; `triagedBy` shows the offload | "A budget phone borrows a neighbour's AI. The tablet merges duplicates." |
 | 5 | 1:05–1:45 | Guardian S23+, then finder S24U ~30 m away | Guardian: "Lost child", description only → finder sees the alert, taps "I'm with them" → guardian gets the sealed alert + radar; walks over; under ~10 m the radar switches to UWB arrow + distance | "No names, no photos. The child's location is sealed so only the guardian can read it." |
 | 6 | 1:45–2:00 | Tablet | Heatmap (anonymous 25 m cells) + incident list → closing line | "No servers, no data plan. Proxima: powered to protect." |
+| 7 (optional, filmed last) | +0:10 | S26+ sends, S23+ receives, both Bluetooth/Wi-Fi OFF; the Honor films | `acoustic on` on both; the S26+ raises a CRITICAL SOS → the S23+ shows it marked "unverified". It's silent (18 kHz), so subtitle it. Only S26+ → S23+ works (the S23+ speaker is too weak) | "No radio at all? Phones can still pass an SOS by inaudible sound." |
 
 **Rules while filming.** These are product rules too, and judges check them.
 - No bystanders' faces. Only teammates who agreed to be filmed.
