@@ -29,7 +29,7 @@ core/src/main/kotlin/mu/proxima/core/
   pipeline/  IncidentPipeline · IncidentMerger · RuleTriageEngine · Packets (ProximaJson, PacketFactory)
   fake/      Simulation.kt (dev-only fakes + honest empty repositories)
 mesh/   src/main/java/mu/proxima/mesh/    MeshModule + NearbyMeshEngine, Room dedup store, foreground service
-ai/     src/main/java/mu/proxima/ai/      AiModule + tiered TriageEngine, TriageServer, VoiceIo
+ai/     src/main/java/mu/proxima/ai/      AiModule + tiered TriageEngine, TriageServer, VoiceIo, HandsFreeGuide, CrowdRiskMonitor
 locate/ src/main/java/mu/proxima/locate/  LocateModule + AndroidLocateEngine, UWB session, venue map data
 trust/  src/main/java/mu/proxima/trust/   TrustModule + TinkTrustEngine, QR gen/scan, Asset repositories
         src/main/assets/data/             help_points_mu.json (OSM), protocols.json (cited)
@@ -83,3 +83,4 @@ ALL_CLEAR and FOUND close the incident named in `relatedIncidentId`.
 |---|---|---|---|
 | 13:40 Fri | setup | Initial contract | — |
 | 15:40 Fri | UI | `IncidentRecord.originKey`; `reportFound(IncidentRecord)` + `shareLocationWithGuardian(IncidentRecord)`; guardian accepts notices for its own LOST_PERSON reports; SIM finder in FakeMeshEngine | see PR |
+| 19:05 Fri | AI | Additive: `GuideState` + `GuideEngine` (hands-free guided first aid) and `CrowdRiskLevel` + `CrowdRisk` + `CrowdRiskEngine` (crowd-crush early warning) moved from `ai/` into `Domain.kt` / `Engines.kt`. Deprecated typealiases at the old `mu.proxima.ai.guide/crowd` names keep `app/` compiling until its imports switch | #30 |

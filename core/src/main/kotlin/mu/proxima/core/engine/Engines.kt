@@ -3,8 +3,10 @@ package mu.proxima.core.engine
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import mu.proxima.core.model.CrowdRisk
 import mu.proxima.core.model.DeviceCapabilities
 import mu.proxima.core.model.GeoPoint
+import mu.proxima.core.model.GuideState
 import mu.proxima.core.model.HelpCategory
 import mu.proxima.core.model.HelpPoint
 import mu.proxima.core.model.HopEvent
@@ -121,4 +123,20 @@ interface ProtocolRepository {
 /** UI lane. Decides the tier at startup. */
 interface DeviceCapabilityProvider {
     fun detect(): DeviceCapabilities
+}
+
+/** AI lane (#30). Reads a vetted card step by step and follows voice commands. Never authors steps. */
+interface GuideEngine {
+    val state: StateFlow<GuideState>
+    fun start(card: ProtocolCard)
+    fun next()
+    fun back()
+    fun repeat()
+    fun stop()
+}
+
+/** AI lane (#30). Crowd-crush early warning from anonymous density cells + incident reports. */
+interface CrowdRiskEngine {
+    /** Only areas at WATCH or above, most severe first. */
+    val risks: StateFlow<List<CrowdRisk>>
 }
