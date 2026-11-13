@@ -11,67 +11,98 @@ Implement `TriageEngine` + `VoiceIo` and return them from `AiModule`. The `TRIAG
 
 ## Tasks
 **P0 (device check by 15:00, M1 18:00)**
-- [ ] **Device check** on S24 Ultra / S26+ / S23+: which on-device LLM runs? Options: LiteRT-LM (`litertlm-android`,
-      Gemma 3 1B or Gemma 3n E2B), MediaPipe LLM Inference (`tasks-genai`), or ML Kit GenAI / Gemini Nano if supported.
-      Use **Context7**. Measure load time, latency for one triage prompt, and RAM. Pick ONE and log the decision.
-      Models are sideloaded: `adb push <model> /sdcard/Android/data/mu.proxima.app/files/models/`. Never commit them.
-- [~] `VoiceIo` (`AndroidVoiceIo` + 8 JVM tests done 15:53; on-device test pending phone): `SpeechRecognizer` (prefer offline; check the offline English pack is installed), RMS → `VoiceEvent.Level`
+- [x] **Device check** (19:27): Gemini Nano unusable (S26+ download cancelled, S24U unavailable) → **Gemma 4 E2B on LiteRT-LM**, measured on S24U: ~8.5 s load, ~1.5 s/report (~2.5 s with full app), ~2.1 GB PSS. Model sideloaded, never committed.
+- [x] `VoiceIo` (`AndroidVoiceIo`, device-tested offline on S24U 18:25): `SpeechRecognizer` (prefer offline; check the offline English pack is installed), RMS → `VoiceEvent.Level`
       for the waveform; `TextToSpeech` for reading protocol steps aloud.
 **P1 (M2 23:00)**
-- [~] `LlmTriageEngine` (code + 17 JVM tests done 15:37; on-device validation pending Nano download): few-shot prompt → strict JSON matching `TriageResult` → parse with `ProximaJson` → validate enums;
+- [x] `LlmTriageEngine` (device-tested with Gemma on S24U, 56/56 valid JSON): prompt → strict JSON matching `TriageResult` → parse with `ProximaJson` → validate enums;
       6 s timeout → fall back to `RuleTriageEngine`. Fill `subtype` from the codes in `RuleTriageEngine` so protocols match.
 - [x] (17:14, 11 JVM tests; not device-tested) Tiered engine: Tier 1 with model loaded = `ON_DEVICE_LLM`; otherwise, if a peer has `llmReady` = `OFFLOAD_TO_PEER`
       (TRIAGE_REQUEST ttl 2, wait ≤5 s for TRIAGE_RESULT); otherwise `RULES_ONLY`.
 - [x] (17:14) `TriageServer` on Tier 1: answers TRIAGE_REQUESTs from mesh.inbound.
-- [~] Kreol keywords (10 `RuleTriageEngineTest` cases pin current EN/FR/Kreol behaviour; native-speaker check still TODO): a Mauritian teammate verifies and extends the list in `RuleTriageEngine`. Add unit tests (`./gradlew :core:test`).
+- [~] Kreol: **parked (pivot 18:04)**. Best-effort keywords only; scored separately in the eval as "not tuned". Native-speaker check still TODO if time.
 **Pivot (#30, 17:40 Fri)**
 - [x] B hands-free guided first aid: device-tested on S24U.
 - [~] D crowd-crush early warning: code + tests, UI wired by Mikhil (#46), contract in core (#49); needs multi-phone test.
-- [~] On-device LLM: Gemma 4 E2B (Nano unusable on team phones). `LiteRtLmBackend` + 7 JVM tests done 18:48; model downloaded; device test pending a phone.
+- [x] On-device LLM: Gemma 4 E2B (`LiteRtLmBackend`, shared engine, streaming + cancel) on main (#67). Eval harness `ai/eval/` + severity floor.
 **P2**
 - [ ] Kreol/French voice input; hazard photo classification (multimodal model) if time allows.
-- [ ] **10:00 Sat: compile all decision logs into a shortlist** for the README.
+- [~] **10:00 Sat: decision shortlist**: draft done (section below, 10 + 5 bench); team picks at 10:00, then into README with Diya.
+- [ ] **#45 (TRUST→AI): proof-read the 9 protocol cards against the IFRC 2020 PDF, by 08:00 Sat.** Must be Seeya (second member). Claude can prepare a side-by-side.
 
 ## Accuracy rule
 The AI never generates medical instructions. It outputs type, severity, subtype, summary, landmark and count only.
 Steps come from TRUST's cited protocol cards.
 
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
-1. **Triage:** every SOS goes through `TieredTriageEngine`: local on-device LLM → a nearby Tier 1 phone's LLM over the mesh (offload) → keyword rules (`RuleTriageEngine`, EN/FR/Kreol best-effort). It never fails and never waits more than 6 s.
-2. **Safety:** the model only classifies (type, severity, subtype, summary, landmark, count). Output is validated, protocol cards are always picked locally from TRUST's cited cards, and keyword rules can raise severity but never lower it. A wrong quick button can't hide a critical description (#16).
+1. **Triage:** every SOS goes through `TieredTriageEngine`: local on-device LLM (Gemma 4 E2B, sideloaded) → a nearby Tier 1 phone's LLM over the mesh (offload) → keyword rules (`RuleTriageEngine`, EN/FR/Kreol best-effort). It never fails and never waits more than 6 s.
+2. **Safety:** the model only classifies (type, severity, subtype, summary, landmark, count). Output is validated, protocol cards are always picked locally from TRUST's cited cards, and keyword rules can raise severity but never lower it, and severity never drops below the floor for its subtype (`ai/eval/` measures this). A wrong quick button can't hide a critical description (#16).
 3. **Voice:** offline-first speech in/out (`AndroidVoiceIo`): on-device recognizer, language fallback en-MU→en-GB→en-US (Kreol→French), takes audio focus so instructions are heard over music.
 4. **Hands-free first aid (B):** reads a vetted card step by step and follows "next / repeat / stop". "He's breathing" switches CPR → recovery position; it picks cards, never writes steps.
 5. **Crowd-crush early warning (D):** anonymous 25 m density cells + nearby crowd reports + fainting clusters → WATCH/WARNING/DANGER. Only the Command Center raises one HAZARD/CROWD_CRUSH alert per area per 10 min.
 
 ## NEXT_SESSION_HANDOFF
-_Saved 18:40 Fri by Seeya's session. Branch `lane/ai`, pushed, clean. Last AI merge to main: PR #21 at 16:14._
+_Saved 20:40 Fri by Seeya's session. Branch `lane/ai` pushed and clean at the saving-protocol commit, **5 code/doc commits ahead
+of main** (ee0e6aa, b0aba06, d743ee9, f3f2c9f, 91c6fbc) + this save. Main = `fb20894`, **frozen by the lead for the M2 run**
+(#53 / #68): no PRs into main until he reopens it._
 
-**Done and working**
-- Triage: `LlmTriageEngine` (backend-agnostic `LlmBackend`), `TieredTriageEngine` + `TriageServer` (Tier 2 offload over the mesh, LLM-ready announcements on CONTROL/"ai"), shared `TriagePrompt.sanitize` + `TriageMerge` safety net. JVM-tested only.
-- Voice (`ai/.../voice/`): **device-tested offline on Diya's S24 Ultra.** Language fallback, offline pack request (`triggerModelDownload`), audio focus (`USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`), #9 (12 Hz levels, hold-to-talk Final).
-- **B hands-free guide** (`ai/.../guide/`, `AiModule.createGuide`): **device-tested on the S24U**: next / repeat / "he's breathing" → recovery / "he stop breathing" → CPR / stop.
-- **D crowd-crush warning** (`ai/.../crowd/`, `AiModule.createCrowdRisk`): 15 JVM tests, not device-tested (needs several phones outdoors + the tablet).
-- Bus: #16, #9 done; #10 👍; #35 answered (fix is b5bc9d0, on lane/ai only). Tests: **72 ai + 13 core green**.
+**Done and working (on main via PR #67 unless noted)**
+- Triage: `TieredTriageEngine` (local LLM → peer offload → `RuleTriageEngine`, never more than 6 s), `LlmTriageEngine` + `TriagePrompt`
+  (strict parser, sanitize, subtype-in-type recovery, lost-child button override, **severity floor per subtype**) + `TriageMerge`
+  (rules raise severity, never lower it).
+- **Gemma 4 E2B** via `LiteRtLmBackend` (`ai/.../triage/LiteRtLmBackend.kt`): loads once at app start from
+  `/sdcard/Android/data/mu.proxima.app/files/models/*.litertlm`, GPU → CPU fallback, shared by triage + guide behind a mutex,
+  streaming + `cancelProcess` on timeout. `FirstReadyBackend` = Gemma, else Gemini Nano. Device-tested on Diya's S24U.
+  No model file → rules only, nothing breaks.
+- Voice (offline, device-tested), **B** hands-free guide (device-tested), **D** crowd-crush warning (JVM-tested; UI wired in #46;
+  contract in core via #49).
+- **Eval** `ai/eval/` (README there): `cases.jsonl` = 56 (32 original, 12 `ho*` held-out, 12 `fs*` fresh teammate set);
+  `TriageEvalTest` (`-PproximaEval=export` | `-PproximaEval=score:gemma@<device>`); on-phone runner =
+  `LlmProbeActivity --ez eval true`. Reports: `REPORT_v1_baseline.md`, `REPORT_v2.md`, **`REPORT_v3_fresh.md` (frozen honest
+  number)**, `REPORT.md` (latest generated).
+- README (#23): tech stack, fallback paragraph, measured phone numbers, AI disclosure row (on main). Honest accuracy paragraph
+  with the fresh set reported pre-fix (on `lane/ai`).
+- Only on `lane/ai` (needs a PR when main reopens): deprecated aliases removed + "1 phone" wording (#68 asks), fresh set +
+  results, **seizure & live wire → CRITICAL**, "fils" / "old lady", lost/found severity floor, README accuracy update, lane logs.
+  Full build + all module tests green.
 
-**Broken / not done / blocked**
-- **No on-device LLM works yet.** Gemini Nano: S26+ (Chanum's, Exynos) download cancelled by Samsung AICore; S24U (Diya's) UNAVAILABLE. So triage = rules in practice, and offload has no helper.
-- **Not on main yet:** offload, B, D, voice fixes (#35 needs them). Merge needs Seeya's OK.
-- **#30 waiting for Mikhil's 👍** (Diya 👍, Chanum 👍; #28 cell locations are on main via PR #32). After 👍: move `GuideContract.kt` + `CrowdContract.kt` shapes to `core/` in a small dedicated PR. UI must wire `createGuide` / `createCrowdRisk` in ProximaGraph.
-- **#10 not merged:** `CrowdRiskMonitor` raises via `pipeline.report(raw)`. When #10 lands, pass our own TriageResult (TODO in AiModule).
-- **#23 README AI section** (due 10:30 Sat) not written. **10:00 Sat:** AI compiles the team decision-log shortlist.
+**Broken / not done / risks**
+- Main frozen → the commits above are not on main yet. When reopened: `git fetch && git merge origin/main`,
+  `./gradlew assembleDebug test`, `gh pr create`, wait for CI `assemble` on the **current head sha**
+  (`gh run list --branch lane/ai`; `gh pr checks --watch` can exit early on an older run), then `gh pr merge --merge`.
+  **The PR body must warn MESH + UI: seizure and live-wire alerts are now CRITICAL → hop budget 10 instead of 7.**
+- Fresh-set result is weak (English + French: shipped path under-triaged 4 of 7, before fixes). Do **not** tune on `fs*`
+  or `ho*` cases again, and do not claim a new accuracy number without a new independent set.
+- D (crowd crush) never tested on several phones. Honor X8b never tested with Gemma (leave it on rules).
+- #10 (`report(raw, triaged)`) still open: once merged, `CrowdRiskMonitor` should pass its own TriageResult (TODO in `AiModule`).
 
 **Exact next steps (in order)**
-1. Ask Seeya: merge `lane/ai` → main now? (`git fetch && git merge origin/main`, `./gradlew assembleDebug test`, PR, wait for CI `assemble`, `gh pr merge --merge`). Then tell Mikhil on #35 that the fix is live.
-2. LLM plan B = **Gemma 4 E2B** (`litert-community/gemma-4-E2B-it-litert-lm`, `gemma-4-E2B-it.litertlm`, ~2.6 GB, Apache 2.0, ~52 tok/s GPU on S26 Ultra per Google). Seeya downloads it. `adb push` to `/sdcard/Android/data/mu.proxima.app/files/models/`, run the probe (`--es backend gpu`) and record load / latency / RAM / JSON-valid, then add `LiteRtLmBackend : LlmBackend` (load once at app start) and swap it into `AiModule` + `createGuide`. Fallback candidate: Qwen3-1.7B (Apache 2.0, disable thinking mode).
-3. After Mikhil's 👍 on #30: core PR for the B/D shapes.
-4. README AI section (#23) + decision shortlist (10:00 Sat).
+1. **#45, by 08:00 Sat:** help Seeya proof-read `trust/src/main/assets/data/protocols.json` (9 cards) against the IFRC 2020 PDF.
+   Prepare a side-by-side (each card's steps vs the text of its cited page); Seeya judges; post "checked, OK" or
+   card id + step + problem on #45. Do not edit TRUST's file.
+2. When the lead reopens main (watch #53 / #1): PR the `lane/ai` commits as above, then comment on #4 and one line on #1.
+3. Team crowd-crush (D) multi-phone test; on Tier 1 demo phones check `adb logcat -d -s Proxima:* | grep -E "llm:|triage:"`
+   shows `loaded in` and `ON_DEVICE_LLM`.
+4. 10:00 Sat: team picks from the decision shortlist below → README `## Key decisions` with Diya. 10:30 final README
+   check. 12:30 submit.
 
 **Device notes**
-- Probe: `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity` + `--ez nanoDownload true` | `--ez voice true` | `--ez guide true --es card cpr-adult` | `--es backend cpu|gpu`. Logs: `adb logcat -d -s Proxima:*`.
-- Other members' phones carry their own debug key: installing ours needs `adb uninstall mu.proxima.app` → **always ask the owner first** (done today for Chanum's S26+ and Diya's S24U, both notified on #3 / #6).
-- Demo-phone checklist: offline speech pack (en-GB; fr-FR for French), volume up, mic allowed, model file sideloaded (once Gemma is chosen).
+- **Demo phones run the lead's build only (#68): never `installDebug` on them.** That debug build already has the probe:
+  `adb shell mkdir -p /sdcard/Android/data/mu.proxima.app/files/eval` + `adb shell chmod 777` that folder,
+  `adb push ai/eval/out/prompts.jsonl` into it, `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez eval true --es name gemma`,
+  read back with `adb exec-out run-as mu.proxima.app cat <folder>/gemma_raw.jsonl > ai/eval/out/gemma_raw.jsonl`,
+  then delete the folder (`run-as mu.proxima.app rm -rf`).
+- Never send key events to a teammate's phone without checking `topResumedActivity` first; ask Seeya before any uninstall.
+- Gemma file on this laptop: `C:/Users/THIS-PC/Downloads/proxima-models/gemma-4-E2B-it.litertlm` (2,588,147,712 bytes).
+  Push steps posted on #68.
+- This laptop: Windows Application Control blocks the LiteRT-LM desktop DLL → evals run on phones only.
+  Git Bash: prefix adb commands with `MSYS_NO_PATHCONV=1`. Mauritius time = UTC + 4 (Git Bash has no tz data).
 
-**Files touched today:** `ai/build.gradle.kts`, `ai/src/main/AndroidManifest.xml`, `ai/src/main/.../{AiModule.kt, triage/*, offload/*, voice/*, guide/*, crowd/*}`, `ai/src/debug/*`, `ai/src/test/*`, `core/.../pipeline/RuleTriageEngine.kt` (+ test), `gradle/libs.versions.toml` (+mlkit-genai-prompt), `docs/TEAM_ROLES.md`, `docs/lanes/AI.md`.
+**Files touched this session:** `ai/build.gradle.kts`, `ai/src/main/AndroidManifest.xml`, `ai/.../AiModule.kt`,
+`ai/.../triage/{LiteRtLmBackend,TriagePrompt,TriageMerge}.kt`, `ai/.../crowd/CrowdRiskModel.kt`, `ai/.../{guide,crowd}/*Contract.kt`
+(deleted), `ai/src/debug/.../LlmProbeActivity.kt`, `ai/src/test/...` (backend, prompt, eval, crowd), `ai/eval/*`,
+`core/.../pipeline/RuleTriageEngine.kt` (+ test), `core/.../model/Domain.kt` + `engine/Engines.kt` (#49), `docs/ARCHITECTURE.md`,
+`README.md`, `docs/lanes/AI.md`.
 
 ## Decision shortlist draft (for README `## Key decisions`, team picks at 10:00 Sat)
 _Drafted 19:45 Fri from docs/DECISIONS.md, all five lane logs and TRUST's README draft. 10 proposed + 5 on the bench.
@@ -120,6 +151,7 @@ TRUST's draft stopped at 18:05; the main change is adding the evening decisions.
 | 20:10 Fri | Lead merged all lanes (PR #67 took lane/ai at a1923f3); pulled main fb20894, build+tests green (#68); posted Gemma push steps. Aliases removed + "1 phone" fix on lane/ai. |
 | 20:23 Fri | Fresh teammate set (12) run once on Diya's S24U with the team build (no install, eval folder removed after): EN+FR shipped under-triage 4/7, Kreol 1/5. |
 | 20:35 Fri | Seizure/electrical → CRITICAL, "fils", "old lady", lost/found floor; README reports fresh set pre-fix; REPORT_v3_fresh.md frozen. |
+| 20:40 Fri | Saving protocol: handoff rewritten; #23 answered (AI README already on main); memory note on teammate-phone safety. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
