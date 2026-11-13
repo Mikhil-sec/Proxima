@@ -84,6 +84,8 @@ class TriageEvalTest {
             val ship = Score("**Shipped: $model + rules safety net**")
         }
         val headline = Group(); val kreol = Group(); val heldOut = Group()
+        // fs* = written by a teammate, labels verbatim, never used to tune anything: the honest number.
+        val freshEnFr = Group(); val freshKreol = Group()
         var valid = 0
         var late = 0
         val latencies = mutableListOf<Long>()
@@ -100,6 +102,7 @@ class TriageEvalTest {
             val shipped = parsed?.takeIf { inTime }?.let { TriageMerge.merge(it, r) } ?: r
             val g = if (c.lang == "mfe") kreol else headline
             if (c.id.startsWith("ho") && c.lang != "mfe") { heldOut.rules.add(c, r); heldOut.model.add(c, parsed); heldOut.ship.add(c, shipped) }
+            if (c.id.startsWith("fs")) (if (c.lang == "mfe") freshKreol else freshEnFr).let { f -> f.rules.add(c, r); f.model.add(c, parsed); f.ship.add(c, shipped) }
             val expect = "${c.types.joinToString("/")} · ${c.subtypes.ifEmpty { listOf("-") }.joinToString("/")} · ${c.severities.joinToString("/")}"
             "| ${c.id} | ${c.lang} | ${c.hint ?: ""} | ${c.text.replace("|", "\\|")} | $expect | ${g.rules.add(c, r)} | ${g.model.add(c, parsed)} | ${g.ship.add(c, shipped)} |"
         }
@@ -112,7 +115,21 @@ class TriageEvalTest {
             appendLine()
             appendLine("$n emergency reports (wrong quick button and ambiguous cases included). Expected labels were written **before** any model was run; where two answers are reasonable, both are accepted.")
             appendLine()
-            appendLine("### English + French (${headline.ship.n} reports)")
+            if (freshEnFr.ship.n + freshKreol.ship.n > 0) {
+                appendLine("### Fresh set: written by a teammate, never used for tuning (the honest number)")
+                appendLine()
+                appendLine("Reports and expected labels written by another team member who had not seen the other cases; labels used verbatim (one accepted severity each, so stricter than the sets below). Run once, after all code changes.")
+                appendLine()
+                appendLine("| Path (English + French, ${freshEnFr.ship.n}) | Type correct | Type + subtype | Severity exact | Under-triaged |")
+                appendLine("|---|---|---|---|---|")
+                appendLine(freshEnFr.rules.line()); appendLine(freshEnFr.model.line()); appendLine(freshEnFr.ship.line())
+                appendLine()
+                appendLine("| Path (Kreol, best-effort, ${freshKreol.ship.n}) | Type correct | Type + subtype | Severity exact | Under-triaged |")
+                appendLine("|---|---|---|---|---|")
+                appendLine(freshKreol.rules.line()); appendLine(freshKreol.model.line()); appendLine(freshKreol.ship.line())
+                appendLine()
+            }
+            appendLine("### English + French, all sets (${headline.ship.n} reports, includes cases used for tuning)")
             appendLine()
             appendLine("| Path | Type correct | Type + subtype | Severity in range | Under-triaged |")
             appendLine("|---|---|---|---|---|")

@@ -147,7 +147,8 @@ class TriagePromptTest {
     @Test fun floor_raisesUnderRatedCriticalSubtypes() {
         assertEquals(Severity.CRITICAL, parsed("""{"type":"MEDICAL","severity":"HIGH","subtype":"UNCONSCIOUS"}""").severity)
         assertEquals(Severity.CRITICAL, parsed("""{"type":"HAZARD","severity":"HIGH","subtype":"CROWD_CRUSH"}""").severity)
-        assertEquals(Severity.HIGH, parsed("""{"type":"MEDICAL","severity":"MEDIUM","subtype":"SEIZURE"}""").severity)
+        assertEquals(Severity.CRITICAL, parsed("""{"type":"MEDICAL","severity":"MEDIUM","subtype":"SEIZURE"}""").severity)
+        assertEquals(Severity.HIGH, parsed("""{"type":"MEDICAL","severity":"MEDIUM","subtype":"BLEEDING"}""").severity)
     }
 
     @Test fun floor_neverLowers_andLeavesOtherSubtypes() {
@@ -172,5 +173,19 @@ class TriagePromptTest {
         val r = parsed("""{"type":"MEDICAL","severity":"HIGH","subtype":"UNCONSCIOUS"}""", text = "someone collapsed", hint = IncidentType.LOST_PERSON)
         assertEquals(IncidentType.MEDICAL, r.type)
         assertEquals(Severity.CRITICAL, r.severity)
+    }
+
+    @Test fun foundElderly_neverLow() {
+        val r = parsed("""{"type":"FOUND","severity":"LOW","subtype":"LOST_PERSON"}""", text = "found an old lady confused near the main gate")
+        assertEquals("ELDERLY", r.subtype)
+        assertEquals(Severity.HIGH, r.severity)
+    }
+
+    @Test fun shippedPath_frenchLostSonWithWrongButton_isLostChild() {
+        val report = report("mon fils de 5 ans a disparu pres du lac", hint = IncidentType.MEDICAL)
+        val llm = TriagePrompt.parse("""{"type":"MEDICAL","severity":"HIGH","subtype":"GENERAL"}""", report)!!
+        val shipped = TriageMerge.merge(llm, mu.proxima.core.pipeline.RuleTriageEngine().classify(report))
+        assertEquals(IncidentType.LOST_PERSON, shipped.type)
+        assertEquals(Severity.CRITICAL, shipped.severity)
     }
 }
