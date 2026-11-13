@@ -91,6 +91,16 @@ interface TrustEngine {
     /** Returns null if not addressed to this node or tampered. */
     fun open(sealedB64: String): ByteArray?
 
+    /**
+     * True if [publicKey] is this node's: its current key, or (with per-session identity, #38) a previous
+     * session's key it still retains. Use this, not `== identity.publicKey`, so an app restart does not lose
+     * notices sealed to the guardian before it.
+     */
+    fun ownsKey(publicKey: String): Boolean = publicKey == identity.publicKey
+
+    /** Same as [ownsKey] for node ids, so "is this lost report mine?" survives an app restart. */
+    fun ownsNodeId(nodeId: String): Boolean = nodeId == identity.nodeId
+
     /** Guardian side: mint a new wristband tag bound to this phone's key. */
     fun createWristband(): WristbandTag
     /** Tags this phone minted (so it knows which FoundNotices are its own). */

@@ -187,14 +187,14 @@ class IncidentPipeline(
             }.onSuccess { accept(it, valid, packet.hopCount, packet.originKey) }
 
             PacketKind.SEALED -> {
-                if (!valid || packet.recipientKey != trust.identity.publicKey) return
+                if (!valid || packet.recipientKey?.let(trust::ownsKey) != true) return
                 val bytes = trust.open(packet.payload) ?: return
                 val notice = runCatching {
                     ProximaJson.decodeFromString(FoundNotice.serializer(), bytes.decodeToString())
                 }.getOrNull() ?: return
                 val mineLost = _incidents.value.any {
                     it.incident.id == notice.tagId && it.incident.type == IncidentType.LOST_PERSON &&
-                        it.incident.reporterNodeId == mesh.selfNodeId
+                        (it.incident.reporterNodeId == mesh.selfNodeId || trust.ownsNodeId(it.incident.reporterNodeId))
                 }
                 if (mineLost || trust.myWristbands().any { it.tagId == notice.tagId }) _foundNotices.tryEmit(notice)
             }

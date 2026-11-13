@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import mu.proxima.core.engine.MeshEngine
+import mu.proxima.core.engine.TrustEngine
 import mu.proxima.core.fake.EmptyProtocolRepository
 import mu.proxima.core.fake.FakeLocateEngine
 import mu.proxima.core.fake.FakeTrustEngine
@@ -44,6 +45,16 @@ private class LoopMesh(override val selfNodeId: String, private val bus: Mutable
     override suspend fun start() = Unit
     override suspend fun stop() = Unit
     override suspend fun send(packet: MeshPacket) { sent += packet.packetId; bus.emit(packet) }
+}
+
+/** A phone after an app restart with per-session identity: a new key, plus the previous session's, retained. */
+private class RestartedTrust(
+    private val previous: FakeTrustEngine,
+    private val now: FakeTrustEngine = FakeTrustEngine(),
+) : TrustEngine by now {
+    override fun ownsKey(publicKey: String) = publicKey == now.identity.publicKey || publicKey == previous.identity.publicKey
+    override fun ownsNodeId(nodeId: String) = nodeId == now.identity.nodeId || nodeId == previous.identity.nodeId
+    override fun open(sealedB64: String) = now.open(sealedB64) ?: previous.open(sealedB64)
 }
 
 class LostAndFoundTest {
@@ -79,6 +90,46 @@ class LostAndFoundTest {
         Thread.sleep(200)
         assertTrue(bystander.foundNotices.replayCache.isEmpty())
         assertTrue(finder.foundNotices.replayCache.isEmpty())
+        scope.cancel()
+    }
+
+    /**
+     * #38: a fresh identity per app session must not cost a guardian the finder's notices. The finder seals to
+     * the key in the alert, which is the guardian's PREVIOUS session key once the guardian's app has restarted.
+     */
+    @Test
+    fun `guardian still receives the finder after an app restart with a new identity`() = runBlocking {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val bus = MutableSharedFlow<MeshPacket>(extraBufferCapacity = 64)
+        val onAir = java.util.Collections.synchronizedList(mutableListOf<MeshPacket>())
+        scope.launch { bus.collect { onAir += it } }
+
+        // As in the app, the mesh id IS the trust node id.
+        val firstSession = FakeTrustEngine()
+        val guardianScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val guardian = IncidentPipeline(LoopMesh(firstSession.identity.nodeId, bus, guardianScope), RuleTriageEngine(),
+            firstSession, FakeLocateEngine(guardianScope), EmptyProtocolRepository(), guardianScope).also { it.start() }
+        val (finder, _) = node("FINDER", bus, scope)
+        Thread.sleep(100)
+
+        val lost = guardian.report(RawReport("Lost child, boy about 5, blue shirt", System.currentTimeMillis(), typeHint = IncidentType.LOST_PERSON))
+        val seen = withTimeout(2_000) { finder.incidents.first { list -> list.any { it.incident.id == lost.id } } }
+            .first { it.incident.id == lost.id }
+
+        // The guardian's app restarts: new identity, in-memory incidents gone, previous session's key retained.
+        guardianScope.cancel()
+        val secondSession = RestartedTrust(previous = firstSession)
+        val restarted = IncidentPipeline(LoopMesh(secondSession.identity.nodeId, bus, scope), RuleTriageEngine(),
+            secondSession, FakeLocateEngine(scope), EmptyProtocolRepository(), scope).also { it.start() }
+        Thread.sleep(100)
+        // A neighbour's store-and-forward re-delivers the guardian's own alert.
+        bus.emit(onAir.first { it.kind == mu.proxima.core.model.PacketKind.INCIDENT && it.payload.contains(lost.id) }.copy(packetId = "relay-1"))
+        withTimeout(2_000) { restarted.incidents.first { list -> list.any { it.incident.id == lost.id } } }
+
+        assertTrue(finder.reportFound(seen, landmark = "By the temple steps"))
+
+        val notice = withTimeout(2_000) { restarted.foundNotices.first { it.tagId == lost.id } }
+        assertEquals("By the temple steps", notice.landmark)
         scope.cancel()
     }
 

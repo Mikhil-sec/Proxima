@@ -152,12 +152,12 @@ class TinkTrustEngine(
 
     /**
      * True if [publicKey] is this node's current key or a previous session's still-retained key - i.e. "was this
-     * addressed to me?" in a way that survives a restart. Becomes an override once the #38 interface change lands.
+     * addressed to me?" in a way that survives a restart (#38).
      */
-    fun ownsKey(publicKey: String): Boolean = publicKey == current.publicKey || retired.any { it.publicKey == publicKey }
+    override fun ownsKey(publicKey: String): Boolean = publicKey == current.publicKey || retired.any { it.publicKey == publicKey }
 
     /** Same as [ownsKey] for node ids, so "is this lost report mine?" survives a restart. */
-    fun ownsNodeId(nodeId: String): Boolean = nodeId == current.nodeId || retired.any { it.nodeId == nodeId }
+    override fun ownsNodeId(nodeId: String): Boolean = nodeId == current.nodeId || retired.any { it.nodeId == nodeId }
 
     override fun createWristband(): WristbandTag {
         val tag = WristbandTag(tagId = hex(TAG_BYTES), guardianKey = identity.publicKey, createdAtMs = clock())
