@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.rotate
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import mu.proxima.app.ProximaGraph
@@ -79,7 +80,7 @@ fun NearestHelp(graph: ProximaGraph, from: GeoPoint?, categories: Set<HelpCatego
                     }
                 },
                 trailingContent = { Text(distanceLabel(h.distanceM), style = MaterialTheme.typography.titleMedium) },
-                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
         }
         if (list.first().distanceM > WALKABLE_M) {

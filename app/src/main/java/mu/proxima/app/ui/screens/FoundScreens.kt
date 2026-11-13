@@ -45,10 +45,10 @@ import mu.proxima.app.ui.ageLabel
 import mu.proxima.app.ui.components.BackIcon
 import mu.proxima.app.ui.components.Fact
 import mu.proxima.app.ui.components.LargeButton
+import mu.proxima.app.ui.components.SimLabel
 import mu.proxima.app.ui.components.StateLabel
 import mu.proxima.app.ui.components.Sym
 import mu.proxima.app.ui.components.SymbolIcon
-import mu.proxima.app.ui.components.safeButtonColors
 import mu.proxima.app.ui.distanceLabel
 import mu.proxima.app.ui.label
 import mu.proxima.app.ui.theme.semantic
@@ -59,6 +59,7 @@ import mu.proxima.core.model.GeoMath
 import mu.proxima.core.model.Proximity
 import mu.proxima.core.model.RadarFix
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 private fun reunite(graph: ProximaGraph, nav: Nav, lostId: String) {
@@ -75,7 +76,15 @@ fun FoundAlertScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav, lostId
     val now = rememberNow()
     val distance = me?.let { m -> notice.location?.let { GeoMath.distanceM(m, it) } }
 
-    Scaffold(topBar = { TopAppBar(title = {}, navigationIcon = { BackIcon(nav::back) }) }) { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = { BackIcon(nav::back) },
+                actions = { if (graph.simulation) SimLabel(Modifier.padding(end = MaterialTheme.spacing.lg)) },
+            )
+        },
+    ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = MaterialTheme.spacing.xl)) {
             SymbolIcon(Sym.Done, description = null, tint = MaterialTheme.semantic.safe, size = MaterialTheme.sizes.iconLarge)
             Spacer(Modifier.height(MaterialTheme.spacing.xxl))
@@ -109,7 +118,7 @@ private fun proximityLabel(p: Proximity) = when (p) {
 
 /** Smallest round radar range that fits the target with a margin. */
 private fun rangeFor(d: Double): Double =
-    listOf(10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0).firstOrNull { it >= d * 1.15 } ?: (d * 1.2)
+    listOf(10.0, 20.0, 50.0, 100.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0).firstOrNull { it >= d * 1.15 } ?: (d * 1.2)
 
 /**
  * Radar to the person who is with your child. Up = where the phone points (relative bearing); falls back to
@@ -171,7 +180,7 @@ fun RadarScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav, lostId: Str
                 Text("No compass on this phone: the map is north-up.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.semantic.caution)
             }
             Spacer(Modifier.weight(1f))
-            LargeButton("We're together", { reunite(graph, nav, lostId) }, sym = Sym.Done, colors = safeButtonColors())
+            LargeButton("We're together", { reunite(graph, nav, lostId) }, sym = Sym.Done)
             Spacer(Modifier.height(MaterialTheme.spacing.lg))
         }
     }
@@ -200,10 +209,12 @@ private fun RadarScope(fix: RadarFix?, modifier: Modifier) {
         for (k in 1..4) drawCircle(ring, r * k / 4f, c, style = Stroke(hairline.toPx()))
         drawLine(ring, Offset(c.x - r, c.y), Offset(c.x + r, c.y), hairline.toPx())
         drawLine(ring, Offset(c.x, c.y - r), Offset(c.x, c.y + r), hairline.toPx())
-        val diag = 0.7071f
+        // Ring values sit just inside their ring, above the east axis, so no stroke runs through them.
+        // Colour goes in at draw time: TextMeasurer reuses cached layouts across a light/dark switch.
         for (k in listOf(2, 4)) {
             val rr = r * k / 4f
-            drawText(measurer, distanceLabel(range * k / 4), c + Offset(rr * diag + pad.toPx(), rr * diag - pad.toPx() * 4), labelStyle)
+            val t = measurer.measure(ringLabel(range * k / 4), labelStyle)
+            drawText(t, color = ink, topLeft = Offset(c.x + rr - t.size.width - pad.toPx() * 2, c.y - t.size.height - pad.toPx()))
         }
 
         // Up marker: a triangle for "ahead" with a compass, otherwise an N.
@@ -213,7 +224,8 @@ private fun RadarScope(fix: RadarFix?, modifier: Modifier) {
             val p = Path().apply { moveTo(tip.x, tip.y); lineTo(tip.x - w, tip.y + w * 1.6f); lineTo(tip.x + w, tip.y + w * 1.6f); close() }
             drawPath(p, ink)
         } else {
-            drawText(measurer, "N", Offset(c.x - pad.toPx(), c.y - r), labelStyle)
+            val t = measurer.measure("N", labelStyle)
+            drawText(t, color = ink, topLeft = Offset(c.x - t.size.width / 2f, c.y - r))
         }
 
         if (d != null && angle != null) {
@@ -230,3 +242,7 @@ private fun RadarScope(fix: RadarFix?, modifier: Modifier) {
         drawCircle(ink, dot.toPx() / 2, c)
     }
 }
+
+/** Ring scale values: "5 m", "250 m", "2.5 km", never "5.0 m". */
+private fun ringLabel(m: Double): String =
+    if (m < 1000) "${m.roundToInt()} m" else "${"%.1f".format(m / 1000).removeSuffix(".0")} km"

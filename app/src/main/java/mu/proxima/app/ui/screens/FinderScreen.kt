@@ -42,8 +42,8 @@ import mu.proxima.app.ui.components.Fact
 import mu.proxima.app.ui.components.LargeButton
 import mu.proxima.app.ui.components.SeverityBadge
 import mu.proxima.app.ui.components.Sym
+import mu.proxima.app.ui.components.SimLabel
 import mu.proxima.app.ui.components.SymbolIcon
-import mu.proxima.app.ui.components.safeButtonColors
 import mu.proxima.app.ui.components.sym
 import mu.proxima.app.ui.distanceLabel
 import mu.proxima.app.ui.incidentTitle
@@ -69,6 +69,7 @@ fun FinderScreen(graph: ProximaGraph, lostFound: LostFound, nav: Nav) {
             TopAppBar(
                 title = { Text(if (sharing != null) "" else "Found someone?") },
                 navigationIcon = { BackIcon(nav::back) },
+                actions = { if (graph.simulation) SimLabel(Modifier.padding(end = MaterialTheme.spacing.lg)) },
             )
         },
     ) { padding ->
@@ -159,7 +160,7 @@ private fun LostRow(r: IncidentRecord, me: GeoPoint?, now: Long, onClick: () -> 
         supportingContent = {
             Column {
                 Text(i.summary, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-                i.landmark?.let { Text("Last seen $it") }
+                i.landmark?.let { Text("Near $it") }
             }
         },
         leadingContent = { SeverityBadge(Sym.LostPerson, s.cautionContainer, s.onCautionContainer, null) },
@@ -214,7 +215,7 @@ private fun ColumnScope.SharingView(graph: ProximaGraph, lostFound: LostFound, l
     Column(Modifier.weight(1f).padding(horizontal = MaterialTheme.spacing.xl)) {
         SymbolIcon(Sym.Location, description = null, tint = MaterialTheme.semantic.safe, size = MaterialTheme.sizes.iconLarge)
         Spacer(Modifier.height(MaterialTheme.spacing.lg))
-        Text("Their guardian has been told", style = MaterialTheme.typography.displaySmall)
+        Text("Sharing your location with their guardian", style = MaterialTheme.typography.displaySmall)
         Spacer(Modifier.height(MaterialTheme.spacing.sm))
         Text(
             "Stay where you are. Your location goes only to their guardian's phone, every few seconds.",
@@ -227,7 +228,7 @@ private fun ColumnScope.SharingView(graph: ProximaGraph, lostFound: LostFound, l
         Fact("Phones around", peers.size.toString())
     }
     Column(Modifier.padding(horizontal = MaterialTheme.spacing.xl)) {
-        LargeButton("Their guardian is here", onDone, sym = Sym.Done, colors = safeButtonColors())
+        LargeButton("Their guardian is here", onDone, sym = Sym.Done)
         TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.sm)) { Text("Stop sharing") }
     }
 }

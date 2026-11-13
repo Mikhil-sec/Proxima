@@ -73,12 +73,6 @@ fun criticalButtonColors(): ButtonColors = ButtonDefaults.buttonColors(
     contentColor = MaterialTheme.semantic.onCritical,
 )
 
-@Composable
-fun safeButtonColors(): ButtonColors = ButtonDefaults.buttonColors(
-    containerColor = MaterialTheme.semantic.safe,
-    contentColor = MaterialTheme.semantic.onSafe,
-)
-
 /** Back navigation for every sub-screen's TopAppBar. */
 @Composable
 fun BackIcon(onClick: () -> Unit) {

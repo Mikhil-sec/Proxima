@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
@@ -60,6 +59,8 @@ import mu.proxima.app.ui.components.Fact
 import mu.proxima.app.ui.components.LargeButton
 import mu.proxima.app.ui.components.NearestHelp
 import mu.proxima.app.ui.components.SeverityBadge
+import mu.proxima.app.ui.components.SimLabel
+import mu.proxima.app.ui.components.StateLabel
 import mu.proxima.app.ui.components.Sym
 import mu.proxima.app.ui.components.SymbolIcon
 import mu.proxima.app.ui.components.criticalButtonColors
@@ -137,12 +138,18 @@ fun ReportScreen(graph: ProximaGraph, capture: VoiceCapture, nav: Nav, hint: Inc
                 title = { Text(if (stage is Stage.Sent) "" else "Report") },
                 navigationIcon = { if (stage !is Stage.Sent) BackIcon(::leave) },
                 actions = {
+                    // What kind of report this is: a label, not a control (nothing to tap).
                     if (hint != null && stage !is Stage.Sent) {
-                        AssistChip(
-                            onClick = {},
-                            label = { Text(hint.label()) },
-                            leadingIcon = { SymbolIcon(hint.sym(), null, size = MaterialTheme.sizes.iconSmall) },
+                        StateLabel(
+                            hint.label(),
+                            container = MaterialTheme.colorScheme.secondaryContainer,
+                            content = MaterialTheme.colorScheme.onSecondaryContainer,
                         )
+                        Spacer(Modifier.width(MaterialTheme.spacing.lg))
+                    }
+                    // "Passed to 3 phones" is simulated until the demo runs with simulation off.
+                    if (stage is Stage.Sent && graph.simulation) {
+                        SimLabel()
                         Spacer(Modifier.width(MaterialTheme.spacing.lg))
                     }
                 },
@@ -177,7 +184,7 @@ private fun defaultText(hint: IncidentType) = when (hint) {
 }
 
 private fun promptFor(hint: IncidentType?) = when (hint) {
-    IncidentType.LOST_PERSON -> "Describe who is missing: age and clothes. No names."
+    IncidentType.LOST_PERSON -> "Who is missing? Say their age and clothes."
     IncidentType.MEDICAL -> "What happened to them?"
     IncidentType.HAZARD -> "What's the danger, and where?"
     else -> "Tell us what's happening and where."
@@ -243,34 +250,39 @@ private fun Waveform(levels: List<Float>, active: Boolean, modifier: Modifier) {
 @Composable
 private fun ColumnScope.TypingView(error: String?, hint: IncidentType?, onCheck: (String) -> Unit) {
     var text by remember { mutableStateOf("") }
-    if (error != null) {
-        Surface(
-            color = MaterialTheme.colorScheme.errorContainer,
-            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Row(Modifier.padding(MaterialTheme.spacing.md), verticalAlignment = Alignment.CenterVertically) {
-                SymbolIcon(Sym.Mic, null)
-                Spacer(Modifier.width(MaterialTheme.spacing.md))
-                Text("The microphone didn't work. Type what's happening instead.", style = MaterialTheme.typography.bodyMedium)
+    // Scrolls, so the button stays pinned above the keyboard even with a long prompt or 130% font.
+    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+        if (error != null) {
+            // A voice fallback, not an emergency: a quiet tonal note, so the critical red stays reserved for SOS.
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Row(Modifier.padding(MaterialTheme.spacing.md), verticalAlignment = Alignment.CenterVertically) {
+                    SymbolIcon(Sym.Mic, null)
+                    Spacer(Modifier.width(MaterialTheme.spacing.md))
+                    // The voice engine's reason already says what to do ("Offline voice not available. Type the report instead.").
+                    Text(error, style = MaterialTheme.typography.bodyMedium)
+                }
             }
+            Spacer(Modifier.height(MaterialTheme.spacing.lg))
         }
-        Spacer(Modifier.height(MaterialTheme.spacing.lg))
+        Text(promptFor(hint), style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.height(MaterialTheme.spacing.xxl))
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it.take(280) },
+            label = { Text("What's happening") },
+            placeholder = { Text("For example: man collapsed near the temple steps") },
+            supportingText = { Text("Say where, if you can. No names.") },
+            minLines = 3,
+            maxLines = 6,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
-    Text(promptFor(hint), style = MaterialTheme.typography.headlineMedium)
-    Spacer(Modifier.height(MaterialTheme.spacing.xxl))
-    OutlinedTextField(
-        value = text,
-        onValueChange = { text = it.take(280) },
-        label = { Text("What's happening") },
-        placeholder = { Text("For example: man collapsed near the temple steps") },
-        supportingText = { Text("Say where, if you can. No names.") },
-        minLines = 3,
-        maxLines = 6,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Spacer(Modifier.weight(1f))
+    Spacer(Modifier.height(MaterialTheme.spacing.md))
     LargeButton("Check alert", { onCheck(text) }, enabled = text.isNotBlank())
     Spacer(Modifier.height(MaterialTheme.spacing.lg))
 }

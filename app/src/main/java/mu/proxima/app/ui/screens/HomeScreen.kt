@@ -307,8 +307,8 @@ private fun AlertsRow(open: List<IncidentRecord>, onClick: () -> Unit) {
         },
         supportingContent = {
             Text(
-                top?.let { incidentTitle(it.incident.type, it.incident.subtype) } ?: "Alerts from phones around you appear here.",
-                maxLines = 1,
+                top?.let { incidentTitle(it.incident.type, it.incident.subtype) } ?: "They'll show up here.",
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         },

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -212,7 +213,7 @@ fun IncidentSheet(
                 i.peopleCount?.let { Fact("People", it.toString()) }
                 Fact("Sorted by", i.triagedBy.label())
                 Fact("Signature", if (record.signatureValid) "Verified" else "Not verified, treat with care")
-                Fact("Travelled", if (record.hopsTravelled == 0) "Sent from this phone" else "${record.hopsTravelled} hops")
+                Fact("Travelled", when (record.hopsTravelled) { 0 -> "Sent from this phone"; 1 -> "1 hop"; else -> "${record.hopsTravelled} hops" })
                 if (i.reportCount > 1) Fact("Reports", "${i.reportCount} people reported this")
             }
             protocol?.let { card ->
@@ -221,12 +222,21 @@ fun IncidentSheet(
                     Text(card.title, style = MaterialTheme.typography.titleLarge)
                 }
                 itemsIndexed(card.steps.take(4)) { n, step ->
-                    ListItem(
-                        headlineContent = { Text(step.text, style = MaterialTheme.typography.bodyLarge) },
-                        leadingContent = { Text("${n + 1}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary) },
-                    )
+                    // Number on the first line of the step, not centred against a five-line paragraph.
+                    Row(Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.sm)) {
+                        Text(
+                            "${n + 1}",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.width(MaterialTheme.spacing.xxxl),
+                        )
+                        Text(step.text, style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
-                item { Text("Source: ${card.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                item {
+                    Spacer(Modifier.height(MaterialTheme.spacing.xs))
+                    Text("Source: ${card.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             item {
                 Spacer(Modifier.height(MaterialTheme.spacing.lg))
