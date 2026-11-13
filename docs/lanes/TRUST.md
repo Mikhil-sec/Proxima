@@ -46,37 +46,26 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 
 
 ## NEXT_SESSION_HANDOFF
-_Saved 19:10 Fri 13 Nov. Branch `lane/trust` == `main` (c0bceaf). 78/78 trust tests, 16/16 core, whole project green._
+_Saved 19:32 Fri 13 Nov. Branch `lane/trust` == `main`. 88/88 trust tests, core green, whole project builds._
+_Diya 19:12: time is short - merge interface changes WITHOUT waiting for 👍, but inform the lanes; stop only for key decisions._
 
-### State of #38 (committed to the lead at 19:05: per-session identity + roles tonight, friend find only if both merge by ~01:00)
-**1. Per-session identity - code DONE, waiting on review.**
-- **Part A merged (#50), no runtime change.** `KeyRotation.PER_SESSION | STABLE` in `TinkTrustEngine`: fresh keysets per
-  session, previous sessions kept **24 h, max 10**, older ones + legacy stable keysets destroyed. `ownsKey` / `ownsNodeId`.
-  `KeysetStore` gained `names()` / `delete()`. The contract runs under both policies (`TinkTrustEngineTest` = per-session,
-  `TinkTrustEngineStableTest`) + `TinkKeyRotationTest` (5). New contract test: a notice sealed before a restart opens after.
-- **Part B = interface change #51, PR #52 (`iface/session-identity`) - DO NOT MERGE until UI + MESH 👍 on #51.** Adds
-  `TrustEngine.ownsKey/ownsNodeId` (defaults = equality, fake unchanged), uses them in `IncidentPipeline` (SEALED recipient
-  check + `mineLost`), flips `TrustModule` to `PER_SESSION`, updates `docs/ARCHITECTURE.md`, adds a `LostAndFoundTest`
-  restart case that **fails with the old lines** (checked by reverting). When 👍 arrive: `git fetch`, merge main into the
-  branch if needed, re-run `./gradlew assembleDebug test`, `gh pr merge 52 --merge`, then run
-  `:trust:connectedDebugAndroidTest` on the S24 (per-session storage has only run on the JVM so far), comment #51/#38/#1.
-- Open question to MESH on #38/#51: can a peer id change *mid-session*? If yes, timed rotation (~30 min) is a small
-  follow-up in `TinkTrustEngine` (new session on a timer); if not, we ship per-launch and say so honestly.
-- **Gap reported, not mine to fix:** `IncidentPipeline._incidents` is in-memory, so after a restart the guardian only
-  recognises their own lost report once a neighbour re-forwards it (stated on #51).
+### #38 status
+- **1. Per-session identity - LIVE on main (#50 + interface change #51/PR #52).** Fresh identity per app launch;
+  previous sessions' keys kept 24 h (max 10); pipeline uses `trust.ownsKey/ownsNodeId`. **Not yet run on a phone**:
+  plug in the S24, `./gradlew :trust:connectedDebugAndroidTest`, read `adb logcat -d -s TestRunner:*`.
+  Open to MESH: can an id change mid-session (timed rotation)? Gap left with UI: pipeline incidents are in-memory.
+- **2. Verified roles - TRUST side DONE (#55, PRs #56/#57).** `Role`, `RolePass`, `TrustEngine.verifyRoleClaim` (default
+  false). Organiser key generated 19:24 by `./gradlew :trust:generateOrganiserKey`: PUBLIC in
+  `trust/src/main/assets/data/organiser_public.json`, PRIVATE at `~/.proxima/organiser_private.json` on Diya's laptop,
+  **outside the repo - never commit, never post it**. Push to the organiser phone per `RolePasses.ORGANISER_PRIVATE_FILE` doc.
+  The task refuses to overwrite the key (that would void issued passes). MESH/UI wiring asked as OPTIONAL on #55.
+  Not built: role-phone mode (`KeyRotation.STABLE`) and pass delivery - only if MESH/UI say they'll wire the rest.
+- **3. Friend find - NOT started.** 1 and 2 merged by 19:30, so per the #38 promise it is now allowed, but it costs
+  ~4 h TRUST + MESH + UI: needs Diya's go-ahead (key decision).
 
-### THE ONE THING THAT MATTERS NEXT: verified roles (#38 item 2, promised ~00:30)
-Needs its own `interface-change` issue FIRST (none opened yet). Plan:
-1. Issue with exact Kotlin: in `core/model`: `enum class Role { MEDIC, STEWARD, POLICE }`, `@Serializable data class
-   RolePass(role, holderKey, label, expiresAtMs, organiserSig)` with `signingBytes()` prefixed `"proxima-rolepass-v1|"`;
-   on `TrustEngine`: `fun verifyRoleClaim(pass: RolePass, packet: MeshPacket, nowMs: Long): Boolean = false` (default false
-   so the fake never shows a role) - true only if the organiser signature verifies, not expired, `packet.originKey ==
-   pass.holderKey` AND `verify(packet)` (stops replaying an overheard pass).
-2. TRUST: role phones construct with `KeyRotation.STABLE` (a pass binds to `holderKey`). Organiser public keyset in
-   `trust/src/main/assets/` (safe to commit); organiser PRIVATE keyset only via `adb push`, never committed (CLAUDE.md 9).
-   Issuing helper for the organiser phone. **Context7 first** for Tink JSON keyset parsing of the pushed private key.
-3. MESH adds `role` + `pass` to the beacon; UI draws it (map + nearest help). Ask them on the issue.
-Still owed after that: two-phone found-notice (after everyone is on one build), #23 README chase, #45 proof-read.
+### THE ONE THING THAT MATTERS NEXT
+Ask Diya: friend find yes/no. Then: S24 device run of per-session storage; two-phone found-notice once everyone is on
+one build; chase #23 (README sections by 10:30) and #45 (protocol proof-read); update README privacy/roles lines.
 
 ### What works, merged to `main`, verified
 - **Dataset** `trust/src/main/assets/data/osm_help_points_raw.json` - 524 real Mauritius OSM features (ODbL),
@@ -169,6 +158,9 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 19:00 Fri | Bus: closed #11, nudged #23 (UI/MESH/AI owe sections), opened #45 (AI to proof-read protocols), told UI the Honor is TIER1 (#2), warned MESH the Honor has no logcat (#19). Docs merged (#43). |
 | 19:05 Fri | Answered #38: per-session identity + roles tonight, friend find only if both merge by ~01:00. |
 | 19:08 Fri | **Per-session identity part A merged (#50)**, no runtime change. 78/78. Part B (core) up as interface change **#51 / PR #52**, held for 👍. Restart test proven to fail on the old pipeline. |
+| 19:13 Fri | Diya authorised merging interface changes without waiting for 👍 (inform instead). Merged #52: **per-session identity live**. Informed on #51 and closed it. No phone connected for the device run. |
+| 19:20 Fri | **Verified roles** core + TRUST merged (#55, PR #56): 9 tests (replay, forgery, edits, expiry, no key). |
+| 19:30 Fri | Organiser keypair generated on the laptop (public shipped, private off-repo), issuer for the organiser phone, guard test that the shipped key is public-only. PR #57. 88/88. MESH/UI asked on #55 to wire it, optional. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -209,3 +201,6 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 19:06 Fri | Split per-session identity into **A (TRUST-only, merged) and B (core interface change, held for 👍)**, and keep the app on `STABLE` until B lands | The pipeline checks `recipientKey == identity.publicKey` and `reporterNodeId == selfNodeId`, so rotating keys alone would silently drop a guardian's found-notices after a restart - worse than the tracking it fixes. Shipping A first lets the engine work be reviewed and merged without changing behaviour | Rotating now and fixing the pipeline later (a regression in the hero flow in the meantime); changing `core/` without an issue (CLAUDE.md 1 forbids it) |
 | 19:06 Fri | Keep previous sessions' keys **24 h, max 10**, on the phone only | One event day covers a search; private keys never leave the device, so retention does not link sessions for anyone else. The cap bounds how many keys `open()` tries per notice | No retention (a restart loses the notices); indefinite retention (an old key would outlive the event for no reason) |
 | 19:07 Fri | New `TrustEngine` methods get **default implementations** (equality), and the pipeline keeps the `mesh.selfNodeId` check alongside | Defaults leave `FakeTrustEngine` and simulation untouched, so the interface change is two lines of behaviour. In simulation the fake mesh and fake trust ids differ, so dropping the old check would break sim lost & found | Abstract methods (every fake must change); replacing the selfNodeId check (breaks simulation) |
+| 19:18 Fri | A role is checked ONLY as `verifyRoleClaim(pass, packet, now)`, never as a bare pass check | A pass travels in the clear, so a bare signature check lets anyone replay an overheard medic pass. Requiring the carrying packet to be signed by `holderKey` makes the claim unforgeable without the holder's private key. Default `false` means the fake and any build without the organiser key never show a role | A public `verifyRolePass(pass)` as the lead proposed (replayable); sealing the pass (it is not secret, sealing adds nothing) |
+| 19:24 Fri | **Organiser key generated on the laptop, private half outside the repo** (approved by Diya) | One build serves every phone, and `~/.proxima/` cannot be picked up by any `git add`, which is stronger than a gitignore entry. The generator refuses to overwrite, since a new key silently voids every pass already issued | Generating on the organiser phone (needs a phone now and a second build round); a gitignored folder in the repo (one `-f` away from a leak) |
+| 19:30 Fri | Ask MESH/UI to wire roles as **optional** (approved by Diya) | Their own P0/P1s before the 08:00 freeze matter more, and TRUST-side roles are complete and tested either way, so the README can state it honestly | Pushing roles as a priority (risks other lanes' core features); not asking (the capability would never be visible) |
