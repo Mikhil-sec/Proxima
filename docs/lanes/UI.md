@@ -20,6 +20,76 @@ You consume everything through `graph.pipeline`, `graph.mesh`, `graph.locate`, `
   48dp+ targets. Command Center is dense tactical telemetry.
 - Always show a **SIM** badge when `graph.simulation` is true. Show `triagedBy` and verified (green) vs unverified (amber) on incidents.
 
+## Design plan & quality bar (every screen must pass before it is "done")
+
+### Tokens (code: `app/.../ui/theme/Theme.kt`, nothing else picks colours or sizes)
+| Token | Value | Only used for |
+|---|---|---|
+| Black | `#05070A` | Every background. True OLED black, not "tinted near-black". |
+| Surface / SurfaceHi | `#0F141C` / `#161D28` | Sheets, pressed states, the few raised panels |
+| Line | `#232C3A` | 1dp structure: map grid, dividers that separate *different* things |
+| Green `#00FF9D` | phosphor | **Meaning only:** verified signature, mesh link alive, "you are connected". Never decoration. |
+| Amber `#FFB800` | | Unverified relay, SIM badge, warnings, MEDIUM |
+| Crimson `#FF2A55` | | SOS and CRITICAL only. If crimson is on screen, something is on fire. |
+| Text / Dim | `#E6EDF3` / `#7D8590` | Body / secondary (Dim on Black = 5.4:1, on Surface = 4.9:1, both pass AA) |
+
+- **Type scale** (Space Grotesk, ratio ~1.25): 44 / 32 / 26 / 22 / 18 / 16 / 14sp. Body 18sp on civilian screens.
+  JetBrains Mono **only for machine data** (coordinates, dBm, hop counts, node ids, timers), never for labels or sentences.
+- **Spacing**: 4dp grid, screen gutters 20dp (phone) / 24dp (tablet). Section gaps 32dp, related items 12dp.
+- **Shape**: hierarchy-driven, not one radius everywhere. SOS = circle, primary actions = 20dp radius,
+  list rows = no container (a severity rail + whitespace), sheets = 28dp top corners.
+- **Motion**: one ambient motion per screen at most (Home: SOS breathing ring; Command Center: hop pulses; Radar: sweep).
+  Everything else moves only in response to touch. All of it respects the system animator scale (reduced motion).
+
+### Two registers (the core design decision)
+- **Civilian (phone: Home, Report, Guardian, Finder, Guided response):** calm, plain, huge. Reads like a
+  well-made public-safety sign, not a hacker toy. Sentence case, no mono, no grid, no telemetry. One action per screen.
+  The one bold thing: **the crimson SOS ring**.
+- **Command Center (tablet):** the "Field Terminal" register. Dense mono telemetry, tactical grid, live hop pulses.
+  The one bold thing: **the live mesh map**. The terminal look lives here and on the radar, nowhere else.
+
+### Anti-slop checklist (reject the screen if any box fails)
+- [ ] No default Material: no `Card`, no `AlertDialog`, no `Scaffold` FAB, no default purple/teal, no `TopAppBar` with a back arrow + title.
+- [ ] No identical rounded cards in a stack. Lists are rows with a severity rail; grouping is done with space, not boxes.
+- [ ] No ALL-CAPS tracked-out eyebrow labels above headings. Caps are allowed only for the 3-letter SIM/UWB/GPS badges.
+- [ ] No "A · B · C" metadata strings. Telemetry is laid out in aligned columns or as separate, labelled values.
+- [ ] No "→" glued to button text, no emoji as icons, no gradients as decoration, no drop shadows on black.
+- [ ] No single-word colour accent in a headline. Colour on text means state (verified, critical), nothing else.
+- [ ] No lorem ipsum, no "Lorem/John Doe/Test", no empty grey boxes. Every empty state says what to do next.
+- [ ] No spinner on a blank screen. Show what is known now (cached incidents, last fix), and mark it as stale.
+- [ ] No fake numbers in the final demo. Anything simulated carries the amber SIM badge.
+- [ ] Every structural device (rail, divider, number, badge) encodes information. If it doesn't, delete it.
+- [ ] Remove one accessory before shipping: after the screen works, take the screenshot and cut one decorative element.
+
+### Mobile UI guidelines (Android, outdoor festival, panicking user)
+- [ ] **Touch targets:** 48dp minimum everywhere; civilian primary actions ≥ 72dp tall, SOS ≥ 200dp. 8dp+ between targets.
+- [ ] **Thumb zone:** primary action in the bottom third on phone. Nothing critical in the top corners.
+- [ ] **One action per civilian screen**; the secondary option is visibly quieter (text button, not a twin button).
+- [ ] **Edge-to-edge:** content padded with `WindowInsets.safeDrawing`; nothing under the status bar, nav bar or cutout.
+- [ ] **Back is predictable:** system back always goes one step up; destructive or sending steps can always be cancelled.
+- [ ] **Font scale:** layout survives 130% system font (Honor default is often large). Use `sp`, no fixed-height text boxes, no clipping.
+- [ ] **Contrast:** text ≥ 4.5:1, large text ≥ 3:1. Black text on crimson/amber/green fills (white on crimson fails at small sizes).
+- [ ] **Never colour alone:** verified/unverified/critical also carry a word or shape (✓ / ! / ring).
+- [ ] **TalkBack:** every icon/Canvas has a `contentDescription` or semantics; SOS announces "Hold to call for help".
+- [ ] **Sunlight & night:** OLED black + saturated accents; no thin 1dp text-critical strokes; no Dim text for anything urgent.
+- [ ] **Haptics** confirm state, not decoration: SOS armed, alert sent, peer found, packet hop (tablet off), radar proximity.
+- [ ] **Offline-first copy:** never say "No internet". Say how many phones are around and whether the alert left this phone.
+- [ ] **Language:** short, plain words a stressed parent understands; strings ready for FR / Kreol (no text baked into images).
+- [ ] **Orientation:** phone portrait-locked; tablet any orientation, Command Center designed for landscape.
+- [ ] **Performance:** Canvas screens hold 60fps on the Honor X8b (Tier 2); no allocations inside `onDraw` loops.
+
+### Copy rules
+- Active verbs that say exactly what happens: "Send alert", "Cancel", "I found someone", "Show me the way".
+  The same word all the way through: the button "Send alert" leads to "Alert sent".
+- Errors say what happened and what to do, in the app's voice, without apologising ("Microphone is off. Type what's happening instead.").
+- No names, no photos, no personal details in any example text (privacy rule, CLAUDE.md §4).
+
+### Definition of done per screen
+1. Builds, runs on the Honor X8b (and the tablet for Command Center).
+2. Screenshot taken via `adb exec-out screencap -p`, reviewed against both checklists above, one accessory removed.
+3. Re-checked at 130% font scale and with TalkBack labels.
+4. Logged in the Progress log with the time.
+
 ## Tasks
 **P0 (M1, 18:00)**
 - [ ] Theme (colours, fonts, shapes) + permission/boot screen (request `graph.requiredPermissions`, tier badge, SIM badge, hidden SIM toggle)
