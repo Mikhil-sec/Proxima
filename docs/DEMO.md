@@ -57,5 +57,5 @@ Privacy, limits, next. One idea per slide, plain words.
 - That the friend radar works indoors: it needs GPS. The lost-child radar uses UWB up close.
 
 ## Lead's laptop (optional, technical)
-Forced relay chain for questions about multi-hop: `sh chain.sh set` (A56 → S24 Ultra → tablet, all at once on the
-cables), then `sh chain.sh reset`. Never set it phone by phone in the dev sheet (#3).
+Forced relay chain for questions about multi-hop: `sh tools/devices/chain.sh set` (A56 → S24 Ultra → tablet, all at once on the
+cables), then `sh tools/devices/chain.sh reset`. Never set it phone by phone in the dev sheet (#3).
