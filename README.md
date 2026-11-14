@@ -6,23 +6,6 @@ Proxima lets people raise and route emergencies, find lost children and get guid
 
 > Hackathon *Life Powered by Tech*, 13–14 Nov 2026 · Theme 1: **Powered to Protect**
 
-<!-- ASSEMBLY STATUS (TRUST owns this file; remove this block before submitting)
-     Filled: Problem & user · Data sources · Tech stack · How to run · AI disclosure (TRUST row) · draft decisions.
-     RECEIVED: MESH (measured-on-phones table, #47) · LOCATE (radar table + AI row, #60).
-     STILL NEEDED from each lane, by 10:30 Sat (#23):
-       UI (Mikhil)   – the diagram in "How it works"; screenshots; AI-disclosure row
-       AI (Seeya)    – AI-disclosure row; their decision shortlist draft is in docs/lanes/AI.md
-     TRUST to decide before submitting: roles (#55) and friend find (#61) are built + tested on the TRUST side but
-     appear in the app only if MESH/UI wire them. Claim them ONLY if they are on screen in the demo build.
-     Also: "Surprise card" once drawn, and the final 5–10 decision shortlist (AI lane compiles ~10:00 Sat).
-
-     *** CHECK BEFORE SUBMITTING (was a blocker until 18:10 Fri) ***
-     The signing/sealing/identity claims are TRUE in main with simulation OFF: TinkTrustEngine (Ed25519 + HPKE,
-     Keystore-backed, fresh identity per app session). Security contract on device: 21/21 on the Honor (18:50),
-     22/22 on the S24 Ultra built from main incl. per-session identity (19:47, M2 step 3).
-     Remaining: the M2 two-phone lost & found with simulation OFF (#53 step 2) - record its result here.
--->
-
 ## Problem & user
 
 **Hero user: a parent with a young child on the Maha Shivaratri pilgrimage to Ganga Talao (Grand Bassin).**
@@ -58,13 +41,28 @@ Everything is one `Incident` on one pipeline — lost person, sighting, found, m
    beacon then carries a tag that changes every 10 minutes and that only its paired friends can recognise. If a
    friend can't call for help, your phone spots their tag in beacons it already hears and shows the 25 m square
    their phone was last heard in, with the radar to it. **Nobody broadcasts a search**, so no relay or bystander
-   learns that anyone is being looked for. *Status: crypto and beacon matching are unit-tested (TRUST, MESH); the
-   pairing screen is built; pairing between two real phones has not been run yet.*
+   learns that anyone is being looked for. *Tested on two real phones (S24 Ultra ↔ Galaxy A56, 14 Nov): they paired
+   by matching code and each then recognised the other from its rotating beacon tag. The radar to a friend needs a
+   GPS fix or UWB; indoors with neither, the screen asks you to step outside.*
 7. **Verified posts.** A medic tent's or steward's phone carries a pass signed by the event organiser. Every phone
    checks that signature together with the beacon it arrived in, then shows the post, live, in "Nearest help" and
-   on the Command Center plan. At Ganga Talao the nearest fixed help point is 8.6 km away; a medic tent is not.
-   *Status: signing and verification are unit-tested; passes are issued from the organiser's laptop over adb; the
-   on-screen display has not been run with a real role phone yet.*
+   on the Command Center plan. At Ganga Talao the nearest medical facility is 8.5 km away; a medic tent is not.
+   *Tested on real phones (14 Nov): the organiser's laptop signed a 12-hour "Medic tent 2" pass for the Honor X8b,
+   delivered over adb (the organiser's private key never leaves the laptop). The Honor showed "Verified role: Medic
+   tent 2", and a medical report on the S24 Ultra listed "Medic tent 2 — Medic on site now, verified by the
+   organiser" first in Nearest help, 5 m away, above the nearest clinic (506 m).*
+
+**Tested end to end on real phones, simulation off** (14 Nov, 5 devices: S24 Ultra, S26+, S23+, Galaxy A56,
+and a Galaxy Tab S6 Lite as Command Center). Every step passed:
+- **SOS → Command Center:** a typed medical report reached every phone and the tablet, *Signature: Verified*.
+- **Forced two-hop relay** (A56 → S24 Ultra → tablet): the same packet arrived one hop later with its signature
+  still valid.
+- **Lost & found with real encryption:** guardian (S23+) reported a lost child, finder (S26+) answered, and the
+  guardian got *"Someone is with your child"* plus the radar (UWB with a direction arrow up close, then GPS).
+  The three bystander devices relayed the finder's sealed updates (23 in total) and **none could open them**.
+- **On-device AI triage:** Gemma on the S24 Ultra sorted a bleeding report in 1.4 s, and the tablet showed exactly
+  what the sender's review screen showed.
+- **Friend find:** see item 6.
 
 **The radar, honestly: what works on which phone** (measured 13 Nov, simulation off, real mesh)
 | Source | Phones | What we measured |
@@ -146,6 +144,11 @@ unit-tested Kotlin, not in a one-off script.
 `emergency=*` returns only six generic values. So those categories are empty, and we say so rather than
 shipping a map with invented pins. Lost-person alerts therefore route to police, and hazards to fire and
 police, both of which are real and well covered.
+
+**Known data error (upstream):** one OpenStreetMap feature near Grand Baie, *"Vet Clinic" / Clinique Vétérinaire
+du Nord* (way 1200032819), is tagged as a human clinic (`amenity=clinic`) rather than `amenity=veterinary`, so
+the app can list it as medical help. We kept the data as published rather than hand-editing it; the right fix
+is to correct the tag in OpenStreetMap and re-fetch.
 
 ### 2. Response protocols — IFRC
 
