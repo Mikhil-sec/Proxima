@@ -21,7 +21,7 @@ Ganesh Chaturthi, Père Laval, concerts, political rallies and university campus
 
 ## Real dataset (rule: it must power a feature)
 - **Mauritius help points:** OpenStreetMap (ODbL) health facilities, police, fire stations, pharmacies,
-  defibrillators, water and toilets, cross-checked against data.govmu.org where possible. Powers "nearest help"
+  water and toilets (OSM Mauritius has no defibrillators, assembly points or ambulance stations). Powers "nearest help"
   and the Command Center map.
 - **Response protocols:** first-aid and safety steps transcribed from an authoritative source (e.g. IFRC
   International First Aid Guidelines / Red Cross), with the source stored on every card.

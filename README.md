@@ -73,6 +73,18 @@ and a Galaxy Tab S6 Lite as Command Center). Every step passed:
   what the sender's review screen showed.
 - **Friend find:** see item 6.
 
+**Screens** (real phones, simulation off, 14 Nov; frames from the demo video, status bars cropped)
+
+| SOS review | Help + cited card | Finder | Guardian | Radar |
+|---|---|---|---|---|
+| <img src="docs/img/sos-review.png" width="160" alt="Review screen: Critical, Not breathing, sorted by on-device AI, 90%"> | <img src="docs/img/sos-help.png" width="160" alt="Alert sent to 3 phones, nearest health centres, CPR card"> | <img src="docs/img/finder-confirm.png" width="160" alt="Finder: Are you with them now? Location goes only to the guardian"> | <img src="docs/img/guardian-found.png" width="160" alt="Guardian: Someone is with your child, location encrypted to you"> | <img src="docs/img/guardian-radar.png" width="160" alt="Radar: 2.8 m, You're there"> |
+
+<img src="docs/img/command-center.png" width="640" alt="Command Center on the tablet: 6 tickets, fire reported by 2 people, crowd watch area, verified Medic tent 2 on the plan">
+
+*Command Center (Tab S6 Lite): a fire typed on the S24 Ultra arrived over the mesh; a second report of it merged
+into the same ticket ("2 people reported it"); the plan shows a crowd-watch area from anonymous 25 m cells and the
+verified Medic tent 2.*
+
 **The radar, honestly: what works on which phone** (measured 13 Nov, simulation off, real mesh)
 | Source | Phones | What we measured |
 |---|---|---|
@@ -225,7 +237,7 @@ AGP 9.5.1 · Kotlin 2.4.21 · Gradle 9.9.1 · minSdk 26 · compileSdk 37.
 | Claude Code (Anthropic) | Project scaffolding, shared interfaces, docs; each lane lists further use below |
 | Claude Code — TRUST lane | Wrote the cryptography engine (Ed25519 signing and HPKE sealing on Google Tink, keys in the Android Keystore), per-session identity, the organiser-signed role passes and their laptop issuer, friend-find tags and pairing, the OSM tag mapping and nearest-help ranking, protocol-card selection, and all 101 TRUST unit tests, including a security contract written before the engine; drove the Overpass fetch. The IFRC protocol steps were **copied from the text of the published PDF with a page citation each**, deliberately not generated, so no medical step was written by a model. The member made the security calls (no blockchain, no uncited crush card, organiser key kept off the repo), approved friend find, and ran every device test on the S24 Ultra and Honor X8b. |
 | Claude Code — LOCATE lane | Wrote the radar engine (GPS, compass heading, UWB session over the mesh), the arrow filter and all LOCATE unit tests, plus the adb device-test tools. Every claim in the radar table above comes from logs on real phones, not from the model; the member placed the phones and judged the arrow direction. |
-| Claude Code — MESH lane | Wrote the Nearby mesh engine (relay, dedup, reconnect backoff, store-and-forward, beacons, allow-list), the acoustic modem and all 34 MESH unit tests (including synthetic-audio tests for noise, echo and clock drift), plus the adb device-test script. The member ran every phone test, chose to install test builds side by side so teammates' phones kept their data, and moved the acoustic tones to near-ultrasound after the audible version disturbed other teams. Every number in the mesh table comes from phone logs. |
+| Claude Code — MESH lane | Wrote the Nearby mesh engine (relay, dedup, reconnect backoff, store-and-forward, beacons, allow-list), the acoustic modem and the MESH unit tests (52 today, including synthetic-audio tests for noise, echo and clock drift, and 8 surge-control tests added by the lead for the surprise card), plus the adb device-test script. The member ran every phone test, chose to install test builds side by side so teammates' phones kept their data, and moved the acoustic tones to near-ultrasound after the audible version disturbed other teams. Every number in the mesh table comes from phone logs. |
 | Claude Code — AI lane | Wrote the triage engine (Gemini Nano and Gemma/LiteRT-LM backends, prompt, strict output validator, rules safety net), the mesh offload, offline voice in/out, the hands-free guide, the crowd-crush risk model, their unit tests and the accuracy-eval harness. Also prepared the step-by-step comparison of the 9 protocol cards against the IFRC PDF for the proof-read (#45). The member chose the runtime and the pivot to the guide and crowd warning, ran every phone test, spoke every voice command and approved the proof-read before it was posted. The eval's expected answers were fixed before any model was run, and the fresh test set was written by another teammate. No medical text is generated: the model sorts a report (type, subtype, severity and a one-line summary of what the reporter said), and the steps come from TRUST's cited cards. |
 | Claude Code — UI lane (lead) | Wrote every screen (Compose, Material You tokens, the `designCheck` gate), the Command Center plan, the pairing and radar screens, the per-device install script and the team's integration merges. Screens were reviewed from real screenshots on the Honor X8b and Tab S6 Lite in light and dark; the member chose the design direction (rejecting the first "terminal" look), ran the devices and made the scope calls. |
 
