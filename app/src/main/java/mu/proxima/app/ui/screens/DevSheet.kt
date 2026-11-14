@@ -40,9 +40,13 @@ import mu.proxima.app.ui.Nav
 import mu.proxima.app.ui.Screen
 import mu.proxima.app.ui.components.Fact
 import mu.proxima.app.ui.components.LargeButton
+import mu.proxima.app.ui.components.label
 import mu.proxima.app.ui.label
 import mu.proxima.app.ui.theme.spacing
 import mu.proxima.core.model.Peer
+import mu.proxima.app.ui.surgeLabel
+import mu.proxima.mesh.MeshBeaconInfo
+import mu.proxima.mesh.MeshLoad
 import mu.proxima.mesh.MeshDemoControls
 
 /** Simulation is read once when the graph is built, so switching it means a full restart. */
@@ -76,6 +80,8 @@ fun DevSheet(graph: ProximaGraph, nav: Nav, onDismiss: () -> Unit) {
             Fact("Compass", if (caps.hasCompass) "Yes" else "No")
             Fact("Triage", triage.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase))
             Fact("Node", graph.mesh.selfNodeId)
+            Fact("Surge control", surgeLabel(MeshLoad.state.collectAsStateWithLifecycle().value))
+            MeshBeaconInfo.rolePass.collectAsStateWithLifecycle().value?.let { Fact("Verified role", "${it.label} (${it.role.label()})") }
             ListItem(
                 headlineContent = { Text("Simulation", style = MaterialTheme.typography.titleMedium) },
                 supportingContent = { Text("Fake phones and incidents. Must be off for the final demo.") },

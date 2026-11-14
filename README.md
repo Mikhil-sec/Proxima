@@ -6,23 +6,6 @@ Proxima lets people raise and route emergencies, find lost children and get guid
 
 > Hackathon *Life Powered by Tech*, 13–14 Nov 2026 · Theme 1: **Powered to Protect**
 
-<!-- ASSEMBLY STATUS (TRUST owns this file; remove this block before submitting)
-     Filled: Problem & user · Data sources · Tech stack · How to run · AI disclosure (TRUST row) · draft decisions.
-     RECEIVED: MESH (measured-on-phones table, #47) · LOCATE (radar table + AI row, #60).
-     STILL NEEDED from each lane, by 10:30 Sat (#23):
-       UI (Mikhil)   – the diagram in "How it works"; screenshots; AI-disclosure row
-       AI (Seeya)    – AI-disclosure row; their decision shortlist draft is in docs/lanes/AI.md
-     TRUST to decide before submitting: roles (#55) and friend find (#61) are built + tested on the TRUST side but
-     appear in the app only if MESH/UI wire them. Claim them ONLY if they are on screen in the demo build.
-     Also: "Surprise card" once drawn, and the final 5–10 decision shortlist (AI lane compiles ~10:00 Sat).
-
-     *** CHECK BEFORE SUBMITTING (was a blocker until 18:10 Fri) ***
-     The signing/sealing/identity claims are TRUE in main with simulation OFF: TinkTrustEngine (Ed25519 + HPKE,
-     Keystore-backed, fresh identity per app session). Security contract on device: 21/21 on the Honor (18:50),
-     22/22 on the S24 Ultra built from main incl. per-session identity (19:47, M2 step 3).
-     Remaining: the M2 two-phone lost & found with simulation OFF (#53 step 2) - record its result here.
--->
-
 ## Problem & user
 
 **Hero user: a parent with a young child on the Maha Shivaratri pilgrimage to Ganga Talao (Grand Bassin).**
@@ -54,6 +37,32 @@ Everything is one `Incident` on one pipeline — lost person, sighting, found, m
    so relays carry it but cannot read it. The guardian then gets a radar pointing the way.
 5. **Command Center** (tablet at a first-aid or police post): live incident heatmap from **anonymous grid
    cells only**, mesh topology, and merged report counts ("Fire — 15 reports").
+6. **My people (friend find).** Friends pair once by comparing a six-digit number on both screens. Each phone's
+   beacon then carries a tag that changes every 10 minutes and that only its paired friends can recognise. If a
+   friend can't call for help, your phone spots their tag in beacons it already hears and shows the 25 m square
+   their phone was last heard in, with the radar to it. **Nobody broadcasts a search**, so no relay or bystander
+   learns that anyone is being looked for. *Tested on two real phones (S24 Ultra ↔ Galaxy A56, 14 Nov): they paired
+   by matching code and each then recognised the other from its rotating beacon tag. The radar to a friend needs a
+   GPS fix or UWB; indoors with neither, the screen asks you to step outside.*
+7. **Verified posts.** A medic tent's or steward's phone carries a pass signed by the event organiser. Every phone
+   checks that signature together with the beacon it arrived in, then shows the post, live, in "Nearest help" and
+   on the Command Center plan. At Ganga Talao the nearest medical facility is 8.5 km away; a medic tent is not.
+   *Tested on real phones (14 Nov): the organiser's laptop signed a 12-hour "Medic tent 2" pass for the Honor X8b,
+   delivered over adb (the organiser's private key never leaves the laptop). The Honor showed "Verified role: Medic
+   tent 2", and a medical report on the S24 Ultra listed "Medic tent 2 — Medic on site now, verified by the
+   organiser" first in Nearest help, 5 m away, above the nearest clinic (506 m).*
+
+**Tested end to end on real phones, simulation off** (14 Nov, 5 devices: S24 Ultra, S26+, S23+, Galaxy A56,
+and a Galaxy Tab S6 Lite as Command Center). Every step passed:
+- **SOS → Command Center:** a typed medical report reached every phone and the tablet, *Signature: Verified*.
+- **Forced two-hop relay** (A56 → S24 Ultra → tablet): the same packet arrived one hop later with its signature
+  still valid.
+- **Lost & found with real encryption:** guardian (S23+) reported a lost child, finder (S26+) answered, and the
+  guardian got *"Someone is with your child"* plus the radar (UWB with a direction arrow up close, then GPS).
+  The three bystander devices relayed the finder's sealed updates (23 in total) and **none could open them**.
+- **On-device AI triage:** Gemma on the S24 Ultra sorted a bleeding report in 1.4 s, and the tablet showed exactly
+  what the sender's review screen showed.
+- **Friend find:** see item 6.
 
 **The radar, honestly: what works on which phone** (measured 13 Nov, simulation off, real mesh)
 | Source | Phones | What we measured |
@@ -83,7 +92,29 @@ dropped if its id was seen before (Room table, so this survives a restart). Othe
 **Not measured:** range outdoors, chains longer than 3 phones, and behaviour with dozens of phones. Nearby caps
 connections per phone, so a large crowd forms a partial mesh, and relaying is what covers the gaps.
 
-<!-- UI: architecture diagram here. Source: docs/ARCHITECTURE.md -->
+**Architecture** (full detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))
+
+```mermaid
+flowchart LR
+    subgraph Phone["Phone that needs help"]
+        SOS["SOS: voice or typed"] --> TRI{"Triage<br/>Gemma on device → nearby AI phone → keyword rules"}
+        TRI --> REV["Review screen<br/>(what is sent = what is shown)"]
+        REV --> SIGN["Incident, signed (Ed25519)"]
+    end
+    SIGN -->|Bluetooth / Wi-Fi, no network| R1["Relay phone"]
+    R1 -->|"hop budget 3/5/7/10<br/>dedup · surge control"| R2["Relay phone"]
+    R2 --> CC["Command Center tablet<br/>queue · site plan · density · crowd risk"]
+    R1 --> PH["Every phone nearby<br/>alert + cited protocol card + nearest help"]
+    subgraph LF["Lost & found"]
+        G["Guardian reports a lost child"] -.alert.-> F["Finder: 'I'm with them'"]
+        F -->|"location sealed to the guardian's key (HPKE)<br/>relays carry it, can't read it"| G2["Guardian's radar<br/>UWB → GPS"]
+    end
+```
+
+`:core` (pure Kotlin) holds the shared contract and the one `IncidentPipeline`; each lane owns one module behind a
+factory: `:mesh` (Nearby, store-and-forward, surge control), `:ai` (triage, voice, hands-free guide, crowd risk),
+`:locate` (GPS, compass, UWB radar), `:trust` (Tink keys, sealing, verified roles, friend find, cited data) and
+`:app` (Compose UI).
 
 ## Data sources
 
@@ -113,6 +144,11 @@ unit-tested Kotlin, not in a one-off script.
 `emergency=*` returns only six generic values. So those categories are empty, and we say so rather than
 shipping a map with invented pins. Lost-person alerts therefore route to police, and hazards to fire and
 police, both of which are real and well covered.
+
+**Known data error (upstream):** one OpenStreetMap feature near Grand Baie, *"Vet Clinic" / Clinique Vétérinaire
+du Nord* (way 1200032819), is tagged as a human clinic (`amenity=clinic`) rather than `amenity=veterinary`, so
+the app can list it as medical help. We kept the data as published rather than hand-editing it; the right fix
+is to correct the tag in OpenStreetMap and re-fetch.
 
 ### 2. Response protocols — IFRC
 
@@ -178,29 +214,28 @@ AGP 9.5.1 · Kotlin 2.4.21 · Gradle 9.9.1 · minSdk 26 · compileSdk 37.
 | Tool | What we used it for |
 |---|---|
 | Claude Code (Anthropic) | Project scaffolding, shared interfaces, docs; each lane lists further use below |
-| Claude Code — TRUST lane | Wrote the OSM tag-mapping and ranking code, the protocol-selection logic and all 22 unit tests; drove the Overpass fetch. The IFRC protocol steps were **transcribed by hand from the published PDF**, deliberately not generated — and no medical step was written by a model. |
+| Claude Code — TRUST lane | Wrote the cryptography engine (Ed25519 signing and HPKE sealing on Google Tink, keys in the Android Keystore), per-session identity, the organiser-signed role passes and their laptop issuer, friend-find tags and pairing, the OSM tag mapping and nearest-help ranking, protocol-card selection, and all 101 TRUST unit tests, including a security contract written before the engine; drove the Overpass fetch. The IFRC protocol steps were **copied from the text of the published PDF with a page citation each**, deliberately not generated, so no medical step was written by a model. The member made the security calls (no blockchain, no uncited crush card, organiser key kept off the repo), approved friend find, and ran every device test on the S24 Ultra and Honor X8b. |
 | Claude Code — LOCATE lane | Wrote the radar engine (GPS, compass heading, UWB session over the mesh), the arrow filter and all LOCATE unit tests, plus the adb device-test tools. Every claim in the radar table above comes from logs on real phones, not from the model; the member placed the phones and judged the arrow direction. |
 | Claude Code — MESH lane | Wrote the Nearby mesh engine (relay, dedup, reconnect backoff, store-and-forward, beacons, allow-list), the acoustic modem and all 34 MESH unit tests (including synthetic-audio tests for noise, echo and clock drift), plus the adb device-test script. The member ran every phone test, chose to install test builds side by side so teammates' phones kept their data, and moved the acoustic tones to near-ultrasound after the audible version disturbed other teams. Every number in the mesh table comes from phone logs. |
-| Claude Code — AI lane | Wrote the triage engine (Gemini Nano and Gemma/LiteRT-LM backends, prompt, strict output validator, rules safety net), the mesh offload, offline voice in/out, the hands-free guide, the crowd-crush risk model, their unit tests and the accuracy-eval harness. The member chose the runtime and the pivot to the guide and crowd warning, ran every phone test and spoke every voice command. The eval's expected answers were fixed before any model was run. No medical text is generated: the model only picks a type and subtype, and steps come from TRUST's cited cards. |
-<!-- UI: add your row -->
+| Claude Code — AI lane | Wrote the triage engine (Gemini Nano and Gemma/LiteRT-LM backends, prompt, strict output validator, rules safety net), the mesh offload, offline voice in/out, the hands-free guide, the crowd-crush risk model, their unit tests and the accuracy-eval harness. Also prepared the step-by-step comparison of the 9 protocol cards against the IFRC PDF for the proof-read (#45). The member chose the runtime and the pivot to the guide and crowd warning, ran every phone test, spoke every voice command and approved the proof-read before it was posted. The eval's expected answers were fixed before any model was run, and the fresh test set was written by another teammate. No medical text is generated: the model sorts a report (type, subtype, severity and a one-line summary of what the reporter said), and the steps come from TRUST's cited cards. |
+| Claude Code — UI lane (lead) | Wrote every screen (Compose, Material You tokens, the `designCheck` gate), the Command Center plan, the pairing and radar screens, the per-device install script and the team's integration merges. Screens were reviewed from real screenshots on the Honor X8b and Tab S6 Lite in light and dark; the member chose the design direction (rejecting the first "terminal" look), ran the devices and made the scope calls. |
 
 ## Key decisions
 
-<!-- DRAFT shortlist, assembled by TRUST from docs/DECISIONS.md and the lane logs.
-     AI lane compiles the final 5–10 at ~10:00 Sat; trim this then. All times Fri 13 Nov. -->
+Times are Fri 13 Nov unless marked Sat.
 
-| Time | Decision | Why |
-|---|---|---|
-| ~13:05 | Hero user = a parent at Maha Shivaratri, not "everyone at events" | A specific Mauritian user with real, measurable network congestion |
-| ~13:10 | Cut the duress PIN, decoy calculator, cyber-warfare branding and LLM chatbot | Too many features, none finished; they did not serve the user |
-| ~13:15 | Unify lost / sighting / found / medical / hazard / all-clear as one `Incident` pipeline | One bus to build, test and explain, instead of five subsystems |
-| ~13:25 | The AI **selects** a cited protocol card and never authors medical advice | Removes the possibility of a hallucinated instruction being read aloud |
-| 13:35 | Six Gradle modules, one owner each, fakes behind factories | Five developers in parallel with zero merge conflicts |
-| 14:43 | Commit the **raw** Overpass response and map it in tested Kotlin | Licence, fetch date and coordinates stay verifiable against OSM |
-| 15:35 | **Drop the QR wristband**; the finder answers the guardian's alert instead | No wristband hardware or printing, and the flow works without it — same privacy, one less dependency |
-| 15:45 | Ship protocol cards with gaps rather than invent the missing four | A wrong protocol is more dangerous than an absent one |
-| 16:50 | **Reject a blockchain** for the trust layer; keep Ed25519 signatures + HPKE sealing | A ledger is public (a child's location on it inverts our privacy rule) and needs consensus, i.e. connectivity, the one thing a crowd does not have |
-| 18:05 | A node id is **derived from its key** and `verify()` rejects any packet whose id does not match | A valid signature alone lets an attacker claim someone else's id; binding the two makes ids unforgeable. The same 21-test security spec passes on the JVM and on two real phones |
+| Time | Decision | Explanation | Why | Alternatives rejected |
+|---|---|---|---|---|
+| ~13:05 | Hero user = **a parent at Maha Shivaratri, Ganga Talao**; concerts and campuses come after | We designed for one specific person: a parent who has lost their child in a huge pilgrimage crowd where the phone network is jammed. That gave us a clear test for every feature: would a panicking parent manage it with no help? Concerts and campuses came after. | A specific Mauritian user with real network congestion; every feature has to work for a panicking parent | "Everyone at big events" |
+| ~13:15 | **One `Incident` pipeline** for lost, sighting, found, medical, hazard and all-clear | A lost child, a sighting, a "found" message, a medical SOS, a hazard and an all-clear are all the same kind of object on one message bus. The only thing that changes is severity, which decides how far the alert spreads (3 to 10 hops). That meant building, testing and explaining one system instead of one per feature. | One bus to build, test and explain; severity alone sets how far an alert travels (3 to 10 hops) | A separate subsystem per feature |
+| ~13:25 | The AI **selects** a cited IFRC protocol card and **never writes medical advice**; every AI path falls back to keyword rules | The AI only sorts the emergency: what type, how serious and a one-line summary. The first-aid steps read to the user come from a vetted IFRC 2020 card with a page citation. If the AI is missing or fails, keyword rules take over, so every phone still works. A made-up instruction read aloud over a casualty is the worst failure we could ship. | A made-up instruction read aloud over a casualty is the worst possible failure; the rules keep every phone working with no model | A free-form first-aid chatbot; a cloud LLM (there is no network at the venue) |
+| 14:55 | **What you see is what is sent:** the AI result shows for 3 s and sends unless cancelled, and that exact result goes on the mesh (#10) | After the AI sorts a report, the result shows on screen for 3 seconds and then sends unless the user cancels. Exactly that result goes onto the mesh. A panicking user can still catch a wrong result without an extra tap. On the real phones, the Command Center ticket matched the review screen. | A panicking user can still catch a wrong triage without an extra tap. On phones, the Command Center ticket matched the review screen | Sending with no check; a confirm tap (slower in a panic); triaging again on send (the alert could differ from the screen) |
+| 15:35 | **Drop the QR wristband:** the guardian reports the lost child, a finder answers that alert, and the location is sealed to the guardian's key | In the new flow, the guardian reports the lost child, a finder answers that alert, and the child's location is sealed so only the guardian's key can open it. We kept the same privacy and needed no printing, no hardware on the day and no camera permission. | No wristband printing or hardware on the day, the same privacy property, and no camera permission | Printing wristbands on the day; keeping a QR path nobody could demo |
+| 15:45 | **Ship protocol cards with gaps** (no crowd-crush, electrical, fallen-branch or flood card) instead of writing the missing steps | IFRC 2020 has no protocol for crowd crush, electrical injury, fallen branches or floods, so we didn't write one. A confident wrong protocol is more dangerous than none. | IFRC 2020 has no protocol for them, and a confident wrong protocol is more dangerous than none | Steps written from a model's knowledge; citing blogs as authoritative |
+| 16:50 | **No blockchain** for trust: Ed25519 signatures + HPKE sealing | A blockchain is public, so a child's location on it would break our privacy rule. It also needs consensus, which needs connectivity, the one thing a crowd doesn't have. Plain signatures prove who sent an alert, and sealing makes sure only the guardian can read the location. | A ledger is public (a child's location on it inverts our privacy rule) and needs consensus, i.e. connectivity, the one thing a crowd does not have | A blockchain trust layer |
+| 18:48 | **Gemma 4 E2B on the phone** (Google LiteRT-LM), with Gemini Nano as second choice | Gemini Nano wasn't available on any team phone. Gemma is openly licensed, runs on any Android phone's GPU or CPU, and sorts a report in about 1.5 s on the S24 Ultra. Nano stays as a second choice. | Nano was unavailable on every team phone; Gemma is openly licensed and runs on any Android GPU or CPU. On the S24 Ultra it sorts a report in about 1.5 s | Waiting for Nano; Qwen3-1.7B; keyword rules and offload only |
+| 20:20 | Headline accuracy = a **fresh test set written by a teammate**, run once, reported as measured **before** we fixed its misses. **Kreol is left out of the headline:** we stopped tuning it at 18:04, so it stays best-effort and is shown separately | Every earlier test set was written by the person tuning the code, which flatters the score. A teammate wrote fresh reports, we ran them once, and we reported the result before fixing anything: on English and French, the app under-rated 4 of 7. Kreol is left out of that number. We stopped tuning Kreol at 18:04 because it has no speech recognizer and no native speaker to check it, so a Kreol score wouldn't be trustworthy. The app still accepts Kreol on a best-effort basis, and we show its result separately: it under-rated 1 of 5, against 4 for keywords alone. | Every earlier set was written by the person tuning the code, and fixing after seeing a test set inflates the score. Kreol has no speech recognizer and no native-speaker check, so a Kreol score would not be trustworthy | Reporting the tuned figure; re-scoring after the fixes; counting Kreol in the headline |
+| 01:20 Sat | **Surprise card "Scale up":** collapse duplicate hazard reports per 25 m square (never reports about people), relay by priority under a rate cap, and publish where it still fails (15 payloads/s) | In a crush, hundreds of people report the same event, and every copy delays unrelated critical alerts. So we merge duplicate hazard reports from the same 25 m square, but never reports about people (one fire is one fire, but two lost children are two); relays send the most urgent alerts first, under a rate cap; and we publish where it still fails: at 15 messages per second. | In a crush hundreds report one event, and every copy delays unrelated critical alerts. One fire is one fire; two lost children are two | Plain rate limiting (a person's report queues behind crush copies); matching duplicates by text (unreliable, needs the AI on every relay); showing only the speeds where we win |
 
 Full logs: `docs/DECISIONS.md` and `docs/lanes/*.md`.
 
@@ -212,6 +247,9 @@ Full logs: `docs/DECISIONS.md` and `docs/lanes/*.md`.
 3. **Put the phone in airplane mode** — that is the demo. Keep Bluetooth, Wi-Fi and Location switched on; they
    carry the mesh without any network.
 4. Two or more phones show relaying; three or more show multi-hop. A tablet (≥ 600dp) opens the Command Center.
+5. **A fresh install starts in simulation mode** (yellow "Simulation" badge): simulated phones and alerts, so a single
+   phone shows what a busy festival looks like. For the real mesh: press and hold **"Proxima"** at the top left →
+   Developer → **Simulation off** → Restart. Our live demo runs with simulation off.
 
 Nothing leaves the device except signed incident packets passed to nearby phones, and a child's location only
 ever travels encrypted to the guardian's key.
@@ -229,7 +267,25 @@ ever travels encrypted to the guardian's key.
 
 ## Surprise card
 
-<!-- see docs/SURPRISE_CARD.md, once drawn -->
+**Card: "Scale up"**: *thousands of users at once; identify one thing that would break, and adapt.*
+
+**What breaks: the relay storm.** In a crowd crush hundreds of people press SOS within seconds. Every phone used to
+re-send every copy to every neighbour, so an unrelated cardiac arrest queued behind hundreds of copies of the same
+crush.
+
+**What we changed** (`mesh/.../SurgeControl.kt`):
+- **One hazard is one event per 25 m square.** A relay forwards the first 3 reports and counts the rest.
+  **People are never collapsed:** medical and lost-person reports always travel.
+- **A rate cap with a priority buffer.** Most severe first; a person beats a known hazard; beacons are shed first.
+  Your own SOS never waits.
+- **Store-and-forward drops the least severe packet, not the oldest.**
+
+**Evidence.** A **model** of 1,400 phones (400 packed at a gate) runs these exact classes. The rules cut radio sends
+by 27–36% and the worst backlog by about 4x, and the unrelated critical still reached the post in 0.4 s. On very
+slow links neither design delivers. The model found why ("first copy wins" dedup keeps a detoured copy with too few
+hops left), and that fix is our next step. It's a model, not a measurement: see
+[docs/SURPRISE_CARD.md](docs/SURPRISE_CARD.md). Live, the Command Center's "Relay" line shows the surge control at
+work.
 
 ## Team
 

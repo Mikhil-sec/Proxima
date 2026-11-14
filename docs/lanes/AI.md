@@ -27,8 +27,8 @@ Implement `TriageEngine` + `VoiceIo` and return them from `AiModule`. The `TRIAG
 - [x] On-device LLM: Gemma 4 E2B (`LiteRtLmBackend`, shared engine, streaming + cancel) on main (#67). Eval harness `ai/eval/` + severity floor.
 **P2**
 - [ ] Kreol/French voice input; hazard photo classification (multimodal model) if time allows.
-- [~] **10:00 Sat: decision shortlist**: draft done (section below, 10 + 5 bench); team picks at 10:00, then into README with Diya.
-- [ ] **#45 (TRUST→AI): proof-read the 9 protocol cards against the IFRC 2020 PDF, by 08:00 Sat.** Must be Seeya (second member). Claude can prepare a side-by-side.
+- [x] **Key decisions (#90):** final 10 rows in README `## Key decisions` (PR #95, 06:05 Sat). AI slide sent to Yorvan on #92.
+- [x] **#45:** proof-read posted 20:55 Fri (no contradictions; 4 fix requests to TRUST). Timer issue fixed in the guide (PR #76).
 
 ## Accuracy rule
 The AI never generates medical instructions. It outputs type, severity, subtype, summary, landmark and count only.
@@ -42,93 +42,49 @@ Steps come from TRUST's cited protocol cards.
 5. **Crowd-crush early warning (D):** anonymous 25 m density cells + nearby crowd reports + fainting clusters → WATCH/WARNING/DANGER. Only the Command Center raises one HAZARD/CROWD_CRUSH alert per area per 10 min.
 
 ## NEXT_SESSION_HANDOFF
-_Saved 20:40 Fri by Seeya's session. Branch `lane/ai` pushed and clean at the saving-protocol commit, **5 code/doc commits ahead
-of main** (ee0e6aa, b0aba06, d743ee9, f3f2c9f, 91c6fbc) + this save. Main = `fb20894`, **frozen by the lead for the M2 run**
-(#53 / #68): no PRs into main until he reopens it._
+_Saved 06:15 Sat by Seeya's session. `lane/ai` = `origin/main` (`2a88fcd`) + this saving-protocol commit (lane file only).
+**All AI lane code and README work is on main.** Feature freeze 08:00 Sat · README final 10:30 · submit 12:30. The lead has installed the latest build on every demo
+phone and finished device testing (#88/#90): **do not touch any phone unless Seeya asks.**_
 
-**Done and working (on main via PR #67 unless noted)**
-- Triage: `TieredTriageEngine` (local LLM → peer offload → `RuleTriageEngine`, never more than 6 s), `LlmTriageEngine` + `TriagePrompt`
-  (strict parser, sanitize, subtype-in-type recovery, lost-child button override, **severity floor per subtype**) + `TriageMerge`
-  (rules raise severity, never lower it).
-- **Gemma 4 E2B** via `LiteRtLmBackend` (`ai/.../triage/LiteRtLmBackend.kt`): loads once at app start from
-  `/sdcard/Android/data/mu.proxima.app/files/models/*.litertlm`, GPU → CPU fallback, shared by triage + guide behind a mutex,
-  streaming + `cancelProcess` on timeout. `FirstReadyBackend` = Gemma, else Gemini Nano. Device-tested on Diya's S24U.
-  No model file → rules only, nothing breaks.
-- Voice (offline, device-tested), **B** hands-free guide (device-tested), **D** crowd-crush warning (JVM-tested; UI wired in #46;
-  contract in core via #49).
-- **Eval** `ai/eval/` (README there): `cases.jsonl` = 56 (32 original, 12 `ho*` held-out, 12 `fs*` fresh teammate set);
-  `TriageEvalTest` (`-PproximaEval=export` | `-PproximaEval=score:gemma@<device>`); on-phone runner =
-  `LlmProbeActivity --ez eval true`. Reports: `REPORT_v1_baseline.md`, `REPORT_v2.md`, **`REPORT_v3_fresh.md` (frozen honest
-  number)**, `REPORT.md` (latest generated).
-- README (#23): tech stack, fallback paragraph, measured phone numbers, AI disclosure row (on main). Honest accuracy paragraph
-  with the fresh set reported pre-fix (on `lane/ai`).
-- Only on `lane/ai` (needs a PR when main reopens): deprecated aliases removed + "1 phone" wording (#68 asks), fresh set +
-  results, **seizure & live wire → CRITICAL**, "fils" / "old lady", lost/found severity floor, README accuracy update, lane logs.
-  Full build + all module tests green.
+**Done and on main**
+- Triage: `TieredTriageEngine` (Gemma on device → nearby AI phone over the mesh → `RuleTriageEngine`, max 6 s), strict parser,
+  severity floor per subtype, rules raise but never lower. Seizure + live wire = CRITICAL (hop budget 10) (PR #71).
+- Gemma 4 E2B via LiteRT-LM, loaded once at app start from `/sdcard/Android/data/mu.proxima.app/files/models/`. Phone test
+  (#75 T4): bleeding report sorted in 1.4 s on the S24 Ultra; review screen = Command Center ticket ("On-device AI").
+- Success is now logged (PR #81): `triage: ON_DEVICE_LLM TYPE/SUBTYPE/SEVERITY in N ms` (+ `(before rules: …)`), labels only.
+- Hands-free guide: timed steps add "Say next to hear the next step now." so "call EMS" isn't held behind a 20-min timer (PR #76).
+- Voice, crowd-crush warning (D), offload, eval harness `ai/eval/` (honest number: `REPORT_v3_fresh.md`).
+- **#45** proof-read posted on the issue. **#90** done: README `## Key decisions` = final 10 rows with alternatives, AI
+  disclosure row updated (PR #95), AI slide posted to Yorvan on #92.
 
-**Broken / not done / risks**
-- Main frozen → the commits above are not on main yet. When reopened: `git fetch && git merge origin/main`,
-  `./gradlew assembleDebug test`, `gh pr create`, wait for CI `assemble` on the **current head sha**
-  (`gh run list --branch lane/ai`; `gh pr checks --watch` can exit early on an older run), then `gh pr merge --merge`.
-  **The PR body must warn MESH + UI: seizure and live-wire alerts are now CRITICAL → hop budget 10 instead of 7.**
-- Fresh-set result is weak (English + French: shipped path under-triaged 4 of 7, before fixes). Do **not** tune on `fs*`
-  or `ho*` cases again, and do not claim a new accuracy number without a new independent set.
-- D (crowd crush) never tested on several phones. Honor X8b never tested with Gemma (leave it on rules).
-- #10 (`report(raw, triaged)`) still open: once merged, `CrowdRiskMonitor` should pass its own TriageResult (TODO in `AiModule`).
+**Open / risks (none blocking the AI lane)**
+- **#45 card fixes not applied yet** by TRUST (`protocols.json` unchanged since c149e59): page numbers, spine caution before
+  "roll onto side", ABC check on assess-person, 5 wording nits. TRUST's file and call; a change after the 08:00 freeze needs the
+  lead's OK, and the phones need a rebuild to pick it up. Nudge Diya on #45 only if Seeya wants.
+- Phones: S24 Ultra = Gemma (verified 23:23 Fri). S23+ = storage full (1.2 GB free) → rules + offload. S26 has the model; lead
+  says testing is done. Honor = rules only. Crowd crush (D) never tested on several phones.
+- Accuracy is modest (fresh set: shipped path under-rated 4 of 7 before fixes). Don't claim a new number; don't tune on `fs*`/`ho*`.
+- Honest notes for judges (from #90): A56 didn't offload in T1 (rules sorted it); rules parsed "gate, not breathing" as the
+  landmark "Gate not breathing". No code changes after the 08:00 freeze.
+- Old AI issues still open on GitHub (#9, #10, #16, #30, #35): all implemented/answered earlier; leave closing to their authors.
 
 **Exact next steps (in order)**
-1. **#45, by 08:00 Sat:** help Seeya proof-read `trust/src/main/assets/data/protocols.json` (9 cards) against the IFRC 2020 PDF.
-   Prepare a side-by-side (each card's steps vs the text of its cited page); Seeya judges; post "checked, OK" or
-   card id + step + problem on #45. Do not edit TRUST's file.
-2. When the lead reopens main (watch #53 / #1): PR the `lane/ai` commits as above, then comment on #4 and one line on #1.
-3. Team crowd-crush (D) multi-phone test; on Tier 1 demo phones check `adb logcat -d -s Proxima:* | grep -E "llm:|triage:"`
-   shows `loaded in` and `ON_DEVICE_LLM`.
-4. 10:00 Sat: team picks from the decision shortlist below → README `## Key decisions` with Diya. 10:30 final README
-   check. 12:30 submit.
+1. Check the bus: `gh issue view 1 --comments | tail -n 30`, `gh issue list --label lane:ai --state open`, and #90 / #92 / #45
+   for replies (Yorvan may ask about the slide; Diya may answer #45).
+2. 10:30 Sat: read the final README once (Key decisions, AI disclosure row, AI accuracy paragraph) and fix only AI-lane errors,
+   docs-only PR, wait for CI on the head sha, merge.
+3. Be ready to answer judges' AI questions (README "Measured" section + the honest notes above). 12:30 the lead submits.
 
 **Device notes**
-- **Demo phones run the lead's build only (#68): never `installDebug` on them.** That debug build already has the probe:
-  `adb shell mkdir -p /sdcard/Android/data/mu.proxima.app/files/eval` + `adb shell chmod 777` that folder,
-  `adb push ai/eval/out/prompts.jsonl` into it, `adb shell am start -n mu.proxima.app/mu.proxima.ai.debug.LlmProbeActivity --ez eval true --es name gemma`,
-  read back with `adb exec-out run-as mu.proxima.app cat <folder>/gemma_raw.jsonl > ai/eval/out/gemma_raw.jsonl`,
-  then delete the folder (`run-as mu.proxima.app rm -rf`).
-- Never send key events to a teammate's phone without checking `topResumedActivity` first; ask Seeya before any uninstall.
-- Gemma file on this laptop: `C:/Users/THIS-PC/Downloads/proxima-models/gemma-4-E2B-it.litertlm` (2,588,147,712 bytes).
-  Push steps posted on #68.
-- This laptop: Windows Application Control blocks the LiteRT-LM desktop DLL → evals run on phones only.
-  Git Bash: prefix adb commands with `MSYS_NO_PATHCONV=1`. Mauritius time = UTC + 4 (Git Bash has no tz data).
+- Demo phones are signed with **Mikhil's laptop debug key**; an install from this laptop is refused (only an uninstall would get
+  round it, which wipes the teammate's data and model). Never install on them; ask Seeya before any uninstall.
+- Read-only checks are fine when asked: `adb logcat -d -s Proxima:* | grep -E "llm:|triage:"`, `dumpsys package mu.proxima.app`,
+  `ls` of the models folder. Check `topResumedActivity` before any key press or screenshot; restart the app only with Seeya's OK.
+- Gemma file: `C:/Users/THIS-PC/Downloads/proxima-models/gemma-4-E2B-it.litertlm` (2,588,147,712 bytes); push ~80 s over USB.
+- Git Bash: prefix adb with `MSYS_NO_PATHCONV=1`. Mauritius time = UTC + 4. Never read `build/` (use Gradle `-i` output for test failures).
 
-**Files touched this session:** `ai/build.gradle.kts`, `ai/src/main/AndroidManifest.xml`, `ai/.../AiModule.kt`,
-`ai/.../triage/{LiteRtLmBackend,TriagePrompt,TriageMerge}.kt`, `ai/.../crowd/CrowdRiskModel.kt`, `ai/.../{guide,crowd}/*Contract.kt`
-(deleted), `ai/src/debug/.../LlmProbeActivity.kt`, `ai/src/test/...` (backend, prompt, eval, crowd), `ai/eval/*`,
-`core/.../pipeline/RuleTriageEngine.kt` (+ test), `core/.../model/Domain.kt` + `engine/Engines.kt` (#49), `docs/ARCHITECTURE.md`,
-`README.md`, `docs/lanes/AI.md`.
-
-## Decision shortlist draft (for README `## Key decisions`, team picks at 10:00 Sat)
-_Drafted 19:45 Fri from docs/DECISIONS.md, all five lane logs and TRUST's README draft. 10 proposed + 5 on the bench.
-TRUST's draft stopped at 18:05; the main change is adding the evening decisions. All times Fri 13 Nov._
-
-| Time | Decision | Why | Source |
-|---|---|---|---|
-| ~13:05 | Hero user = a parent at Maha Shivaratri (Ganga Talao), not "everyone at events" | A specific Mauritian user with real, measurable network congestion | DECISIONS |
-| ~13:10 | Cut the duress PIN, decoy calculator, cyber-warfare branding and LLM chatbot | Too many features, none finished; they did not serve the user | DECISIONS |
-| ~13:15 | One `Incident` pipeline for lost / sighting / found / medical / hazard / all-clear | One bus to build, test and explain instead of five subsystems | DECISIONS |
-| ~13:25 | The AI **selects** a cited protocol card and never writes medical advice; keyword rules always back it up | No hallucinated instruction can be read aloud, and SOS never depends on a model loading | DECISIONS |
-| 15:35 | **Drop the QR wristband**: the finder answers the guardian's alert, location sealed to the guardian | Same privacy with no hardware or printing; one less thing to fail | DECISIONS / UI |
-| 15:45 → 18:00 | Ship with **no card** for crowd crush, electrical, branch, flood rather than invent one | IFRC has no crush protocol; a confident wrong card is worse than none | TRUST |
-| 16:05 | Tell the whole team (and put it in the README) that simulation-OFF did not yet mean real crypto, instead of fixing it quietly | A privacy claim must be true in the build we submit | TRUST |
-| 16:50 | **Reject a blockchain**; keep Ed25519 signatures + HPKE sealing | A public ledger would expose a child's location and needs connectivity, the one thing a crowd doesn't have | TRUST |
-| 18:04 | AI pivot: stop chasing Kreol accuracy; build **hands-free CPR guidance** and **crowd-crush early warning** | Kreol can't be made accurate without a model or native reviewer; CPR and crush are where lives are lost at Ganga Talao | AI |
-| 18:48 → 19:37 | Gemini Nano unavailable on all our phones → **Gemma 4 E2B on LiteRT-LM**; measured on fixed reports, then added a **severity floor** because the model under-rated severity | Measured, not assumed: S24 Ultra 1.5 s/report; English + French under-triage 9 (rules) → 1 (shipped), with the tuning caveat stated | AI |
-
-**Bench (swap in if the team prefers):**
-| Time | Decision | Why | Source |
-|---|---|---|---|
-| 13:35 | Six Gradle modules, one owner each, fakes behind factories | Five developers in parallel with zero merge conflicts | DECISIONS |
-| 15:32 | Keyword rules can **raise** the model's severity but never lower it | Under-triage is the dangerous error | AI |
-| 17:15 | Beacons carry only the centre of a 25 m cell; crowd density is anonymous | Density without tracking anyone | MESH |
-| 18:50 | Acoustic SOS tones moved to near-ultrasound after the audible version disturbed other teams | Fallback when radio fails, without being a nuisance | MESH |
-| 18:39 | README states the RSSI radar fallback is simulation-only | Nearby Connections exposes no RSSI; honest over impressive | LOCATE |
+**Files touched this session:** `ai/.../guide/HandsFreeGuide.kt` (+ test), `ai/.../triage/LlmTriageEngine.kt` (+ test),
+`README.md` (Key decisions, AI disclosure row), `docs/lanes/AI.md`.
 
 ## Progress log
 | Time | What |
@@ -155,6 +111,9 @@ TRUST's draft stopped at 18:05; the main change is adding the evening decisions.
 | 20:45 Fri | PR #71 merged (main reopened): Gemma backend, eval, seizure/live wire CRITICAL on main. |
 | 20:55 Fri | #45 proof-read posted: 9 cards vs IFRC 2020 PDF, no contradictions; 5 pages, 1 order fix, ABC check, 5 wording nits to TRUST. |
 | 21:00 Fri | Guide: timed steps now say "Say next to hear the next step now." (+1 test). |
+| 23:25 Fri | S24U (Diya): Gemma loaded 4.6 s after app restart, seizure SOS → Critical/Seizure on screen. S23+ (Yorvan): new build, storage full (1.2 GB) → rules + offload. S26 (Chanum): model pushed, waiting for lead's build. |
+| 23:40 Fri | Triage success now logged: `triage: ON_DEVICE_LLM TYPE/SUBTYPE/SEVERITY in N ms` (+ `before rules:` when raised). Labels only, no report text. +2 tests. |
+| 06:15 Sat | #90 done (10 key decisions + disclosure row, PR #95; AI slide to Yorvan on #92). Saving protocol: handoff rewritten, shortlist draft removed (final list is in README). |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -190,3 +149,4 @@ TRUST's draft stopped at 18:05; the main change is adding the evening decisions.
 | 20:30 Fri | Fix the two real fresh-set misses, but report the fresh number as measured **before** the fixes (Seeya) | Fixing after seeing a test set inflates it; judges get the unbiased number plus what we changed | Re-scoring after fixes; not fixing |
 | 15:34 Fri | App never auto-downloads Gemini Nano | No surprise mobile-data use for festival-goers; demo phones get it pre-downloaded on Wi-Fi | Auto-download on first launch |
 | 20:55 Fri | Timed steps held back "call EMS" (burns/fracture 20 min, heat 15, seizure 5, CPR defib 2): fix in the **guide** with a spoken next-step cue, not by reordering cards (Seeya) | One change covers all 5 cards, stays in AI lane, cards keep IFRC order; cue is navigation only so no AI-authored advice | TRUST reorders cards; reading the next step automatically after a timed step (breaks one-action-per-step) |
+| 06:05 Sat | README Key decisions = 10 rows across all lanes, each with alternatives rejected (#90) | Mix of product scope, safety, privacy, honesty and the surprise card; the deliverable requires times + alternatives | Kept from draft but cut: feature cut (13:10), modules (13:35), raw Overpass (14:43), node id from key (18:05) |

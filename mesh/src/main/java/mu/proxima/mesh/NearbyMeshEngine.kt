@@ -125,6 +125,11 @@ class NearbyMeshEngine(
     private val endpoints = mutableMapOf<String, Endpoint>()          // endpointId → neighbour
     private val indirect = mutableMapOf<String, Peer>()              // nodeId → peer known via beacons
     private val outbox = ArrayDeque<MeshPacket>()                    // store-and-forward
+    // Scale-up card (SurgeControl.kt): collapse duplicate hazards, rate-cap relaying behind a priority buffer.
+    private val collapse = HazardCollapse()
+    private class Relay(val packet: MeshPacket, val from: String, val priority: Int)
+    private val governor = RelayGovernor<Relay>(priority = { it.priority })
+    private var collapsed = 0L
     private val jobs = mutableListOf<Job>()
 
     private val localName = "$selfNodeId|${capabilities.tier.name}"
@@ -149,6 +154,12 @@ class NearbyMeshEngine(
             }
         }
 
+        jobs += scope.launch(serial) { // drain the relay buffer when a surge has filled it
+            while (isActive) {
+                delay(RELAY_DRAIN_MS)
+                if (governor.queued > 0) relayNow(governor.drain(clock()))
+            }
+        }
         jobs += scope.launch(serial) { // beacons → indirect peers on other phones
             while (isActive) {
                 sendBeacon()
@@ -362,10 +373,28 @@ class NearbyMeshEngine(
         }
         _inbound.tryEmit(packet)
         MeshRelay.nextHop(packet, selfNodeId)?.let { fwd ->
+            val hazardKey = HazardCollapse.keyOf(fwd)
+            if (!collapse.shouldForwardKey(hazardKey, clock())) {
+                collapsed++
+                Log.i(TAG, "surge: not forwarding ${fwd.packetId.take(8)}, same hazard already forwarded from that 25 m square")
+                publishLoad()
+                return
+            }
             remember(fwd)
-            broadcast(fwd, excludeEndpoint = fromEndpoint)
+            relayNow(governor.offer(Relay(fwd, fromEndpoint, relayPriority(fwd, hazardKey)), clock()))
         }
     }
+
+    /** Send what the governor released (own SOS never goes through it: see [send]). */
+    private fun relayNow(released: List<Relay>) {
+        released.forEach { broadcast(it.packet, excludeEndpoint = it.from) }
+        if (governor.queued > 0 && released.isEmpty()) Log.d(TAG, "surge: ${governor.queued} relays waiting")
+        publishLoad()
+    }
+
+    private fun publishLoad() = MeshLoad.publish(
+        RelayLoad(governor.queued, governor.relayed, governor.shed, collapsed, governor.peakQueue),
+    )
 
     private fun broadcast(packet: MeshPacket, excludeEndpoint: String?) {
         val targets = endpoints.filter { (id, ep) ->
@@ -402,7 +431,7 @@ class NearbyMeshEngine(
         }
         outbox.removeAll { it.packetId == packet.packetId }
         outbox.addLast(packet)
-        while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
+        while (outbox.size > OUTBOX_MAX) outbox.remove(MeshRelay.evictFor(outbox) ?: break)
         val json = ProximaJson.encodeToString(MeshPacket.serializer(), packet)
         scope.launch {
             runCatching { stored.upsert(StoredPacket(packet.packetId, json, packet.createdAtMs)) }
@@ -417,7 +446,7 @@ class NearbyMeshEngine(
             if (outbox.none { it.packetId == p.packetId }) outbox.addLast(p)
             seen.markFirstSeen(p.packetId) // don't re-deliver our stored packets to inbound if they echo back
         }
-        while (outbox.size > OUTBOX_MAX) outbox.removeFirst()
+        while (outbox.size > OUTBOX_MAX) outbox.remove(MeshRelay.evictFor(outbox) ?: break)
         if (restored.isNotEmpty()) Log.i(TAG, "restored ${restored.size} stored packets")
         // Rebuild this phone's own incident list (the pipeline keeps it in memory only), #51.
         val replay = MeshRelay.replayAfterRestart(restored, clock(), STORE_MS)
@@ -646,6 +675,7 @@ class NearbyMeshEngine(
         private const val PEER_EXPIRY_MS = 35_000L
         private const val STORE_MS = 30 * 60 * 1000L
         private const val OUTBOX_MAX = 200
+        private const val RELAY_DRAIN_MS = 100L
         private const val FORGET_ENDPOINT_MS = 10 * 60 * 1000L
         private const val RADIO_RETRY_MS = 10_000L
         private val STRATEGY = Strategy.P2P_CLUSTER

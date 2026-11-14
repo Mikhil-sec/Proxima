@@ -88,4 +88,11 @@ object MeshRelay {
 
     /** The node that handed us this packet (for HopEvents). */
     fun lastHop(packet: MeshPacket): String = packet.path.lastOrNull() ?: packet.originNodeId
+
+    /**
+     * Surge rule 3 (scale-up card): when the store-and-forward buffer is full, evict the least severe packet,
+     * oldest first within a severity. (It used to drop the oldest, so a flood of LOW could push out a CRITICAL.)
+     */
+    fun evictFor(stored: Collection<MeshPacket>): MeshPacket? =
+        stored.minWithOrNull(compareBy<MeshPacket> { it.severity.ordinal }.thenBy { it.createdAtMs })
 }

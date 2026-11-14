@@ -42,6 +42,8 @@ class ProximaGraph(app: Application, val simulation: Boolean) {
         // before sending (MeshBeaconInfo.coarse); llmReady lets Tier 2 phones pick a peer to offload triage to.
         scope.launch { locate.selfLocation.collect { MeshBeaconInfo.location.value = it } }
         scope.launch { triage.capability.collect { MeshBeaconInfo.llmReady.value = it == TriageCapability.ON_DEVICE_LLM } }
+        // Role phones only (#55, #69): the organiser-signed pass pushed by adb, if valid for this phone. Null elsewhere.
+        if (!simulation) runCatching { TrustModule.loadRolePass(app, trust) }.getOrNull()?.let { MeshBeaconInfo.rolePass.value = it }
     }
 
     /** Every runtime permission any engine needs — request these once from the UI. */

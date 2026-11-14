@@ -10,6 +10,8 @@ import mu.proxima.core.model.Severity
 import mu.proxima.core.model.TriageCapability
 import mu.proxima.core.model.TriageSource
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -59,6 +61,28 @@ class LlmTriageEngineTest {
         val r = engine.triage(report("someone is hurt"))
         assertEquals(TriageSource.ON_DEVICE_LLM, r.source)
         assertEquals("BLEEDING", r.subtype)
+    }
+
+    @Test fun success_isLogged_withLabelsOnly_neverReportText() = runTest {
+        val logs = mutableListOf<String>()
+        val engine = LlmTriageEngine(FakeBackend(), backgroundScope, log = { logs += it })
+        runCurrent()
+        engine.triage(report("someone is hurt by the north gate"))
+        val line = logs.single { it.startsWith("triage: ON_DEVICE_LLM ") }
+        assertTrue(line, line.matches(Regex("triage: ON_DEVICE_LLM MEDICAL/BLEEDING/HIGH in \\d+ ms")))
+        assertFalse(logs.any { "north gate" in it })
+    }
+
+    @Test fun success_logsWhenRulesRaisedTheModel() = runTest {
+        val logs = mutableListOf<String>()
+        // Issue #16 case: model obeys a wrong LOST_PERSON button; the words say cardiac arrest, so rules override.
+        val backend = FakeBackend(output = { """{"type":"LOST_PERSON","severity":"MEDIUM","subtype":"PERSON","summary":"Man collapsed"}""" })
+        val engine = LlmTriageEngine(backend, backgroundScope, log = { logs += it })
+        runCurrent()
+        engine.triage(RawReport(text = "a man collapsed, he's not breathing", createdAtMs = 0, typeHint = IncidentType.LOST_PERSON))
+        val line = logs.single { it.startsWith("triage: ON_DEVICE_LLM ") }
+        assertTrue(line, line.startsWith("triage: ON_DEVICE_LLM MEDICAL/CARDIAC_ARREST/CRITICAL in "))
+        assertTrue(line, line.contains("(before rules: LOST_PERSON/PERSON/"))
     }
 
     @Test fun slowModel_fallsBackToRulesWithinBudget() = runTest {
