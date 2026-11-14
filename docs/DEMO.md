@@ -45,9 +45,9 @@ The hand-over line is a question the next slide answers. Seeya clicks.
 
 | # | Slide | Speaker | The logic (3 beats) | Hand over |
 |---|---|---|---|---|
-| 1 | The network fails first | Mikhil | Big crowd → network dies → help never hears. Seoul 2022: warning call ~4 h early, 158 died | "So what did we build? Yorvan." |
-| 2 | Everything in one app | Yorvan | Something wrong → speak or tap, AI sorts it, first aid aloud · Someone missing → no name, only the parent sees · Getting help → real help points, verified medic tents, first-aid post screen | "But how does it work with no network? Diya." |
-| 3 | Like passing a note through the crowd | Diya | Phone to phone, no internet · Signed: can't be faked · Sealed: only the parent opens it · AI picks a Red Cross card, never writes advice | "Does it really work? Seeya." |
+| 1 | The network fails first | Mikhil | Big crowd → network dies → help never hears. Seoul 2022: warning call ~4 h early, 158 died | "So what did we build? Diya." |
+| 2 | Everything in one app | Diya | Something wrong → speak or tap, AI sorts it, first aid aloud · Someone missing → no name, only the parent sees · Getting help → real help points, verified medic tents, first-aid post screen | "But how does it work with no network? Yorvan." |
+| 3 | Like passing a note through the crowd | Yorvan | Phone to phone, no internet · Signed: can't be faked · Sealed: only the parent opens it · AI picks a Red Cross card, never writes advice | "Does it really work? Seeya." |
 | 4 | It works on real phones | Seeya | SOS through another phone, still verified · AI on the phone in 1.4 s · 3 phones carried the location, none could read it | "And with thousands of people? Chanum." |
 | 5 | Wild card: Scale up | Chanum | Copies of one crush block a cardiac arrest · First 3 per 25 m square travel, rest counted, people never merged · Model: 113 → 27 backlog, cardiac in 0.4 s (**say "model"**) | "Mikhil." |
 | 6 | Find people, not track them | Mikhil | No names, anonymous squares, new identity each session · Not proven: thousands, outdoor range · Next: real first-aid post, 50+ phones | Hands a judge the tablet |
