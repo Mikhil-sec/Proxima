@@ -46,33 +46,33 @@ Implement `TrustEngine`, `HelpPointRepository`, `ProtocolRepository` and return 
 
 
 ## NEXT_SESSION_HANDOFF
-_Saved 20:49 Fri 13 Nov. `lane/trust` == main (e6cb2ed). 101/101 trust tests, whole project green. **main is OPEN**
-(lead reopened 20:25, #53). Diya (19:12): merge interface changes without waiting for 👍 but inform the lanes; stop and
-ask her only for key decisions. **Still in force: never install onto demo devices** (Honor, S24 Ultra, S23+, S26+,
-tablet run the lead's build); adb file pushes are fine, `installDebug` is not._
+_Saved 05:58 Sat 14 Nov. `lane/trust` merged to main (#94). **Code is done; freeze 08:00 (docs only after), submit 12:30.**
+Plan: #88; my task issue: #89 (done except the lead's tablet check). Diya: merge without waiting for 👍 but inform;
+ask her only for key decisions. **Never install onto demo devices**; adb file pushes are fine._
 
-### State - everything TRUST built is on main
+### State - everything TRUST built is on main and has run on real phones
 | Item | Status |
 |---|---|
-| TinkTrustEngine (Ed25519 + HPKE, Keystore) | Done. 22/22 S24 Ultra (19:47, from main), 21/21 Honor |
-| Per-session identity (#52) | Live. MESH #54 replays stored alerts (<= 30 min) after restart, which makes guardian-restart work on the real mesh |
-| Verified roles (#55, #56, #57, #72) | TRUST side complete incl. **role mode**: `files/role/` folder -> stable identity + `holder_key.txt`; laptop signs with `./gradlew :trust:issueRolePass -Prole=MEDIC -Plabel="Medic tent 2" -Pholder=<file>` -> `~/.proxima/pass.json` (self-checks against the shipped public key); adb push -> `TrustModule.loadRolePass`. Organiser PRIVATE key `~/.proxima/organiser_private.json`: **never commit/post; Diya to back it up**. MESH beacon wiring #69 (👍 given) merges from `lane/mesh`; UI needs the one line posted on #55 |
-| Friend find (#61, #62) | TRUST side on main. MESH wiring on `lane/mesh-friends` (👍 given); UI (Mikhil) builds pairing + match card |
-| README | On main (#70). Claims only what is on main + tested; roles / friend find NOT claimed until on screen |
+| TinkTrustEngine (Ed25519 + HPKE, Keystore) | 22/22 S24 Ultra, 21/21 Honor. M2 T3 (lost & found, sim OFF): 23 sealed updates relayed by bystanders, none opened |
+| Per-session identity (#52) | Live; MESH #54 replays own alerts (<= 30 min) after restart |
+| Verified roles (#55, #72, MESH #77, UI) | **Passed on phones 05:55 Sat**: Honor = "Medic tent 2" (pass valid 12 h, to ~17:53 Sat); S24U Nearest help lists it first (5 m). Tablet ring = lead to confirm on #89 |
+| Friend find (#61, #62, MESH #78, UI) | **Passed on phones (M2 T6)**: S24U <-> A56 paired, recognised by rotating tag |
+| README | Merged (#94): M2 results, friend find + roles claimed, assembly block removed, Vet Clinic limit, 8.5 km fix |
+| #79 flaky core test | Fixed (PR #80) |
 
 ### THE ONE THING THAT MATTERS NEXT
-1. **Watch #1 for `[M2]` results** (lead's logic run on the shared build). Fix anything TRUST first (lead rule: M2 fixes
-   before features). Write the lost & found result into the README status block (top comment).
-2. **If someone sends a role phone's `holder_key.txt`:** run the issueRolePass command above, hand back `~/.proxima/pass.json`
-   (public, safe to share), delete it after.
-3. **Friend-storage device run** (Keystore AES-GCM key only ran on the JVM): S24 is a demo device, so ask the lead on #53
-   before `ANDROID_SERIAL=R5CXA2VDYMY ./gradlew :trust:connectedDebugAndroidTest` (test package only), or use a
-   non-demo phone. Read results with `adb logcat -d -s TestRunner:*`.
-4. Once MESH #69 / `lane/mesh-friends` and UI's wiring land: check roles + friend find on screen, then decide whether
-   the README claims them.
-5. Chase #23 (only UI owes README sections). #45 proof-read is queued by AI (due 08:00).
-6. ~10:00 Sat: team picks decisions from AI's draft (docs/lanes/AI.md) -> README `## Key decisions` with AI.
-   Before 12:30: remove the README assembly comment block. Freeze 08:00; submit 12:30.
+1. **Check #89** for the lead's tablet result (green ring "Medic tent 2"). If the Honor ever loses the role (reinstall /
+   clear data = new identity): plug it into THIS laptop, `adb shell mkdir -p /sdcard/Android/data/mu.proxima.app/files/role
+   && chmod 777 <that dir>`, restart app, `adb exec-out cat .../role/holder_key.txt > ~/.proxima/holder_key.txt`,
+   `./gradlew :trust:issueRolePass -Prole=MEDIC -Plabel="Medic tent 2" -Phours=12` (NO -Pholder), `adb push` the pass with a
+   Windows path (`cygpath -w`), chmod 644, restart. Script: scratchpad `role_phone.sh` (step 1 there uses run-as, which
+   fails on the Honor - use the mkdir+chmod above). Delete local holder_key/pass afterwards.
+2. **~10:00 Sat:** AI (Seeya) compiles the final 5-10 key decisions in README (#90); help pick TRUST's (blockchain
+   rejection, contract-first tests, no uncited crush card, organiser key off-repo, per-session identity).
+3. **Before 12:30:** final README proof-read; the `<!-- DRAFT shortlist -->` comment in Key decisions is AI's to remove.
+4. Open but not blocking: #45 protocol proof-read (AI); friend-storage instrumented run (#53 ask, unanswered; friend find
+   already passed on phones, so low value now). Deprecated `TinkProtoKeysetFormat` calls stay (no wire change).
+5. **Organiser private key** `~/.proxima/organiser_private.json`: never commit/post; back it up (USB) before the demo.
 
 ### Gotchas learned this session
 - Connected tests print no per-test lines; read `adb logcat -d -s TestRunner:*`. The Honor has logcat OFF entirely:
@@ -187,6 +187,7 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 20:49 Fri | Saving protocol. No M2 results posted yet. Corrected two log times that had been written ahead of the clock. |
 | 20:51 Fri | Session resumed. Context7 confirmed (`/tink-crypto/tink`); it still documents no replacement for the 2 deprecated `TinkProtoKeysetFormat` calls, so they stay (wire format must not change before freeze). No M2 results, so no TRUST fix is due. Asked the lead on #53 for the S24 friend-storage test run; #23 chased (only UI owes a section). |
 | 22:43 Fri | **#79 fixed (PR #80 merged, CI green)**: MESH's CI flake in `LostAndFoundTest` restart test. Cause: `Thread.sleep(100)` raced SharedFlow subscriptions (no replay), so `relay-1` was dropped on a slow runner. `LoopMesh.awaitReady()` waits on `onSubscription` + `subscriptionCount`; timeouts 2 s -> 5 s. Test-only. 5/5 reruns, whole project green after merging #77/#78. |
+| 05:55 Sat | **#89 done.** Honor = **Medic tent 2** (12 h pass): Developer sheet shows the verified role; S24 Ultra's Nearest help lists it first (5 m). #88's `run-as mkdir` fails on Android 14 (no /storage access for run-as); a shell-made `role/` with chmod 777 works, the app then owns holder_key.txt. README (#94): M2 results, friend find + roles claimed as tested on phones, assembly block removed, Vet Clinic (OSM mis-tag) noted, item 7 corrected to 8.5 km. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
