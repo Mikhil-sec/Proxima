@@ -4,6 +4,12 @@
 Ganga Talao for Maha Shivaratri, at Ganesh Chaturthi, concerts or on campus, mobile networks collapse.
 Proxima lets people raise and route emergencies, find lost children and get guided help with **no network at all**.
 
+## Demo video
+Backup demo, 2:06, real phones in airplane mode, simulation off. No voice-over; captions only.
+
+https://github.com/user-attachments/assets/1a2b3c...
+
+
 > Hackathon *Life Powered by Tech*, 13–14 Nov 2026 · Theme 1: **Powered to Protect**
 
 ## Problem & user
