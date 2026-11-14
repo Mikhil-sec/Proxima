@@ -47,8 +47,10 @@ Everything is one `Incident` on one pipeline — lost person, sighting, found, m
 7. **Verified posts.** A medic tent's or steward's phone carries a pass signed by the event organiser. Every phone
    checks that signature together with the beacon it arrived in, then shows the post, live, in "Nearest help" and
    on the Command Center plan. At Ganga Talao the nearest medical facility is 8.5 km away; a medic tent is not.
-   *Status: signing and verification are unit-tested; passes are issued from the organiser's laptop over adb; the
-   on-screen display has not been run with a real role phone yet.*
+   *Tested on real phones (14 Nov): the organiser's laptop signed a 12-hour "Medic tent 2" pass for the Honor X8b,
+   delivered over adb (the organiser's private key never leaves the laptop). The Honor showed "Verified role: Medic
+   tent 2", and a medical report on the S24 Ultra listed "Medic tent 2 — Medic on site now, verified by the
+   organiser" first in Nearest help, 5 m away, above the nearest clinic (506 m).*
 
 **Tested end to end on real phones, simulation off** (14 Nov, 5 devices: S24 Ultra, S26+, S23+, Galaxy A56,
 and a Galaxy Tab S6 Lite as Command Center). Every step passed:
