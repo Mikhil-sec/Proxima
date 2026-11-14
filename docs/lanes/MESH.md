@@ -86,7 +86,7 @@ Same story as the stage demo, but lost & found follows #14 (lost-person alert, "
 Upload unlisted and post the link on #1 and #23.
 
 ## NEXT_SESSION_HANDOFF
-_Saved 20:40 Fri (saving protocol). **Main = `fb20894`, frozen for M2 (#68)**: no PRs into main, no installs on demo devices (the lead installs one build). `lane/mesh` = main + roles (#69) + channel fix + docs. `lane/mesh-friends` = lane/mesh + TRUST #62 + friend find._
+_Updated 21:25 Fri. Main reopened 20:25 (#53). **All MESH code is on main** (`0f7dcf8`, PRs #77 + #78); `lane/mesh` = main. `lane/mesh-friends` is merged and no longer needed. Still: no installs on demo devices (the lead installs one build; S26+ and tablet are next on that list)._
 
 **On main and verified on real phones** (simulation off, no internet):
 - `NearbyMeshEngine` on Nearby P2P_CLUSTER: connect ~6 s, packets ~0.2 s.
@@ -110,21 +110,16 @@ _Saved 20:40 Fri (saving protocol). **Main = `fb20894`, frozen for M2 (#68)**: n
 **Per-session ids are live (#51/#52):** every app launch = new node id. Re-tap the Demo chain after any app restart.
 Timed mid-session rotation: asked TRUST not to do it before the freeze.
 
-**Waiting / not on main yet:**
-- **Roles (#55 → #69), on `lane/mesh`:**
-  - Done: `Beacon.role`, `Peer.role/roleLabel` (core 63339e1), and receivers verify with `trust.verifyRoleClaim(pass, beaconPacket)` (mesh f299143).
-  - Needs 👍 from UI + TRUST on #69.
-  - TRUST: role-phone mode (STABLE keys) + pass loading. UI: set `MeshBeaconInfo.rolePass` and show `peers.filter { it.role != null }`.
-- **Friend find (#61), on `lane/mesh-friends`:**
-  - Done: `Beacon.friendTag`, `Peer.publicKey/friendLabel` (core fc8a646), mesh wiring (3236274).
-  - Mikhil builds the pairing UI; invite = SEALED with `channel = "friend"` (snippets on #61).
-- **Merge order once main reopens:** #62 → `lane/mesh` → `lane/mesh-friends`, each with CI green. **Wait for CI before merging** (PR #59 was merged early by a script slip; CI passed afterwards).
+**On main since 21:20, unit-tested, NOT seen on phones, need UI to show:**
+- **Roles (#55/#69, PR #77):** beacons carry `MeshBeaconInfo.rolePass`; receivers verify → `Peer.role/roleLabel`. TRUST role mode is on main (e3534c4, adb-delivered pass). UI: one line in ProximaGraph `TrustModule.loadRolePass(app, trust)?.let { MeshBeaconInfo.rolePass.value = it }` + render `peers.filter { it.role != null }`.
+- **Friend find (#61, PR #78):** beacons carry `trust.beaconTag()`; receivers set `Peer.friendLabel` (matchFriend) and `Peer.publicKey`. UI: pairing (SEALED `channel = "friend"`, snippets on #61) + match card.
+- Merged without waiting for 👍 on #69 (Chanum's go-ahead); notes on #69, #61, #55.
+- Flaky core test `LostAndFoundTest` restart case (Thread.sleep race) failed CI once on #77; rerun passed. Asked TRUST on #79. If a PR's CI fails on it: `gh run rerun <id> --failed`.
 
 **Exact next steps, in order:**
-1. Bus check (#68, #53, #69, #61, #55). If M2 finds a mesh bug, fix it on `lane/mesh` first.
-2. M2 run (the lead drives over adb): SOS A → B → tablet, lost & found. Check the #54, #59 and silent-link items above. Optional: beacon cell on the heatmap.
-3. When main reopens: the PRs in the merge order above.
-4. Before sleeping: charge the S26+ (video camera). 09:00 Sat pre-flight, 09:30 film per "Backup demo video plan".
+1. Bus check (#1, #3, #69, #61, #79). If M2 finds a mesh bug, fix it on `lane/mesh`, PR, CI green, merge.
+2. M2 on the lead's build: SOS A → B → tablet, lost & found. Check the #54, #59 and silent-link items above. If UI wires roles/friends, check them on phones too.
+3. Before sleeping: charge the S26+ (video camera). 09:00 Sat pre-flight, 09:30 film per "Backup demo video plan".
 5. README MESH section is on main (PR #47). Update its numbers if M2 or the video shows more (longer chain, outdoor range, roles/friends in the demo).
 
 **Device testing (own phones only while main is frozen):**
@@ -168,6 +163,7 @@ Timed mid-session rotation: asked TRUST not to do it before the freeze.
 | 20:05 Fri | Pulled main fb20894 (all lanes merged), whole project green, confirmed on #68. Main frozen for M2; no installs on demo devices |
 | 20:17 Fri | #55 verified roles wired on lane/mesh: core Beacon.role + Peer.role/roleLabel (63339e1, interface-change #69), mesh verification + 5 tests (f299143), 41/41. PR after main reopens + 👍 UI/TRUST |
 | 20:50 Fri | Main reopened 20:25 (#53) with #62 in. Merged main 91dfd87 into lane/mesh (9fa25b6) and lane/mesh-friends; both green (mesh 41 / 44, trust 99, ai 96, locate 20), pushed. lane/mesh PR waits for 👍 UI + TRUST on #69. No M2 mesh bug reported yet; no phones attached |
+| 21:20 Fri | Roles PR #77 merged (1b634f2; CI flaked once on core LostAndFoundTest, rerun green), friend find PR #78 merged (0f7dcf8, CI green). lane/mesh = main. Notes for UI on #69/#61/#55, flaky test asked of TRUST (#79) |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
@@ -198,4 +194,7 @@ Timed mid-session rotation: asked TRUST not to do it before the freeze.
 | 20:17 Fri | Verified roles (#55): the mesh verifies the pass on receipt (`trust.verifyRoleClaim` with the signed BEACON packet) and exposes only `Peer.role/roleLabel` to UI | TRUST requires a pass to be checked with the packet it arrived in; doing it in the mesh keeps crypto out of UI and gives every screen the same answer. Extra guard: the beacon must name its own signer | Hand UI the raw beacon packets (crypto spread over UI); skip roles (Chanum chose to do it) |
 | 20:20 Fri | Friend find (#61) on a separate branch `lane/mesh-friends` built on #62; MESH also exposes `Peer.publicKey` (beacon signer) | #62 is held until main reopens, and keeping it off `lane/mesh` lets roles (#69) merge on their own. Pairing needs the peer's key, which only the mesh sees (beacon originKey) | Wait for #62 on main (loses hours); merge #62 into lane/mesh (couples roles to friend find); UI fetching keys some other way (no source) |
 | 20:20 Fri | Store superseding also keyed by `channel` | A friend invite (channel "friend") and found notices between the same two phones must not replace each other | Separate packet kind (core change, more surface) |
-| 20:50 Fri | Do not open the lane/mesh PR (roles) until UI and TRUST give 👍 on #69, even though main reopened; keep both lane branches merged with main and green meanwhile | CLAUDE.md §1: a core change needs 👍 from the affected lanes before its PR. Keeping the branches current means the PR is a fast merge once they reply | Open the PR now and ask for review on it (skips the contract rule); wait without merging main (merge conflicts later, near the freeze) |
+| 20:50 Fri | (Superseded 21:00) Do not open the lane/mesh PR (roles) until UI and TRUST give 👍 on #69, even though main reopened; keep both lane branches merged with main and green meanwhile | CLAUDE.md §1: a core change needs 👍 from the affected lanes before its PR. Keeping the branches current means the PR is a fast merge once they reply | Open the PR now and ask for review on it (skips the contract rule); wait without merging main (merge conflicts later, near the freeze) |
+| 21:00 Fri | Merge roles (#77) and friend find (#78) without waiting for 👍 from UI/TRUST on #69; leave notes on the issues | Chanum's call: both only add nullable fields, so no lane has to adapt to keep working, and waiting risked missing the 08:00 freeze. TRUST had already built role mode on #69 | Keep waiting for 👍 (could run into the freeze) |
+| 21:05 Fri | The role pass is loaded by the app (UI's one line in ProximaGraph), not inside `MeshModule.create()` | `:mesh` depends only on `:core`; loading `pass.json` in mesh would copy TRUST's file format and adb paths into a second module | Mesh reads the pass file itself (duplicates RolePhone); mesh depends on `:trust` (new module edge) |
+| 21:10 Fri | CI failure on #77 treated as a flake: rerun, not a code change; fix requested from TRUST (#79) | Fails in a core test my diff doesn't touch (6 lines of nullable fields); passes 3/3 locally and on main; cause is a `Thread.sleep` race on a no-replay SharedFlow | Edit the test myself (core test not in my lane); merge with red CI (rule: green first) |
