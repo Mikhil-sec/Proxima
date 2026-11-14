@@ -6,6 +6,15 @@ Proxima lets people raise and route emergencies, find lost children and get guid
 
 > Hackathon *Life Powered by Tech*, 13–14 Nov 2026 · Theme 1: **Powered to Protect**
 
+## Demo video
+
+Backup demo, 2:06, filmed 14 Nov on real phones in airplane mode with simulation off (S24 Ultra, S23+,
+Tab S6 Lite as Command Center). No voice-over, captions only. Shows an SOS triaged by on-device AI, the alert
+hopping to the first-aid post, duplicate reports merged, and a lost child found with the location sealed to
+the guardian.
+
+https://github.com/user-attachments/assets/5755a876-37ed-4f86-9734-2cab13a5b6bc
+
 ## Problem & user
 
 **Hero user: a parent with a young child on the Maha Shivaratri pilgrimage to Ganga Talao (Grand Bassin).**
