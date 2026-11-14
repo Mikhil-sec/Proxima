@@ -54,6 +54,17 @@ Everything is one `Incident` on one pipeline — lost person, sighting, found, m
    so relays carry it but cannot read it. The guardian then gets a radar pointing the way.
 5. **Command Center** (tablet at a first-aid or police post): live incident heatmap from **anonymous grid
    cells only**, mesh topology, and merged report counts ("Fire — 15 reports").
+6. **My people (friend find).** Friends pair once by comparing a six-digit number on both screens. Each phone's
+   beacon then carries a tag that changes every 10 minutes and that only its paired friends can recognise. If a
+   friend can't call for help, your phone spots their tag in beacons it already hears and shows the 25 m square
+   their phone was last heard in, with the radar to it. **Nobody broadcasts a search**, so no relay or bystander
+   learns that anyone is being looked for. *Status: crypto and beacon matching are unit-tested (TRUST, MESH); the
+   pairing screen is built; pairing between two real phones has not been run yet.*
+7. **Verified posts.** A medic tent's or steward's phone carries a pass signed by the event organiser. Every phone
+   checks that signature together with the beacon it arrived in, then shows the post, live, in "Nearest help" and
+   on the Command Center plan. At Ganga Talao the nearest fixed help point is 8.6 km away; a medic tent is not.
+   *Status: signing and verification are unit-tested; passes are issued from the organiser's laptop over adb; the
+   on-screen display has not been run with a real role phone yet.*
 
 **The radar, honestly: what works on which phone** (measured 13 Nov, simulation off, real mesh)
 | Source | Phones | What we measured |
@@ -83,7 +94,29 @@ dropped if its id was seen before (Room table, so this survives a restart). Othe
 **Not measured:** range outdoors, chains longer than 3 phones, and behaviour with dozens of phones. Nearby caps
 connections per phone, so a large crowd forms a partial mesh, and relaying is what covers the gaps.
 
-<!-- UI: architecture diagram here. Source: docs/ARCHITECTURE.md -->
+**Architecture** (full detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))
+
+```mermaid
+flowchart LR
+    subgraph Phone["Phone that needs help"]
+        SOS["SOS: voice or typed"] --> TRI{"Triage<br/>Gemma on device → nearby AI phone → keyword rules"}
+        TRI --> REV["Review screen<br/>(what is sent = what is shown)"]
+        REV --> SIGN["Incident, signed (Ed25519)"]
+    end
+    SIGN -->|Bluetooth / Wi-Fi, no network| R1["Relay phone"]
+    R1 -->|"hop budget 3/5/7/10<br/>dedup · surge control"| R2["Relay phone"]
+    R2 --> CC["Command Center tablet<br/>queue · site plan · density · crowd risk"]
+    R1 --> PH["Every phone nearby<br/>alert + cited protocol card + nearest help"]
+    subgraph LF["Lost & found"]
+        G["Guardian reports a lost child"] -.alert.-> F["Finder: 'I'm with them'"]
+        F -->|"location sealed to the guardian's key (HPKE)<br/>relays carry it, can't read it"| G2["Guardian's radar<br/>UWB → GPS"]
+    end
+```
+
+`:core` (pure Kotlin) holds the shared contract and the one `IncidentPipeline`; each lane owns one module behind a
+factory: `:mesh` (Nearby, store-and-forward, surge control), `:ai` (triage, voice, hands-free guide, crowd risk),
+`:locate` (GPS, compass, UWB radar), `:trust` (Tink keys, sealing, verified roles, friend find, cited data) and
+`:app` (Compose UI).
 
 ## Data sources
 
@@ -182,7 +215,7 @@ AGP 9.5.1 · Kotlin 2.4.21 · Gradle 9.9.1 · minSdk 26 · compileSdk 37.
 | Claude Code — LOCATE lane | Wrote the radar engine (GPS, compass heading, UWB session over the mesh), the arrow filter and all LOCATE unit tests, plus the adb device-test tools. Every claim in the radar table above comes from logs on real phones, not from the model; the member placed the phones and judged the arrow direction. |
 | Claude Code — MESH lane | Wrote the Nearby mesh engine (relay, dedup, reconnect backoff, store-and-forward, beacons, allow-list), the acoustic modem and all 34 MESH unit tests (including synthetic-audio tests for noise, echo and clock drift), plus the adb device-test script. The member ran every phone test, chose to install test builds side by side so teammates' phones kept their data, and moved the acoustic tones to near-ultrasound after the audible version disturbed other teams. Every number in the mesh table comes from phone logs. |
 | Claude Code — AI lane | Wrote the triage engine (Gemini Nano and Gemma/LiteRT-LM backends, prompt, strict output validator, rules safety net), the mesh offload, offline voice in/out, the hands-free guide, the crowd-crush risk model, their unit tests and the accuracy-eval harness. The member chose the runtime and the pivot to the guide and crowd warning, ran every phone test and spoke every voice command. The eval's expected answers were fixed before any model was run. No medical text is generated: the model only picks a type and subtype, and steps come from TRUST's cited cards. |
-<!-- UI: add your row -->
+| Claude Code — UI lane (lead) | Wrote every screen (Compose, Material You tokens, the `designCheck` gate), the Command Center plan, the pairing and radar screens, the per-device install script and the team's integration merges. Screens were reviewed from real screenshots on the Honor X8b and Tab S6 Lite in light and dark; the member chose the design direction (rejecting the first "terminal" look), ran the devices and made the scope calls. |
 
 ## Key decisions
 
@@ -212,6 +245,9 @@ Full logs: `docs/DECISIONS.md` and `docs/lanes/*.md`.
 3. **Put the phone in airplane mode** — that is the demo. Keep Bluetooth, Wi-Fi and Location switched on; they
    carry the mesh without any network.
 4. Two or more phones show relaying; three or more show multi-hop. A tablet (≥ 600dp) opens the Command Center.
+5. **A fresh install starts in simulation mode** (yellow "Simulation" badge): simulated phones and alerts, so a single
+   phone shows what a busy festival looks like. For the real mesh: press and hold **"Proxima"** at the top left →
+   Developer → **Simulation off** → Restart. Our live demo runs with simulation off.
 
 Nothing leaves the device except signed incident packets passed to nearby phones, and a child's location only
 ever travels encrypted to the guardian's key.
@@ -229,7 +265,25 @@ ever travels encrypted to the guardian's key.
 
 ## Surprise card
 
-<!-- see docs/SURPRISE_CARD.md, once drawn -->
+**Card: "Scale up"**: *thousands of users at once; identify one thing that would break, and adapt.*
+
+**What breaks: the relay storm.** In a crowd crush hundreds of people press SOS within seconds. Every phone used to
+re-send every copy to every neighbour, so an unrelated cardiac arrest queued behind hundreds of copies of the same
+crush.
+
+**What we changed** (`mesh/.../SurgeControl.kt`):
+- **One hazard is one event per 25 m square.** A relay forwards the first 3 reports and counts the rest.
+  **People are never collapsed:** medical and lost-person reports always travel.
+- **A rate cap with a priority buffer.** Most severe first; a person beats a known hazard; beacons are shed first.
+  Your own SOS never waits.
+- **Store-and-forward drops the least severe packet, not the oldest.**
+
+**Evidence.** A **model** of 1,400 phones (400 packed at a gate) runs these exact classes. The rules cut radio sends
+by 27–36% and the worst backlog by about 4x, and the unrelated critical still reached the post in 0.4 s. On very
+slow links neither design delivers. The model found why ("first copy wins" dedup keeps a detoured copy with too few
+hops left), and that fix is our next step. It's a model, not a measurement: see
+[docs/SURPRISE_CARD.md](docs/SURPRISE_CARD.md). Live, the Command Center's "Relay" line shows the surge control at
+work.
 
 ## Team
 

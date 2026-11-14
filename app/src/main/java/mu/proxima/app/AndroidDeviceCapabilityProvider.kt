@@ -27,7 +27,8 @@ class AndroidDeviceCapabilityProvider(private val context: Context) : DeviceCapa
         val largeScreen = context.resources.configuration.smallestScreenWidthDp >= 600
         val tier = when {
             largeScreen -> DeviceTier.COMMAND_CENTER
-            ramGb >= 7.0 && flagshipSoc(hasUwb) && pm.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) -> DeviceTier.TIER1_COMPUTE
+            // "8 GB" phones report ~6.9 GiB after the kernel reserve (S23+: 7,242,416 kB), so 6.5 means "8 GB class".
+            ramGb >= 6.5 && flagshipSoc(hasUwb) && pm.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) -> DeviceTier.TIER1_COMPUTE
             else -> DeviceTier.TIER2_SCOUT
         }
         return DeviceCapabilities(tier, "${Build.MANUFACTURER} ${Build.MODEL}", hasUwb, hasCompass, ramGb, largeScreen)

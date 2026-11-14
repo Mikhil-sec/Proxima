@@ -107,7 +107,7 @@ fun ReportScreen(graph: ProximaGraph, capture: VoiceCapture, nav: Nav, hint: Inc
         stage = Stage.Review(raw, result)
     }
 
-    fun send(raw: RawReport) = scope.launch {
+    fun send(raw: RawReport, shown: TriageResult) = scope.launch {
         // Count the phones this alert was handed to directly.
         val watch = launch {
             withTimeoutOrNull(5_000) {
@@ -115,7 +115,7 @@ fun ReportScreen(graph: ProximaGraph, capture: VoiceCapture, nav: Nav, hint: Inc
             }
         }
         // Runs on the graph scope so leaving the screen can never cancel an alert mid-send.
-        val incident = graph.scope.async { graph.pipeline.report(raw) }.await()
+        val incident = graph.scope.async { graph.pipeline.report(raw, shown) }.await()
         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         stage = Stage.Sent(incident)
         watch.join()
@@ -166,7 +166,7 @@ fun ReportScreen(graph: ProximaGraph, capture: VoiceCapture, nav: Nav, hint: Inc
                     onSkip = hint?.let { h -> { capture.cancel(); classify(defaultText(h)) } },
                 )
                 Stage.Typing -> TypingView(capture.error, hint, onCheck = ::classify)
-                is Stage.Review -> ReviewView(s.raw, s.result, onSend = { send(s.raw) }, onCancel = ::leave)
+                is Stage.Review -> ReviewView(s.raw, s.result, onSend = { send(s.raw, s.result) }, onCancel = ::leave)
                 is Stage.Sent -> SentView(
                     graph, s.incident, reached.size,
                     onDone = { nav.reset(Screen.Home) },

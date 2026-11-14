@@ -87,7 +87,7 @@ private const val ARM_MS = 600L
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(graph: ProximaGraph, capture: VoiceCapture, lostFound: LostFound, nav: Nav, onDev: () -> Unit) {
+fun HomeScreen(graph: ProximaGraph, capture: VoiceCapture, lostFound: LostFound, nav: Nav, onDev: () -> Unit, people: Boolean = false) {
     val peers by graph.mesh.peers.collectAsStateWithLifecycle()
     val incidents by graph.pipeline.incidents.collectAsStateWithLifecycle()
     val open = incidents.civilianVisible()
@@ -137,11 +137,22 @@ fun HomeScreen(graph: ProximaGraph, capture: VoiceCapture, lostFound: LostFound,
             AlertsRow(open, onClick = { nav.go(Screen.Feed) })
             TextButton(
                 onClick = { nav.go(Screen.Finder) },
-                modifier = Modifier.fillMaxWidth().padding(bottom = MaterialTheme.spacing.sm),
+                modifier = Modifier.fillMaxWidth().then(if (people) Modifier else Modifier.padding(bottom = MaterialTheme.spacing.sm)),
             ) {
                 SymbolIcon(Sym.Person, description = null, size = MaterialTheme.sizes.iconSmall)
                 Spacer(Modifier.width(MaterialTheme.spacing.sm))
                 Text("I'm with someone who is lost", style = MaterialTheme.typography.labelLarge)
+            }
+            // Friend find (#38). Hidden where the trust engine has no friend book (simulation).
+            if (people) {
+                TextButton(
+                    onClick = { nav.go(Screen.People) },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = MaterialTheme.spacing.sm),
+                ) {
+                    SymbolIcon(Sym.Reports, description = null, size = MaterialTheme.sizes.iconSmall)
+                    Spacer(Modifier.width(MaterialTheme.spacing.sm))
+                    Text("My people", style = MaterialTheme.typography.labelLarge)
+                }
             }
         }
     }

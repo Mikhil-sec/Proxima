@@ -31,6 +31,7 @@ import mu.proxima.core.model.PacketKind
 import mu.proxima.core.model.RawReport
 import mu.proxima.core.model.Severity
 import mu.proxima.core.model.TrackTarget
+import mu.proxima.core.model.TriageResult
 import mu.proxima.core.model.TriageSource
 import mu.proxima.core.model.WristbandTag
 import java.util.UUID
@@ -70,10 +71,14 @@ class IncidentPipeline(
         inboundJob = scope.launch { mesh.inbound.collect { handle(it) } }
     }
 
-    /** SOS / report button. Returns the incident as broadcast. */
-    suspend fun report(raw: RawReport): Incident {
+    /**
+     * SOS / report button. Returns the incident as broadcast.
+     * [triaged]: the result the user was already shown (#10). Passing it skips a second triage call, so the alert
+     * that goes out is exactly the one on the review screen and an on-device LLM is not run twice.
+     */
+    suspend fun report(raw: RawReport, triaged: TriageResult? = null): Incident {
         val withLocation = if (raw.location == null) raw.copy(location = locate.selfLocation.value) else raw
-        val result = runCatching { triage.triage(withLocation) }
+        val result = triaged ?: runCatching { triage.triage(withLocation) }
             .getOrElse { RuleTriageEngine().classify(withLocation) }
         val protocolId = result.protocolId ?: protocols.bestFor(result.type, result.subtype)?.id
         val incident = Incident(

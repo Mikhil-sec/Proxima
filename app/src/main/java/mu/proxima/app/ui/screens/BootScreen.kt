@@ -85,7 +85,7 @@ fun BootScreen(graph: ProximaGraph, onDone: () -> Unit, onDev: () -> Unit) {
                 SimLabel()
             }
             Spacer(Modifier.height(MaterialTheme.spacing.xxxl))
-            Text("To work, this phone needs:", style = MaterialTheme.typography.titleMedium)
+            Text(if (graph.capabilities.isLargeScreen) "To work, this tablet needs:" else "To work, this phone needs:", style = MaterialTheme.typography.titleMedium)
             groups.forEach { g ->
                 ListItem(
                     headlineContent = { Text(g.title, style = MaterialTheme.typography.titleMedium) },

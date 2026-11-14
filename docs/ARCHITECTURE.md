@@ -60,7 +60,8 @@ reports of the same event (same type, within 75 m, within 10 min) and increases 
 ALL_CLEAR and FOUND close the incident named in `relatedIncidentId`.
 
 ## Data flows
-1. **SOS:** UI → `pipeline.report(RawReport)` → `TriageEngine` (LLM → offload → rules) → `Incident` →
+1. **SOS:** UI triages for the review screen, then `pipeline.report(RawReport, triaged = thatResult)` (#10: what is
+   sent is what was shown; without `triaged` the pipeline calls `TriageEngine` itself: LLM → offload → rules) → `Incident` →
    `PacketFactory` signs it → `mesh.send` → relays → each node's `pipeline.incidents` → lists, heatmap, Command Center.
 2. **Guided response:** `incident.protocolId` → `ProtocolRepository.byId` → steps read aloud by `VoiceIo.speak`;
    `HelpPointRepository.nearest(location, type.helpCategories)` gives distance and bearing to real facilities.
