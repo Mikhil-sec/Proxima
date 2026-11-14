@@ -96,21 +96,29 @@ The previous "Field Terminal" look (OLED black, phosphor green, Space Grotesk + 
 
 ## How my part works (5 lines for teammates; fill before 10:00 Sat)
 
-## NEXT_SESSION_HANDOFF (02:45 Sat)
-**Done:** every UI task, plus lead integration. Main = `1698627`, all green (build, tests, lint, designCheck 0).
-M2 passed on phones (#75). All 6 devices on the final build, simulation OFF.
-**Shipped tonight:** device audit fixes (light/dark), config-change fix (dark mode no longer loses a report),
-#8 demo chain, density heatmap, #30 hands-free guide + crowd risk, #10 sent = shown, verified posts, My people
-(friend pairing + radar), surprise-card surge line, radar no-GPS hint, Mermaid architecture diagram in README.
-**Known, not fixed:** dev-sheet demo chain can deadlock (#3; use the adb broadcast all at once); friend radar needs
-the phone's own GPS fix or UWB (now says so); "walk this way" to help points via `locate.track` (#40).
-**Next (submission only):** slides, video, decisions shortlist, README assembly block removal (TRUST), submit by 12:30.
-**Tools:** per-device install script and adb helpers live in the lead laptop's session scratchpad (`prep.sh`, `t.sh`).
-Update a device without wiping it: `ANDROID_SERIAL=<serial> ./gradlew :app:installDebug` (same laptop key).
+## NEXT_SESSION_HANDOFF (06:35 Sat)
+**State:** code done and frozen in spirit. Main = docs-only changes since the devices' build `1698627`, so **no reinstall needed**.
+All 6 devices run it (simulation OFF, Gemma on S24 Ultra + S26+, S24U ↔ A56 paired). M2 passed on phones (#75).
+**Presentation format (lead, 06:10):** show → tell → touch. 90 s lost-child sketch with real phones (UWB radar), then
+6 slides, then judges hold the tablet and one presses SOS. Script: `docs/DEMO.md`. Cast: Yorvan parent (S23+),
+Diya child, Chanum finder (S26+), Mikhil narrator + tablet, Seeya slides clicker + hands a judge a phone.
+**Pitch deck (draft done, private to Mikhil):** https://claude.ai/artifact/Vz4botchqdZgrkZ6fLzuVk (Slides artifact,
+slug `eab77efc-5d27-4e63-9be6-1f62434b62eb`). 6 slides: problem (8.5 km) · one app, three moments · no network ·
+proof on real phones · wild card Scale up · privacy + limits. App palette, Fraunces + Public Sans, real screenshots,
+speaker notes = spoken script. **Open:** slide 2's middle picture is a placeholder for a real radar screenshot
+(capture at the dry run with `tools/devices/t.sh <serial> shot <name>`); the member wants to suggest improvements.
+**Team tasks (assigned issues):** Diya #89 role phone "Medic tent 2" + README cleanup · Seeya #90 decisions 5–10 ·
+Chanum #91 video · Yorvan #92 slides owner (format on #92). Overall plan #88.
+**Our next steps:** 1) slide improvements with the member 2) dry run at 07:00 (tablet, A56, S24U on cables) +
+radar screenshot 3) check Diya's role phone on the tablet log (`verified MEDIC "Medic tent 2"`) 4) after the dry run:
+GitHub Release `v1.0` with the release APK (ask the member before publishing) 5) final README check, submit by 12:30.
+**Device tools:** `tools/devices/` (prep.sh, chain.sh, t.sh + README): install, relay chain, tap-by-text.
 
 ## Progress log
 | Time | What |
 |---|---|
+| 06:35 Sat | Saving protocol: device scripts moved into `tools/devices/`; handoff for the slide session |
+| 06:30 Sat | Pitch deck draft (6 slides, Slides artifact), researched hackathon/anti-slop styles; DEMO.md rewritten as sketch → slides → hands-on; per-member task issues #89–#92 |
 | 02:45 Sat | All 6 devices updated in place to `1698627`; architecture diagram + "fresh install = simulation" note in README; release APK built; STATUS refreshed |
 | 02:20 Sat | **M2 passed on real phones** (T1 SOS, T2 2-hop, T3 lost & found + privacy, T4 Gemma, T6 friend pairing); fixed radar no-GPS hint + "heard just now" (#85) |
 | 02:15 Sat | Surprise card "Scale up": surge control (#83) + 1,400-phone model, README section, slide text |
@@ -137,6 +145,9 @@ Update a device without wiping it: `ANDROID_SERIAL=<serial> ./gradlew :app:insta
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
 |---|---|---|---|
+| 06:10 Sat | Presentation = show → tell → touch: a 90 s lost-child sketch, then 6 slides, then judges hold the tablet and send an SOS | A story is remembered and proves it works live; hands-on proves it isn't staged; jargon-led demos bore judges | Feature-by-feature demo (jargon); slides only (looks like vapourware) |
+| 06:10 Sat | The sketch uses lost & found, not friend find | Lost & found passed on phones with an exact UWB arrow indoors; the friend radar needs GPS and stays on "step outside" indoors | Friend-distress radar (would fail on stage) |
+| 06:30 Sat | Deck look: the app's own palette, documentary type, only real screenshots and measured numbers, a different layout per slide | Research: repeated layouts, icon grids, stock imagery and generic copy are the AI-slop tells; real proof wins hackathons | A template/AI deck tool; purple gradients and icon cards |
 | 00:30 Sat | Friend pairing = pick the phone whose row shows the same six digits, then "The numbers match" on both | No camera (dropped in #18) and node ids change per session; one number both people can read aloud identifies the phone and authenticates the keys in one step | Typing node ids; QR; pairing with no confirmation (anyone in range could add you) |
 | 00:30 Sat | Friend invites travel as CONTROL packets on channel "friend", sealed to the peer | No new packet kind (one pipeline rule); CONTROL is live-only, so a stale invite is never replayed from store-and-forward | New PacketKind (contract change at 00:30); SEALED (pipeline would try to parse it as a FoundNotice) |
 | 00:35 Sat | Verified posts go first in "Nearest help", fixed OSM points after | A tent 80 m away beats a hospital 8.6 km away; the far-help warning is hidden when a live post is in range | A separate "staff" list (two places to look under stress) |
