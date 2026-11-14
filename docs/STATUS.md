@@ -1,16 +1,13 @@
 # STATUS: global dashboard (UI lane / Member 1 maintains; others post on issue #1)
 
-## NEXT_SESSION_HANDOFF (02:45 Sat)
-- **M2 passed on real phones, simulation OFF** (#75): SOS → Command Center, forced 2-hop relay, lost & found with
-  sealed location + UWB/GPS radar, Gemma triage (sent = shown), friend pairing. Bystanders relayed sealed updates
-  but could not read them.
-- **All 6 devices run the final build `1698627`** (simulation OFF, Gemma on S24 Ultra + S26+, S24U ↔ A56 paired).
-  Before the demo: charge them, open Proxima on all of them ~1 minute early so the mesh links up.
-- **Surprise card "Scale up"** answered in code (#83, `mesh/.../SurgeControl.kt`), README section + slide text in
-  `docs/SURPRISE_CARD.md`. Visible live as the "Relay" line on the Command Center.
-- **Only submission work is left.** Main is open for small fixes only; nothing new.
-- Demo chain (forced relay): set it over adb right after the apps start, all at once (see #75 T2), never phone by
-  phone in the dev sheet (that can deadlock, #3).
+## NEXT_SESSION_HANDOFF (06:35 Sat)
+- **Code done; no reinstall needed** (devices run `1698627`, main since = docs only). M2 passed on real phones (#75).
+- **Presentation:** show → tell → touch (`docs/DEMO.md`): 90 s lost-child sketch, 6 slides, judges hold the tablet.
+  Draft deck (private to the lead): https://claude.ai/artifact/Vz4botchqdZgrkZ6fLzuVk
+- **Assigned:** Diya #89 (role phone + README cleanup) · Seeya #90 (decisions 5–10) · Chanum #91 (video) ·
+  Yorvan #92 (slides owner). Plan #88. Dry run 07:00. Submit by 12:30.
+- **Lead next:** slide improvements, dry run + radar screenshot, APK GitHub Release (ask first), final README, submit.
+- Device tools: `tools/devices/` (install, demo relay chain, tap-by-text).
 
 ## Lane board
 | Lane | Owner | State | Real or fake in app | Open |
