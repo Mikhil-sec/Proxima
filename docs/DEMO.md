@@ -39,9 +39,18 @@ Everything below passed on real phones on Sat 14 Nov, 01:30–02:15 (#75).
 - **Radar says "Getting a fix" or "step outside":** Yorvan and Chanum stand within a few metres. UWB takes over (both phones have it).
 - **"Listening" or a download pop-up:** **Type instead** or **Cancel**.
 
-## 2. Slides (max 6, owner Yorvan, #92)
-Problem → Solution → Why it works with no network → Advantages proven on phones → Wild card "Scale up" →
-Privacy, limits, next. One idea per slide, plain words.
+## 2. Slides (max 6, owner Yorvan, #92): one speaker per slide, no reading
+Talk from the logic, not from notes. Each slide's speaker notes hold the same three beats.
+The hand-over line is a question the next slide answers. Seeya clicks.
+
+| # | Slide | Speaker | The logic (3 beats) | Hand over |
+|---|---|---|---|---|
+| 1 | The network fails first | Mikhil | Big crowd → network dies → help never hears. Seoul 2022: warning call ~4 h early, 158 died | "So what did we build? Diya." |
+| 2 | Everything in one app | Diya | Something wrong → speak or tap, AI sorts it, first aid aloud · Someone missing → no name, only the parent sees · Getting help → real help points, verified medic tents, first-aid post screen | "But how does it work with no network? Yorvan." |
+| 3 | Like passing a note through the crowd | Yorvan | Phone to phone, no internet · Signed: can't be faked · Sealed: only the parent opens it · AI picks a Red Cross card, never writes advice | "Does it really work? Seeya." |
+| 4 | It works on real phones | Seeya | SOS through another phone, still verified · AI on the phone in 1.4 s · 3 phones carried the location, none could read it | "And with thousands of people? Chanum." |
+| 5 | Wild card: Scale up | Chanum | Copies of one crush block a cardiac arrest · First 3 per 25 m square travel, rest counted, people never merged · Model: 113 → 27 backlog, cardiac in 0.4 s (**say "model"**) | "Mikhil." |
+| 6 | Find people, not track them | Mikhil | No names, anonymous squares, new identity each session · Not proven: thousands, outdoor range · Next: real first-aid post, 50+ phones | Hands a judge the tablet |
 
 ## 3. Hands-on (5 min): let the judges do it
 1. **Mikhil hands a judge the tablet**: *"You're the first-aid post."* It shows the lost-child alert from the sketch, and the crowd as anonymous squares.
