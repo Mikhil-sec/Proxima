@@ -187,6 +187,7 @@ and `README.md` (assembly). **No `core/` changes have been made by this lane at 
 | 20:49 Fri | Saving protocol. No M2 results posted yet. Corrected two log times that had been written ahead of the clock. |
 | 20:51 Fri | Session resumed. Context7 confirmed (`/tink-crypto/tink`); it still documents no replacement for the 2 deprecated `TinkProtoKeysetFormat` calls, so they stay (wire format must not change before freeze). No M2 results, so no TRUST fix is due. Asked the lead on #53 for the S24 friend-storage test run; #23 chased (only UI owes a section). |
 | 22:43 Fri | **#79 fixed (PR #80 merged, CI green)**: MESH's CI flake in `LostAndFoundTest` restart test. Cause: `Thread.sleep(100)` raced SharedFlow subscriptions (no replay), so `relay-1` was dropped on a slow runner. `LoopMesh.awaitReady()` waits on `onSubscription` + `subscriptionCount`; timeouts 2 s -> 5 s. Test-only. 5/5 reruns, whole project green after merging #77/#78. |
+| 05:55 Sat | **#89 done.** Honor = **Medic tent 2** (12 h pass): Developer sheet shows the verified role; S24 Ultra's Nearest help lists it first (5 m). #88's `run-as mkdir` fails on Android 14 (no /storage access for run-as); a shell-made `role/` with chmod 777 works, the app then owns holder_key.txt. README (#94): M2 results, friend find + roles claimed as tested on phones, assembly block removed, Vet Clinic (OSM mis-tag) noted, item 7 corrected to 8.5 km. |
 
 ## Decision log
 | Time | Decision | Why | Alternatives rejected |
